@@ -158,6 +158,36 @@ curl -sf -X POST "$BASE/api/test-runs" \
 
 ---
 
+## When to POST `verification_reports`
+
+After each verifier sub-agent completes (Stage 3 verification, Stage 4 item verification). The endpoint takes a FLAT shape (verified against live API 2026-06-10 — the nested `verification-report.schema.yaml` YAML goes in `full_report`):
+
+```bash
+curl -sf -X POST "$BASE/api/verification-reports" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "project_slug": "<slug>",
+    "target_id": "feat-x",
+    "target_kind": "stage-3-feature",
+    "verifier_session_id": "verifier-A-<date>",
+    "verifier_prompt_version": "v3.0",
+    "pass_a_code_reality": "pass|partial|fail",
+    "pass_b_stub_detection": "clean|stub-detected",
+    "pass_c_data_correctness": "pass|partial|fail|n-a",
+    "pass_d_acceptance_criteria": "pass|fail",
+    "recommendation_overall": "APPROVE|BLOCK|ITERATE",
+    "recommendation_reason": "<one-liner>",
+    "mandatory_user_review": false,
+    "hard_failures": 0, "partial": 0, "verified": 2,
+    "full_report": { }
+  }'
+```
+
+Required: `project_slug`, `target_id`, `verifier_session_id`, `recommendation_overall`. Response: `{report: {id, ...}}` — that `id` is the `reconciler_id` for the claim PATCH above. GET filter: `?project_slug=<slug>`. No PATCH route exists — reports are immutable once posted.
+
+Related discovery (same date): `POST /api/projects/<slug>/reports` (Stage 4 intake) requires `source` from the enum `tracker-flow-bug | tracker-mega-prompt | chat | auto-feedback` — skill-side intake uses `chat`.
+
 ## Read endpoints (for the rules + dashboards)
 
 | Query | Used by |
