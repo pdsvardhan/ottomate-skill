@@ -9,7 +9,7 @@ Pre-gate validation runs before preprocessing dialogs and stage transitions. Two
 ## 4 phases (chronological by when they fire)
 
 ```
-Phase 0 — Bootstrap        session start, before any user input    7 sub-checks
+Phase 0 — Bootstrap        session start, before any user input    8 sub-checks
 Phase 1 — Identity Lock    after Stage 0.5 (slug+name+port set)    5 sub-checks
 Phase 2 — Intent Consistency  after Stage 0.2 (Journey Detection)   1 sub-check
 Phase 3 — External Refs    after Stage 0.6 (preferences captured)   2 sub-checks (conditional)
@@ -34,12 +34,13 @@ Runs at every session start. Cached 30 minutes — subsequent stage transitions 
 | # | Check | Verdict on fail | Auto-fix? |
 |---|---|---|---|
 | 1 | Server liveness (3 parallel: SSH + Ottomate /api/health + Gitea /api/v1/version) | BLOCK | Manual (check VAULT7A power, SSH daemon, container status) |
-| 2 | Disk space `/mnt/storage` ≥10GB AND `/opt` ≥5GB | BLOCK | Auto-offer `cleanup-routine.sh` |
+| 2 | Disk space `/repos` ≥10GB AND `/app/data` ≥2GB (container-visible mounts; was `/mnt/storage`+`/opt` which aren't visible inside the container — fixed in route code) | BLOCK | Auto-offer `cleanup-routine.sh` |
 | 3 | DB schema healthy (drizzle migrations current + required tables present + risks_catalog ≥20 rows) | BLOCK | Auto-offer `npm run db:migrate` AND/OR `npm run seed:risks` |
 | 4 | Bearer token valid (file at `/opt/homeserver/ottomate/.token` exists + accepted by Ottomate API) | BLOCK | Auto-offer `openssl rand -hex 32 > /opt/homeserver/ottomate/.token && chmod 600 ...` (with re-deploy reminder) |
 | 5 | Server clock in sync (drift between server `date +%s` and local <300s) | PROCEED+CONFIRM | Manual (`sudo timedatectl set-ntp true`) |
 | 6 | Deferred tools loaded (AskUserQuestion + verifier toolkit callable) | BLOCK | Auto-offer `ToolSearch` to load |
 | 7 | Last-session unresolved-halt audit (read most recent `sanity_check_runs`; flag if last verdict was BLOCK without recorded remediation) | PROCEED+CONFIRM | Surface: "previous session BLOCKed on X, did you fix it?" |
+| 8 | WAL integrity (no deleted `ottomate.db`/`-wal`/`-shm` fds held by the server process — detects the WAL-split data-loss mode; added 2026-06-10, adr-015) | BLOCK | Manual — rescue main+wal via `/proc/<pid>/fd` BEFORE any restart; do NOT restart the container |
 
 Each check fires in parallel; total wall-clock target <2s.
 
