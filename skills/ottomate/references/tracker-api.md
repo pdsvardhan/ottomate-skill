@@ -6,61 +6,10 @@
 > response SHAPES and is known to contain stale claims (e.g. components-pick was
 > marked NOT IMPLEMENTED here after it shipped). Full rewrite scheduled in WS2.
 
-> **POST-AUDIT AMENDMENTS (2026-04-29) — New endpoints:**
->
-> ```
-> GET  /api/sanity-check?phase={bootstrap|identity|intent|external|stage_X_to_Y}&project_slug={slug?}
->      → returns sanity_check block per `references/sanity-check.md`
->      → also persists row in sanity_check_runs table
->
-> POST /api/projects/{slug}/intent-drafts          (Stage 0.4 capture)
->      Body: { core_idea_raw, session_id }
->      → inserts intent_drafts row; returns the draft
->
-> POST /api/projects/{slug}/intent-drafts/extract-hints  (Stage 0.4 hybrid extraction)
->      Body: { core_idea_raw, candidate_hints, session_id }
->      → calls Claude with prompts/extract-intent.md; returns refined hints
->      → validates source_substring (anti-hallucination guard)
->
-> GET  /api/iterations/{id}/items/{itemId}/component-options
->      → returns up to 6 ranked candidates from master_components
->      → ranked by Claude relevance to item title + description
->
-> POST /api/iterations/{id}/items/{itemId}/pick-component
->      Body: { master_component_id, picked_variant?, picked_provenance }
->      → updates iteration_item with chosen component
->
-> GET  /api/drift?project_slug={slug}
->      → returns array of detected drift rows (file edited since last sync)
->
-> POST /api/drift/{id}/resolve
->      Body: { resolution: "import" | "overwrite" | "abort", session_id }
->      → applies resolution; updates drift_resolutions row
->
-> GET  /api/audit/{slug}
->      → cross-stage audit query (full ledger of phase transitions)
->      → returns timeline of all entity transitions for the project
->
-> GET  /api/audit/{slug}/anti-gaslight-violations?severity={ALL|HARD|SOFT}
->      → runs the 7 detection rules; returns violation list
->      → see references/anti-gaslight-rules.md for the rules
->
-> POST /api/master-components                       (one-time seed Path 2)
->      Body: { id, name, category, description, source_code_path, ... }
->      → inserts master_components row pointing to filesystem source
->
-> POST /api/skill-events                            (timeline log)
->      Body: { project_slug?, event_type, session_id, evidence?, ... }
->      → inserts skill_events row
->
-> # NOT IMPLEMENTED (2026-05-19 audit): the components-pick page in Ottomate
-> # doesn't exist yet, so polling its status returns 404. Skill should use
-> # chat AskUserQuestion fallback per references/stage-2-components.md until
-> # this UI is built (tracked as P0 in NEXT-SESSION-PLAN).
-> # GET  /api/projects/{slug}/components-pick/status
-> ```
->
-> **Bearer auth (per Codex Round 2 #2):** All POST/PATCH/DELETE require `Authorization: Bearer <TRACKER_API_TOKEN>`. Token at `/opt/homeserver/ottomate/.token` on server.
+> **POST-AUDIT AMENDMENTS (2026-04-29):** applied. The endpoints added then are in the
+> generated inventory (authoritative); their request shapes moved to the body section
+> "Stage 0 + cross-cutting endpoints" below (banner collapsed 2026-06-10). The stale
+> "components-pick page NOT IMPLEMENTED" note was removed — the route exists per inventory.
 
 Tracker v3 runs at `${TRACKER_API_BASE}` (default: `http://127.0.0.1:8110`). All endpoints return JSON. Skill uses zod schemas (mirroring `schemas/`) to validate request/response shapes.
 
@@ -128,6 +77,41 @@ DELETE /api/projects/{slug}/flows/{flow_id}          Delete flow
 # Same pattern for: /features, /pages, /components, /data, /risks, /decisions
 ```
 
+## Stage 0 + cross-cutting endpoints (added post-audit 2026-04-29)
+
+```
+GET  /api/sanity-check?phase={bootstrap|identity|intent|external|stage_X_to_Y}&project_slug={slug?}
+     → returns sanity_check block per `references/sanity-check.md`; persists sanity_check_runs row
+
+POST /api/projects/{slug}/intent-drafts                  (Stage 0.4 capture)
+     Body: { core_idea_raw, session_id }
+
+POST /api/projects/{slug}/intent-drafts/extract-hints    (Stage 0.4 hybrid extraction)
+     Body: { core_idea_raw, candidate_hints, session_id }
+     → returns refined hints; validates source_substring (anti-hallucination guard)
+
+GET  /api/iterations/{id}/items/{itemId}/component-options
+     → up to 6 ranked candidates from master_components
+
+POST /api/iterations/{id}/items/{itemId}/pick-component
+     Body: { master_component_id, picked_variant?, picked_provenance }
+
+GET  /api/drift?project_slug={slug}                      → detected drift rows
+POST /api/drift/{id}/resolve
+     Body: { resolution: "import" | "overwrite" | "abort", session_id }
+
+GET  /api/audit/{slug}                                   → full ledger of phase transitions
+GET  /api/anti-gaslight/violations?project_slug={slug?}  → canonical live rule check
+     (5 rules in SQLite, built 2026-06-10; see references/anti-gaslight-rules.md)
+GET  /api/audit/{slug}/anti-gaslight-violations          → per-project wrapper, same rules
+
+POST /api/master-components                              (one-time seed Path 2)
+     Body: { id, name, category, description, source_code_path, ... }
+
+POST /api/skill-events                                   (timeline log)
+     Body: { project_slug?, event_type, session_id, evidence?, ... }
+```
+
 ## Stage 1 endpoints
 
 ```
@@ -147,8 +131,10 @@ POST   /api/sanity-check?stage=1&slug={x}&journey_type={1|2}
 
 ```
 # NOT IMPLEMENTED (2026-05-19 audit): same as stage-1-handoff above.
-# Use per-doc CRUD on /ui-master-plan, /tech-stack, /architecture, /build-plan,
-# /pages, etc. instead. Lifecycle phase transitions via PATCH /api/projects/{slug}.
+# Corrected 2026-06-10: ui-master-plan via PUT /api/projects/<slug>/ui-master-plan;
+# architecture diagrams via POST /api/projects/<slug>/architecture (new 2026-06-10);
+# tech-stack + build-plan stored as ADRs (no dedicated endpoints, per adr-014).
+# Lifecycle phase transitions via PATCH /api/projects/{slug}.
 # POST   /api/projects/{slug}/stage-2-handoff
 # POST   /api/projects/{slug}/stage-3-handoff
 ```
