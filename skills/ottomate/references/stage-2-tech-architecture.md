@@ -1,6 +1,6 @@
 # Stage 2.5 + 2.6 + 2.7 — Tech Stack + Architecture + Coding Guidelines + Build Plan
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** Per `references/stage-amendments.md`:
+> **POST-AUDIT AMENDMENTS (2026-04-29):** (applied; changelog archived at `_archive/references/stage-amendments.md`):
 > - **NEW: 2.5 produces `CODING_GUIDELINES.md`** in project repo (per D-S0.8). Stage 3.3 reformat reads this; Stage 3.4 codegen reads this.
 > - Trivy + Grype + OSV-Scanner (NOT Snyk per Codex P1 #11) — locked in nightly CI
 > - Per-choice rationale tied to project state (Claude composes ~500 tokens)
@@ -67,7 +67,7 @@ build_plan:
   ...
 ```
 
-Persist as Stage-2-blob — until a dedicated endpoint exists, attach to the project as a comment ADR (`POST /api/projects/<slug>/adr-index`) titled "Build plan v1".
+Persist as Stage-2-blob — no dedicated endpoint exists; attach to the project as an ADR (`POST /api/projects/<slug>/adr-index`, id `adr-NNN-build-plan-<slug>`). Per adr-014 the Stage 2→3 gate checks ADR-presence, nothing else — do not pretend a tech_stacks/build_plans row was written.
 
 ## Lock-in
 

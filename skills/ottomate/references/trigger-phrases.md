@@ -16,9 +16,11 @@ The skill detects user phrases as transition signals. Detection runs continuousl
 | Phrase pattern | Effect |
 |---|---|
 | "let's move on" / "next" / "ready" / "proceed" / "let's go" | Move to next sub-stage in current reference |
-| "let's complete stage 1" / "stage 1 done" / "ND1 done" / "preprocessing done" | Finalize ND1 (end Stage 1 preprocessing) |
+| "ND1 done" / "preprocessing done" / "stage 0 done" | Finalize ND1 (end Stage 0 preprocessing) |
+| "stage 1 done" / "let's complete stage 1" | End Stage 1 → run SO1 verification (if mid-Stage-0, AskUserQuestion: user may mean ND1 finalize under the old numbering) |
 | "let's get to stage 2" / "move to stage 2" / "stage 2 now" | Transition Stage 1 → Stage 2 |
-| "let's get to stage 3" / "build it" / "ready to build" | Transition Stage 2 → Stage 3 |
+| "let's pick components" | Stage 2: enter component picking (after UI master plan saved) |
+| "let's scaffold" / "let's get to stage 3" / "build it" / "ready to build" | Transition Stage 2 → Stage 3 |
 | "let me test" / "ready to test" / "I'll review now" | Transition out of build, ready for Stage 4 |
 | "analyze" / "classify" / "process this" | Trigger Stage 4 step 4.2 (classification) |
 | "lock & build" / "approve all" / "looks good, build" | Lock Stage 4 step 4.3 list, kick off build |
@@ -49,8 +51,10 @@ If a phrase is ambiguous (e.g., "next" mid-list), use the immediate context:
 If genuinely unsure, ask via `AskUserQuestion`:
 - "Did you mean 'next sub-step' or 'next item in list' or 'next stage'?"
 
-## Implementation note
+## Implementation note (honest version, 2026-06-10)
 
-Detection is regex-based. The skill scans every user message for these phrases. Detection happens BEFORE classification of message content — phrases are checked first, content second.
+There is no regex engine in the loop — Claude is the parser, applying these tables as judgment guidance. That means: treat the discipline rules above (position, question-mark suppression, exclusions) as how to JUDGE, not as mechanical guarantees, and lean on the one mechanism that actually holds — **when in doubt, AskUserQuestion**. A missed trigger costs one extra message; a false fire costs an unwanted stage transition. Bias accordingly: only fire when confident.
 
 Phrases that don't match any pattern fall through to normal content handling (free-form input for the current sub-step's question).
+
+This file is the SINGLE source of trigger truth — SKILL.md and stage references link here and must not carry their own phrase tables.

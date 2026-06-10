@@ -225,8 +225,8 @@ rules:
     severity: critical
     condition:
       features_mention: "payment|checkout|card|billing"
-        OR_third_party_services_has:
-          name: "Stripe|Square|PayPal|Braintree"
+      OR_third_party_services_has:
+        name: "Stripe|Square|PayPal|Braintree"
     sunset_trigger: "delegate to PCI-compliant processor (Stripe Checkout, etc.)"
     applies_to:
       kind: feature

@@ -1,6 +1,6 @@
 # Stage 3.5 — Verifier Sub-Agent (Anti-Gaslighting; renumbered 3.4 → 3.5 post-audit)
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** Per `references/stage-amendments.md`:
+> **POST-AUDIT AMENDMENTS (2026-04-29):** (applied; changelog archived at `_archive/references/stage-amendments.md`):
 > - Stub patterns externalized to `data/stub-patterns.md` (referenced not inlined; saves ~2-3K tokens per dispatch)
 > - Output schema referenced from `schemas/verification-report.schema.yaml` (not inlined in prompt)
 > - **`verifier_prompt_version` field stamped** on every verification_reports row (audit chain)

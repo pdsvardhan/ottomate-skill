@@ -1,11 +1,11 @@
 # Ottomate — status (generated)
 
-> Generated 2026-06-10T16:06:21+05:30 by `scripts/generate-status.sh`. Do not hand-edit (adr-016:
+> Generated 2026-06-10T16:24:08+05:30 by `scripts/generate-status.sh`. Do not hand-edit (adr-016:
 > every hand-written count in the previous STATUS drifted wrong).
 
-- Health: `{"status":"ok","version":"0.1.0","port":"3000","db":"connected","timestamp":"2026-06-10T10:36:21.195Z"}`
+- Health: `{"status":"ok","version":"0.1.0","port":"3000","db":"connected","timestamp":"2026-06-10T10:54:08.738Z"}`
 - API route files: 104
-- Tracker repo head: 2690b94 2026-06-10 ADRs 012-016: Codex-R3 rejection, pilot reorder, toolchain pruning, WAL-safe backups, generated docs
+- Tracker repo head: 0c8f7fd 2026-06-10 Timing-safe bearer compare + wal-integrity bootstrap check (adr-015)
 - Latest off-disk backup: ottomate-20260610T115318.db
 
 ## Projects (live)

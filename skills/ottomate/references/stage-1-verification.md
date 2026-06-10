@@ -1,4 +1,6 @@
-# Stage 1.10 — SO1 Verification (5 Passes)
+# Stage 1 — SO1 verification (5 passes)
+
+> Referred to by NAME — sub-step numbers drifted (1.9 vs 1.10 across files) and are retired.
 
 **Mandatory.** Run after producing all 7 SO1 docs and before declaring Stage 1 complete. Catches inconsistency before Stage 2 builds on a faulty foundation.
 
@@ -19,10 +21,10 @@ Each doc validates against its schema in `schemas/`:
 - `overview.schema.yaml` ↔ Doc 1 + non_goals + success_criteria
 - `flows.schema.yaml` ↔ Doc 2 + steps + pre_conditions + edge_cases
 - `features.schema.yaml` ↔ Doc 3 + acceptance_criteria
-- `pages.schema.yaml` ↔ Doc 4 + components + variants + entry_points
+- `ui.schema.yaml` ↔ Doc 4 + components + variants + entry_points
 - `data.schema.yaml` ↔ Doc 5 (concepts + sources + contracts)
 - `risks.schema.yaml` ↔ Doc 7 (instances + policies + 3rd-party + auth + secrets)
-- `decisions.schema.yaml` ↔ Doc 8
+- `adr.schema.yaml` ↔ Doc 8
 
 Use `GET /api/projects/<slug>` and child endpoints to read the live state. Validate each payload. Any failure → HARD halt with field path.
 

@@ -1,6 +1,6 @@
 # Stage 1 Internal Process — Consume ND1 → Produce SO1
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** This file's sub-step 2-11 behavior is amended per the locked audit. Apply changes per `references/stage-amendments.md` section "stage-1-internal.md". Critical inline changes:
+> **POST-AUDIT AMENDMENTS (2026-04-29):** This file's sub-step 2-11 behavior is amended per the locked audit. (Deltas below were applied; original changelog archived at `_archive/references/stage-amendments.md`.) Critical inline changes:
 > - **Sub-step 1:** ND1 archived in 1.1 (not 1.10). Transactional all-or-nothing stub creation. Initial staging ADR shell created here.
 > - **Sub-step 2:** Most fields already set in Stage 0 — only fill `summary.tagline` (template + Claude polish), `summary.short_description` (Claude composes), `tags` (mechanical extraction). target_devices captured at 0.8.
 > - **Sub-step 3-5 (Doc 3/2/4):** Per-feature/flow/page Claude **active critique pass** + cross-entity Claude pass for completeness gaps. Paginated card panel (10/page; soft warning at >30 features). Per `references/output-style.md`.

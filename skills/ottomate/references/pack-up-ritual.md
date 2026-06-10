@@ -1,6 +1,6 @@
 # Pack Up — Session-End Ritual
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** Per `references/stage-amendments.md`:
+> **POST-AUDIT AMENDMENTS (2026-04-29):** (applied; changelog archived at `_archive/references/stage-amendments.md`):
 > - **Step 2 (mirror sync):** Add drift detection BEFORE write (hash compare DB-canonical vs file). Drift surfaces via AskUserQuestion (import / overwrite / abort). drift_resolutions row written.
 > - **NEW step "Pack-Up Reconciliation Lock"** (Codex Round 2): final session-close screen showing done / not-done / deferred / risks-changed / commits — user confirms before push.
 > - **Step 5 (plugin auto-push):** only if remote exists (ottomate plugin currently no remote — skip with notice).
@@ -76,7 +76,7 @@ Same for `~/.claude/plugins/vault7a-ops/` (server-ops skill).
 
 ### 6. Clean up temp files
 
-- Delete any temp files in `C:\Users\pdsva\Desktop\claude mams\` (local SCP staging)
+- Delete any local SCP-staging temp files (e.g. `%TEMP%\*.ts`, `%TEMP%\*.sh` created this session)
 - SSH to server, scrub `/tmp/*.tar.gz` and `/tmp/review-*` stale artifacts
 - Remove backup files (`*.bak`) older than 24h
 

@@ -6,14 +6,14 @@ The `/ottomate` slash command delegates here for full routing logic. The command
 
 ### Step 1 — Sanity check (informational, NEVER blocking)
 
-Run the appropriate sanity checks per `references/sanity-check.md`. Print HARD failures (those DO block — e.g. SSH unreachable, Ottomate down, disk full). All other warnings (SOFT/INFO) are reported and ignored. Specifically: untracked YAML mirrors, unpushed commits, lifecycle phase mismatches, missing optional services like GlitchTip — these are NOT blockers. Mention them in a short status block, then move on. Do not ask the user to "resolve git state" before continuing.
+Run the appropriate sanity checks per `references/sanity-check.md` (BLOCK/PROCEED model). A BLOCK verdict stops (e.g. SSH unreachable, Ottomate down, disk full, wal-integrity fail); everything else is reported in a short status block and ignored. Specifically: untracked YAML mirrors, unpushed commits, lifecycle phase mismatches — these are NOT blockers. Do not ask the user to "resolve git state" before continuing.
 
 ### Step 2 — Parse `$ARGUMENTS`
 
 Tokenise the user's request (whitespace-split). Then:
 
 - **(empty)** → Go to Step 3 with `slug = null` and no category filter.
-- **`new`** → Run Type 1 / Type 2 preprocessing per `references/stage-1-preprocessing.md`. Stop here.
+- **`new`** → Run Stage 0 preprocessing per `references/stage-0-overview.md` (includes Type 1 / Type 2 detection). Stop here.
 - **`personal`** or **`cv`** (single token, case-insensitive) → Go to Step 3 with `slug = null` and `category_filter = <value>`. The list rendered in Step 3 must filter `projects` to those whose `tags` array contains the matching value.
 - **`<slug>`** (single token) → Go to Step 3 with that slug, no extra request.
 - **`<slug> <rest...>`** → Go to Step 3 with that slug. The rest is held for Step 5 routing.
@@ -42,7 +42,7 @@ Apply the FIRST rule that matches:
 
 **Rule A — Repo missing.** Slug exists in Ottomate but repo not on disk (and slug isn't "ottomate", which lives at `/opt/homeserver/ottomate/`): HARD halt. Ask whether to clone from Gitea or pick a different slug.
 
-**Rule B — Empty SO1 + repo on disk = Stage 1 catchup (T2P).** Use `references/stage-1-preprocessing.md` T2P branch. AskUserQuestion first: "Run Stage 1 catchup now / Open project read-only / Submit a quick bug report instead / Cancel". If the user picks catchup, walk the T2P 13-step process. Each of the 7 SO1 docs hits a lock-in gate.
+**Rule B — Empty SO1 + repo on disk = Stage 0 catchup (T2P).** Use the T2P (existing-project) branch of `references/stage-0-overview.md`. AskUserQuestion first: "Run catchup now / Open project read-only / Submit a quick bug report instead / Cancel". If the user picks catchup, walk Stage 0's T2P path into Stage 1; each of the 7 SO1 docs hits a lock-in gate.
 
 **Rule C — Empty SO1 + repo missing.** Edge case. Ask user.
 
@@ -61,6 +61,6 @@ When user says "pack up", "done", "good night": follow `references/pack-up-ritua
 ## Anti-gaslighting reminders
 
 - No code changes before a lock-in gate (Stage 1 SO1 lock, Stage 2 master-plan lock, Stage 4 items lock).
-- Verifier sub-agent is mandatory in Stage 3.4 and Stage 4.7 — dispatch via the Agent tool with locked-manifest+diff inputs (NOT coder claims) per Codex P0 #4.
+- Verifier sub-agent is mandatory at Stage 3 verification and Stage 4 item verification (by name, not number) — dispatch via the Agent tool with locked-manifest+diff inputs (NOT coder claims) per Codex P0 #4.
 - Use AskUserQuestion for choices, never prose.
 - If a SOFT warning surfaces, mention it once. If a HARD check fails, stop and ask.

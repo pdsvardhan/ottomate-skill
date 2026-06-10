@@ -1,6 +1,6 @@
 # Stage 2.2 — UI Master Plan
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** Per `references/stage-amendments.md`:
+> **POST-AUDIT AMENDMENTS (2026-04-29):** (applied; changelog archived at `_archive/references/stage-amendments.md`):
 > - Replace single-shot "propose 2-3 themes" with **3-stage panel**: Stage A (2-3 directions) → Stage B (flesh-out + sample component preview) → Stage C (lock-in gate)
 > - **WCAG AA contrast HARD gate** (any sub-threshold pair blocks lock until fixed)
 > - Light palette derived mechanically from dark via culori/chroma-js
@@ -63,11 +63,11 @@
 3. **Propose 2-3 themes** using preferences + sample sites + chosen inspiration (if any) as guidance. Use AskUserQuestion with previews — each option shows palette swatches + font sample as a small markdown preview.
 4. **User picks** → AI fleshes out the chosen direction with concrete colors, font sizes, spacing tokens. Persist `style_inspiration_id` if step 2 surfaced one.
 5. **Lock-in gate**: present the full UI Master Plan back to the user. Show a side-by-side panel with the user's preferences and the resulting choices. AskUserQuestion: confirm / adjust / restart.
-6. **Persist** via `PUT /api/projects/<slug>/ui-master-plan` (NOT YET IMPLEMENTED — POST as part of project upsert for now).
+6. **Persist** via `PUT /api/projects/<slug>/ui-master-plan` (live — bearer-auth'd; see tracker-api-inventory.md). Saving this row is the gate for entering component picking.
 
 ## Tracker integration
 
-Until the dedicated `ui_master_plans` upsert endpoint exists, use the project-level PATCH to record theme intent in a project tag or attached ADR. Phase 5 of the build adds the dedicated endpoint and a UI page.
+The dedicated upsert endpoint exists: `PUT /api/projects/<slug>/ui-master-plan` (this note previously said "not yet implemented" — stale since the May 2026 build; corrected 2026-06-10 per the generated inventory).
 
 ## Output gate
 

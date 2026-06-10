@@ -99,7 +99,7 @@ properties:
           description: "If true, confidence implicitly = 1.0"
 
         status:
-          enum: [pending-review, locked, building, verified, integrated, rejected]
+          enum: [pending-review, locked, building, verifier-pending, verified, integrated, rejected]   # verifier-pending added 2026-06-10: ledger-tables + mini-pipeline already used it
 
         verifier_result:
           type: ["object", "null"]

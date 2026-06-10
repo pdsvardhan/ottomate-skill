@@ -6,7 +6,7 @@ Per Codex P0 #4: verifier inputs are **locked items + AC + expected_artifacts ma
 **Target:** ~150 lines / ~4K tokens (per Codex Round 2 sub-agent isolation goal).
 
 Reductions:
-- Stub-pattern table externalized to `references/stub-patterns.md` (referenced not inlined)
+- Stub-pattern table externalized to `data/stub-patterns.md` (referenced not inlined)
 - Output schema referenced from `schemas/verification-report.schema.yaml` (not inlined)
 - Concrete example removed (verifier follows schema; no example needed)
 
@@ -41,7 +41,7 @@ Dispatched via Agent tool to a fresh sub-agent (~2-5K tokens of focused context,
   diff_full_path: /tmp/diff-<id>.patch
 {{deploy_url}}:            # for endpoint-hit tests
   https://<slug>.vault7a.xyz
-{{stub_patterns_ref}}:     references/stub-patterns.md
+{{stub_patterns_ref}}:     data/stub-patterns.md
 {{verifier_prompt_version}}: v3.0
 {{coder_claims}}:          # OPTIONAL secondary signal — DO NOT trust
 ```
@@ -175,7 +175,7 @@ END PROMPT
 
 ## Externalized references
 
-### `references/stub-patterns.md` (new, ~80 lines)
+### `data/stub-patterns.md` (new, ~80 lines)
 
 Full table of HARD-fail patterns + allowlist + escape-hatch flow. Verifier reads this as a static config; not inlined per dispatch.
 

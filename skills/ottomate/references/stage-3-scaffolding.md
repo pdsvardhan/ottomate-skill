@@ -1,6 +1,6 @@
 # Stage 3.1 — Scaffolding (repo init + Docker + NPM proxy + Gitea Actions)
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** Per `references/stage-amendments.md`:
+> **POST-AUDIT AMENDMENTS (2026-04-29):** (applied; changelog archived at `_archive/references/stage-amendments.md`):
 > - Pre-checks: drift detection (no manual edits to scaffold-target paths since 1.10)
 > - Gitea Actions secrets: TRACKER_API_TOKEN required (mutations need bearer auth per Codex Round 2 #2)
 > - Phase ledger transition: pages `PROPOSED → LAYOUT_LOCKED` after Tailwind tokens applied

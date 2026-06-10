@@ -100,6 +100,8 @@ properties:
         - if:
             properties:
               type: { enum: [ui, hybrid] }
+            required: [type]
           then:
+            required: [linked_flows]   # without this, an ABSENT linked_flows passed the then-branch (JSON-Schema no-op; fixed 2026-06-10)
             properties:
               linked_flows: { minItems: 1 }

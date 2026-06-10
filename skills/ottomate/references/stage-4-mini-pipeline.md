@@ -1,6 +1,6 @@
 # Stage 4 — Iterate (Mini-Pipeline per User Input)
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** Per `references/stage-amendments.md`:
+> **POST-AUDIT AMENDMENTS (2026-04-29):** (applied; changelog archived at `_archive/references/stage-amendments.md`):
 > - **4.2 Classify:** uses `prompts/classify-text.md` (updated with source-substring rule + lite context-packet, NOT full SO1). Confidence < 0.7 blocks 4.3 lock until clarified. Implicit/inferred items get `why_inferred` + force user confirmation.
 > - **4.3 Lock-In Gate:** server-side validation at lock — confidence ≥ 0.7 OR user_edited; **must_haves + non_goals respected** (regex check); violations require explicit override ADR. **must_haves + non_goals shown as visible rails** in panel. 1-hour inactivity → `pending_user_review` (Codex P2 #15).
 > - **4.7 Verifier:** No "trivial fix skip verifier" exception. Same trimmed prompt as 3.5 + same allowlist + escape hatch.

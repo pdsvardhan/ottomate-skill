@@ -1,6 +1,6 @@
 # Stage 3.2 — Pipeline Setup (CI tools)
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** Per `references/stage-amendments.md`:
+> **POST-AUDIT AMENDMENTS (2026-04-29):** (applied; changelog archived at `_archive/references/stage-amendments.md`):
 > - Trivy + Grype + OSV-Scanner (NOT Snyk per Codex P1 #11) — locked
 > - Lost Pixel for visual regression (NOT Percy SaaS) — locked
 > - HARD halt before 3.3 if scaffold CI red, Lighthouse <80, or Trivy HIGH+

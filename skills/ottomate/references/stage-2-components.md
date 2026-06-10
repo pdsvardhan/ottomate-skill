@@ -23,17 +23,30 @@ Verify the master_components catalog can serve THIS project's component needs be
 - `master_components` table (assumed rich after one-time seed)
 - `Doc 1.preferences.likes` — preference tags (e.g., "animated") for thin-coverage detection
 
-### Logic (mechanical SQL, ~50ms, 0 Claude tokens)
+### Logic (mechanical, but MAPPED — the two category vocabularies differ)
+
+> 2026-06-10: a naive `mc.category = c.category` join is broken by construction —
+> live project components use ~24 ad-hoc values, the catalog uses 18 different ids,
+> with only 6 incidental overlaps. Until this mapping moves into the tracker as code,
+> apply it here when computing coverage:
+
+| Project category (Doc 4) | Catalog categories to count |
+|---|---|
+| input, button, filter, toolbar | input, button-action, forms-validation, selection |
+| display, card, badge, pill, list, grid, row, cell, callout, panel | display, modern-specialty |
+| viz, progress, timeline | dataviz, display |
+| navigation, tabs | navigation, dashboard-shells |
+| feedback | feedback |
+| layout, hero | layout, dashboard-shells |
+| overlay, drawer | overlay |
+| *anything unmapped* | WARN — surface to user, never silently pass |
 
 ```sql
--- For each unique component category referenced in this project's components:
-SELECT 
-  c.category,
-  COUNT(mc.id) AS catalog_count
-FROM (SELECT DISTINCT category FROM components WHERE project_slug = ?) c
-LEFT JOIN master_components mc ON mc.category = c.category
-GROUP BY c.category;
+-- catalog_count for one project category = rows in any of its mapped catalog categories:
+SELECT COUNT(*) FROM master_components WHERE category IN (<mapped list>);
 ```
+
+(Catalog-only categories — animation, transition, interactive, ai-blocks, auth-screens, media, auth — are matched via tags during option ranking, not via this gap check.)
 
 For categories with `catalog_count`:
 - **0 entries** → HARD halt: *"`Category 11 (Data Visualisation)` has 0 entries. Seed before continuing — see `/components-browser` to add."*
@@ -89,7 +102,7 @@ Output: for each component, ≥2-3 ranked options from `master_components`, prio
 --   :prefer_lib  = library to prefer (from ui_master_plan), e.g. 'aceternity' or '' for any
 --   :prefer_tag  = single tag the project favours, e.g. 'modern' or '' for any
 SELECT id, name, description, category, framework_tags, tags,
-       library, quality_grade, source_paths, primary_file, preview_url
+       library, quality_grade, source_code_path, primary_file, preview_url
 FROM master_components
 WHERE category = :cat
   AND (:prefer_tag = '' OR tags LIKE '%' || :prefer_tag || '%')

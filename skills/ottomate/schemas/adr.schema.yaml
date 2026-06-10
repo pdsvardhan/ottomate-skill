@@ -12,7 +12,7 @@ properties:
   # ===== Frontmatter =====
   id:
     type: string
-    pattern: "^adr-[0-9]{3}$"
+    pattern: "^adr-[0-9]{3,}-[a-z][a-z0-9-]*$"   # matches live API validation (lib/validation/decisions.ts); descriptive slug avoids global PK collisions
     description: "Auto-generated, sequential per project (adr-001, adr-002, ...)"
 
   title:
@@ -31,7 +31,7 @@ properties:
 
   superseded_by:
     type: ["string", "null"]
-    pattern: "^adr-[0-9]{3}$"
+    pattern: "^adr-[0-9]{3,}-[a-z][a-z0-9-]*$"   # matches live API validation (lib/validation/decisions.ts); descriptive slug avoids global PK collisions
     description: "ID of the ADR that replaces this one"
 
   deprecated_reason:
