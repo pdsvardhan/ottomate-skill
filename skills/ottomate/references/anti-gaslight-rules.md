@@ -1,23 +1,29 @@
-# Anti-Gaslight Detection Rules — 6 active + 1 deferred
+# Anti-Gaslight Detection Rules
 
-The substrate that catches scope drift, silent additions, missing verification, and other gaslighting patterns. Rules query the phase ledger tables (see `ledger-tables.md`) and entity tables.
+> **Header rewrite (2026-06-10):** the canonical implementation is now LIVE:
+> **`GET /api/anti-gaslight/violations[?project_slug=<slug>]`** — 5 rules reimplemented in
+> SQLite (built 2026-06-10; `app/api/anti-gaslight/violations/route.ts` in the app repo).
+> The PostgreSQL SQL that used to fill this file (jsonb/ILIKE/LATERAL/NOW) could never run
+> against the SQLite DB and has been removed. This file keeps only each rule's
+> intent / severity / when-it-fires prose. For rule logic, the endpoint is authoritative.
 
-**Status (2026-05-13):**
-| Rule | Buildable | Status |
+The substrate that catches scope drift, silent additions, missing verification, and other gaslighting patterns. Rules query the phase ledger tables (see `ledger-tables.md`) and entity tables — empty ledger tables detect nothing (see `ledger-writes.md`).
+
+**Rule → live implementation map:**
+
+| Rule (this file) | Live rule id in the endpoint | Status |
 |---|---|---|
-| 1 — Unreconciled claims | ✅ `feature_claims` table built (migration 0008 applied 2026-05-13) | **Active.** Skill must emit claim rows via `POST /api/feature-claims` for rule to fire. |
-| 2 — Silent provenance | ✅ `_provenance` column exists (migration 0005 applied) | Active. |
-| 3 — Silent drops | ✅ `derived_from_sketch_id` column exists | Active. |
-| 4 — Coverage gaps | ✅ uses existing tables; `test_runs` table now available for tighter signal | Active (enhanced). |
-| 5 — must_haves / non_goals violations | ✅ uses iteration_items | Active. |
-| 6 — Phase order violations | ✅ phase_transitions tables exist | Active. |
-| 7 — Stale verifier | ✅ uses verification_reports + entity.updated_at | Active. |
-| 5b — Deploy gap (new) | ✅ `deploy_artifacts` table built 2026-05-13 | Active. Detects features BUILT >7 days with no deploy_artifact row. |
-
-
+| 1 — Unreconciled claims | `unclaimed-done` (HARD) | Live |
+| 2 — Silent provenance | — | Prose-only; enforced as source-substring discipline at extraction time |
+| 3 — Silent drops | `silent-drops` (SOFT) | Live (detects stalled iteration items; ND1-sketch drop check remains prose-only) |
+| 4 — Coverage gaps | `missing-acceptance` (HARD) | Partially live (AC-presence check; must_haves mapping remains prose-only) |
+| 5 — must_haves / non_goals violations | — | Prose-only; enforced server-side at the 4.3 lock validation |
+| 5b — Deploy gap | `untested-deploys` (HARD) | Live |
+| 6 — Phase order violations | — | Prose-only |
+| 7 — Stale verifier | `stale-verification` (SOFT) | Live |
 
 **When rules fire:**
-- Every stage transition (1.9, 2.8, 3.5/3.7/3.8, 4.7/4.8) — HARD halt on any rule violation
+- Every stage transition (SO1 verification, Stage 2 verification, Stage 3 deploy gate, Stage 4 verifier-result/integrate) — HARD halt on any rule violation
 - Every pack-up — SOFT warning if any violations detected
 - Every `/ottomate <slug>` invocation — INFO surfaces unresolved violations as a session-start warning
 
@@ -28,307 +34,134 @@ The substrate that catches scope drift, silent additions, missing verification, 
 
 ---
 
-## Rule 1 — Unreconciled claims (ACTIVE)
+## Rule 1 — Unreconciled claims
 
-> **Status (2026-05-13):** `feature_claims` table built + applied. API endpoint `POST /api/feature-claims` available. Rule queries unreconciled rows directly.
->
-> **For rule to fire effectively:** skill must POST a `feature_claim` row every time a coder agent reports "done", every iteration-summary mentions "shipped", every chat assertion claims completion. Verifier completion handler should PATCH the matching claim's `reconciled_with` to `verified` / `partial` / `stub-detected` / `dropped`.
->
-> The rule has two complementary queries below: the primary against `feature_claims` (catches all claim sources), and a fallback against `verification_reports` (still useful when no claim row was emitted but a phase transition went past `VERIFIED` without verifier APPROVE).
+**What:** A "done" assertion (coder agent, iteration summary, chat claim) was never reconciled with a verifier verdict — or a feature sits at done with no claim row at all.
 
-**Primary query — unreconciled `feature_claims`:**
-```sql
-SELECT fc.feature_id, f.title, fc.claimed_at, fc.claim_text, fc.source, fc.claimed_by_session
-FROM feature_claims fc
-LEFT JOIN features f ON f.id = fc.feature_id
-WHERE fc.reconciled_with = 'unreconciled'
-  AND fc.claimed_at < datetime('now', '-1 hour');
-```
-
-**Fallback query — phase advanced past VERIFIED without verifier APPROVE:**
-
-**What:** A feature transitioned to `INTEGRATED` (or `VERIFIED`) but has no `verification_reports` row with `recommendation_overall='APPROVE'` for that feature.
-
-**Why:** Indicates Claude or skill claimed the feature is done without the verifier sub-agent confirming. Anti-gaslight bedrock says verifier is mandatory.
+**Why:** Claude or the skill claimed completion without the verifier sub-agent confirming. Verifier is anti-gaslight bedrock.
 
 **Severity:** HARD at stage transition; SOFT at pack-up.
 
-**Query:**
-```sql
-SELECT f.id, f.title
-FROM features f
-WHERE f.current_phase IN ('VERIFIED', 'INTEGRATED')
-  AND NOT EXISTS (
-    SELECT 1 FROM verification_reports vr
-    WHERE vr.target_kind = 'feature'
-      AND vr.target_id = f.id
-      AND vr.recommendation_overall = 'APPROVE'
-  );
-```
+**Live check:** rule `unclaimed-done` in `GET /api/anti-gaslight/violations`.
 
-**Remediation:** Re-run verifier on flagged feature. If verifier still BLOCKs, revert phase transition and address verifier findings.
+**Feeding it:** skill must POST a `feature_claims` row on every "done" assertion and PATCH `reconciled_with` after the verifier completes (see `ledger-writes.md`). No claim rows → nothing to reconcile → rule fires on done-features with zero claims.
+
+**Remediation:** re-run verifier on the flagged feature. If verifier still BLOCKs, revert the phase transition and address findings.
 
 ---
 
 ## Rule 2 — Silent provenance
 
-**What:** A `features` / `flows` / `pages` / `components` / `risk_instances` row exists with NO `_provenance.source_substring` (or equivalent) AND NO `derived_from_sketch_id` (or equivalent ancestor link).
+**What:** A features / flows / pages / components / risk_instances row exists with no `_provenance.source_substring` (or `why_inferred`) and no `derived_from_sketch_id` ancestor link.
 
-**Why:** Means Claude added an entity that doesn't trace to user input or to an upstream sketch. Anti-hallucination guard violated.
+**Why:** Claude added an entity that doesn't trace to user input or an upstream sketch. Anti-hallucination guard violated.
 
 **Severity:** HARD at every stage transition; SOFT at pack-up.
 
-**Query:**
-```sql
--- features
-SELECT f.id, f.title FROM features f
-WHERE f.derived_from_sketch_id IS NULL
-  AND (f._provenance->>'source_substring' IS NULL 
-       AND f._provenance->>'why_inferred' IS NULL);
+**Live check:** not in the live 5 — enforced upstream as the source-substring rule on every Claude extraction (Stage 0 intent, Stage 4 classify).
 
--- repeat for flows, pages, components, risk_instances
-```
-
-**Remediation:** Surface flagged entity to user; user either confirms (provenance becomes `user_typed_at_<sub-step>`) or rejects (entity deleted; ADR if it was used downstream).
+**Remediation:** surface the flagged entity; user confirms (provenance becomes `user_typed_at_<sub-step>`) or rejects (entity deleted; ADR if used downstream).
 
 ---
 
 ## Rule 3 — Silent drops
 
-**What:** A `features_sketch[]` entry from finalized ND1 has NO corresponding `features` row AND NO ADR documenting the drop.
+**What:** A user idea disappeared without acknowledgment — a finalized ND1 sketch with no corresponding entity row and no ADR documenting the drop, or a locked iteration item that stalls in locked/building and never reaches integrated/rejected.
 
-**Why:** Means a user's idea was dropped without explicit acknowledgment. Classic gaslight pattern.
+**Why:** Classic gaslight pattern: the user asked for it, it quietly never happened.
 
 **Severity:** HARD at Stage 1 → Stage 2 transition; SOFT at pack-up.
 
-**Query:**
-```sql
--- For each project's nd1_archive.features_sketch[]:
--- For each sketch entry sk-feat-X:
-SELECT sketch_id 
-FROM jsonb_array_elements(nd1_archive.features_sketch)
-WHERE NOT EXISTS (
-  SELECT 1 FROM features f WHERE f.derived_from_sketch_id = sketch_id
-)
-AND NOT EXISTS (
-  SELECT 1 FROM adr_index a 
-  WHERE a.tags @> '["dropped-feature"]'::jsonb
-    AND a.body LIKE '%' || sketch_id || '%'
-);
-```
+**Live check:** rule `silent-drops` in `GET /api/anti-gaslight/violations` (items stuck >7 days after lock). The ND1-sketch variant is checked as prose during SO1 verification.
 
-(Same shape for flows_sketch.)
-
-**Remediation:** Surface dropped sketches at Stage 1.9 verification; user either creates ADR explaining drop ("decided this is out of scope") or restores feature.
+**Remediation:** user either creates an ADR explaining the drop ("out of scope") or restores the item.
 
 ---
 
 ## Rule 4 — Coverage gaps
 
-**What:** A `must_haves` entry from Doc 1 is unmapped to any feature / flow / page / AC. OR a `success_criteria_initial` entry has no feature whose AC covers it.
+**What:** A `must_haves` entry is unmapped to any feature / flow / page / AC; a success criterion has no covering AC; or a feature past planning has zero acceptance criteria.
 
-**Why:** User's stated requirements aren't reflected in what was built. Silent narrowing.
+**Why:** User's stated requirements aren't reflected in what was built — silent narrowing. With 0 ACs, nothing objective defines "done".
 
-**Severity:** SOFT at every stage transition (HARD at 1.9 if must_haves coverage = 0); INFO at pack-up.
+**Severity:** SOFT at every stage transition (HARD at SO1 verification if must_haves coverage = 0); INFO at pack-up. AC-presence is HARD (the API also 422s on `building` with 0 ACs).
 
-**Query:**
-```sql
--- must_haves coverage
-SELECT mh FROM (
-  SELECT jsonb_array_elements_text(preferences->'must_haves') AS mh
-  FROM projects WHERE slug = ?
-) AS must_haves
-WHERE NOT EXISTS (
-  SELECT 1 FROM features f
-  WHERE f.project_slug = ?
-    AND (f.title ILIKE '%' || mh || '%' 
-         OR f.short_description ILIKE '%' || mh || '%'
-         OR EXISTS (
-           SELECT 1 FROM feature_acceptance_criteria fac
-           WHERE fac.feature_id = f.id
-             AND fac.value ILIKE '%' || mh || '%'
-         ))
-);
+**Live check:** rule `missing-acceptance` in `GET /api/anti-gaslight/violations` (AC-presence). must_haves/success-criteria mapping is checked as prose during SO1 verification.
 
--- success_criteria coverage (similar shape)
-```
-
-**Remediation:** Surface unmapped items; user either adds a feature/AC that covers, or relaxes the must_have/success_criterion via ADR.
+**Remediation:** add a covering feature/AC, or relax the must_have/success criterion via ADR.
 
 ---
 
 ## Rule 5 — must_haves / non_goals violations
 
-**What:** An `iteration_items` row has a `proposed_change` that conflicts with locked `must_haves` (Doc 1) or `non_goals_initial` AND there's no override ADR.
+**What:** An iteration item's `proposed_change` conflicts with locked `must_haves` or `non_goals` and no override ADR exists.
 
-**Why:** Stage 4 iteration trying to violate the rails the user explicitly set. The exact gaslight pattern Stage 4.3 lock-in gate exists to prevent — but rule catches if lock-in failed.
+**Why:** Stage 4 trying to violate rails the user explicitly set — the exact pattern the 4.3 lock-in gate exists to prevent; this rule catches it if lock-in failed.
 
-**Severity:** HARD at Stage 4.3 lock; HARD at Stage 4.8 integrate; SOFT at pack-up if any open iteration has violation.
+**Severity:** HARD at Stage 4.3 lock; HARD at 4.8 integrate; SOFT at pack-up for open iterations.
 
-**Query:**
-```sql
-SELECT ii.id, ii.title, ii.proposed_change
-FROM iteration_items ii
-JOIN iterations i ON i.id = ii.iteration_id
-JOIN projects p ON p.slug = i.project_slug
-WHERE i.status IN ('locked', 'building', 'verifying')
-  AND (
-    -- regex check: proposed_change.action_summary against non_goals
-    EXISTS (
-      SELECT 1 FROM jsonb_array_elements_text(p.preferences->'non_goals') AS ng
-      WHERE ii.proposed_change->>'action_summary' ILIKE '%' || ng || '%'
-    )
-    OR
-    -- contradicts must_haves (e.g., "remove keyboard nav" vs must_have "keyboard nav")
-    EXISTS (
-      SELECT 1 FROM jsonb_array_elements_text(p.preferences->'must_haves') AS mh
-      WHERE ii.proposed_change->>'action_summary' ILIKE '%remove%' || mh || '%'
-        OR ii.proposed_change->>'action_summary' ILIKE '%disable%' || mh || '%'
-    )
-  )
-  AND NOT EXISTS (
-    SELECT 1 FROM adr_index a
-    WHERE a.iteration_id = i.id
-      AND a.tags @> '["override"]'::jsonb
-  );
-```
+**Live check:** not in the live 5 — enforced server-side in the `POST /api/iterations/<id>/lock` validation (rails check), with violations requiring an explicit override ADR.
 
-**Remediation:** Block lock; surface violation to user; user either rejects the iteration item, edits to comply, or creates explicit override ADR (which retires the must_have/non_goal).
+**Remediation:** reject the item, edit it to comply, or create an explicit override ADR (which retires the must_have/non_goal).
+
+---
+
+## Rule 5b — Deploy gap
+
+**What:** A deploy happened with no test run for the same project in the day before it — or a feature sits BUILT >7 days with no deploy artifact.
+
+**Why:** Shipping unverified builds (or claiming built without shipping) erodes the evidence chain.
+
+**Severity:** HARD (untested deploys); SOFT (stale undeployed builds).
+
+**Live check:** rule `untested-deploys` in `GET /api/anti-gaslight/violations`. Requires CI to POST `test_run` and `deploy_artifact` rows (see `ledger-writes.md`).
+
+**Remediation:** run the flow tests against the deployed commit; post the test_run row.
 
 ---
 
 ## Rule 6 — Phase order violations
 
-**What:** A `<entity>_phase_transitions` row shows a transition that skips intermediate phases. E.g., feature went `PROPOSED → INTEGRATED` without `SPECCED / BUILD_READY / BUILDING / VERIFIED` rows in between.
+**What:** A `<entity>_phase_transitions` ledger shows a skipped phase (e.g. `PROPOSED → INTEGRATED` with no SPECCED/BUILD_READY/BUILDING/VERIFIED rows), or a transition whose `from_phase` doesn't match the previous row's `to_phase`.
 
-**Why:** Means a stage was skipped silently. Ledger should be a complete record.
+Valid feature chain: `PROPOSED → SPECCED → BUILD_READY → BUILDING → VERIFIED → INTEGRATED`; `any → DROPPED` only via ADR; `INTEGRATED → REGRESSED → BUILDING` for Stage 4 re-iteration.
+
+**Why:** A stage was skipped silently; the ledger should be a complete record.
 
 **Severity:** HARD at every transition; HARD at pack-up.
 
-**Query:**
-```sql
-WITH transitions AS (
-  SELECT 
-    feature_id,
-    transitioned_at,
-    from_phase,
-    to_phase,
-    LAG(to_phase) OVER (PARTITION BY feature_id ORDER BY transitioned_at) AS prev_to_phase
-  FROM feature_phase_transitions
-)
-SELECT * FROM transitions
-WHERE prev_to_phase IS NOT NULL
-  AND from_phase != prev_to_phase;
-```
+**Live check:** not in the live 5 — prose-only; check the ledger when investigating suspicious transitions.
 
-(Detects ledger gaps: from_phase of new transition doesn't match to_phase of previous.)
-
-Plus phase-order validity check:
-```sql
--- Valid feature transitions
-PROPOSED → SPECCED
-SPECCED → BUILD_READY
-BUILD_READY → BUILDING
-BUILDING → VERIFIED  (or BUILDING → BUILDING via auto-fix iteration)
-VERIFIED → INTEGRATED
-Any → DROPPED (via ADR)
-INTEGRATED → REGRESSED (Stage 4 modification)
-REGRESSED → BUILDING (re-iteration)
-
--- Invalid transitions (rule fires on these):
-PROPOSED → INTEGRATED  (skip)
-PROPOSED → BUILDING  (skip)
-SPECCED → INTEGRATED  (skip)
-```
-
-**Remediation:** Investigate ledger gap; usually means transition write was missing (write the missing row) OR phase was illegally skipped (rollback to prev phase, walk through normally).
+**Remediation:** write the missing transition row (write was missed) OR roll back to the previous phase and walk through normally (phase was illegally skipped).
 
 ---
 
 ## Rule 7 — Stale verifier
 
-**What:** A feature's last verifier run was >7 days ago AND the feature has been edited since (Stage 4 iteration touched it).
+**What:** A feature was edited after its latest verifier APPROVE — the last verdict no longer covers current state.
 
 **Why:** Stage 4 may have changed code without re-running the verifier. Coverage erodes.
 
 **Severity:** SOFT at every Stage 4.8 integrate; INFO at pack-up.
 
-**Query:**
-```sql
-SELECT 
-  f.id, f.title,
-  f.updated_at AS last_edited_at,
-  vr.ran_at AS last_verifier_run
-FROM features f
-LEFT JOIN LATERAL (
-  SELECT MAX(ran_at) AS ran_at
-  FROM verification_reports
-  WHERE target_kind = 'feature' AND target_id = f.id
-    AND recommendation_overall = 'APPROVE'
-) vr ON true
-WHERE f.updated_at > vr.ran_at
-  AND f.updated_at < NOW() - INTERVAL '7 days';
-```
+**Live check:** rule `stale-verification` in `GET /api/anti-gaslight/violations`.
 
-**Remediation:** Stage 4 iteration that touches a feature should re-run verifier on that feature even if the iteration item didn't directly target it (regression risk). Or surface: "feat-X was edited at iter-3 but verifier hasn't run since iter-1; re-run?"
+**Remediation:** re-run the verifier on edited features even when the iteration item didn't directly target them (regression risk).
 
 ---
 
 ## Cross-cutting: where rules surface
 
-### At every stage transition
+- **Every stage transition:** run `GET /api/anti-gaslight/violations?project_slug=<slug>`; refuse the transition on any HARD violation. (`GET /api/audit/<slug>/anti-gaslight-violations` is the per-project wrapper of the same rules.)
+- **Every pack-up:** same call; surface SOFT + INFO findings in the pack-up summary.
+- **Session start:** same call on first project load; surface unresolved findings as a one-line warning. User drills in via the audit view or addresses inline.
 
-Stage 1.9 verification, Stage 2.8 verification, Stage 3.5/3.8 deploy gate, Stage 4.7/4.8 integrate.
-
-Each transition runs `GET /api/audit/<slug>/anti-gaslight-violations?severity=HARD&phase=<phase>` and refuses transition if any HARD violations.
-
-### At every pack-up
-
-Run `GET /api/audit/<slug>/anti-gaslight-violations?severity=ALL`. Surface SOFT and INFO in pack-up summary:
-
-```
-🧳 Pack up complete.
-
-  ⚠ 2 anti-gaslight findings (review at next session):
-     · Rule 4: must_have "keyboard nav" — coverage hint not found in features
-     · Rule 7: feat-search verifier last ran 8 days ago, edited at iter-3
-```
-
-### At session start
-
-Run `GET /api/audit/<slug>/anti-gaslight-violations?severity=ALL` on first project load.
-
-```
-[Stage 1.3] feat-player-search — refining
-  ⚠ Note: 1 anti-gaslight finding pending review (Rule 4 — keyboard nav coverage)
-```
-
-User can drill in via `/audit/<slug>` or address inline.
-
----
-
-## Schema additions for ledger-driven rules
-
-The rules require these columns on entity tables:
-
-```sql
-ALTER TABLE features ADD COLUMN current_phase TEXT NOT NULL DEFAULT 'PROPOSED';
-ALTER TABLE features ADD COLUMN _provenance JSONB;
-ALTER TABLE features ADD COLUMN derived_from_sketch_id TEXT;
-ALTER TABLE features ADD COLUMN derived_from_nd1_version INTEGER;
--- (sqlite uses TEXT for JSON, no JSONB)
-
--- Same for flows, pages, components, risk_instances
-```
-
-And the 6 phase transition tables (see `ledger-tables.md`).
+Schema substrate (the `current_phase` / `_provenance` / `derived_from_sketch_id` columns and the phase transition tables) is documented in `ledger-tables.md`.
 
 ---
 
 ## Why this matters
 
-The user's stated pain: scope drift, silent additions, "Claude says it's done but I'm not sure," the media-dashboard regression. Without rules, every stage transition relies on Claude's narrative honesty. With rules, every transition runs an objective check that doesn't trust narrative.
+The user's stated pain: scope drift, silent additions, "Claude says it's done but I'm not sure." Without rules, every stage transition relies on Claude's narrative honesty. With rules, every transition runs an objective check that doesn't trust narrative.
 
 **Rules detect what narrative hides.**
-
-The cost: ~50ms per rule × 7 rules × per transition = ~350ms (mechanical SQL). Worth it.
