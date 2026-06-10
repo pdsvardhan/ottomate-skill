@@ -1,5 +1,11 @@
 # Ottomate API Reference (for skill consumers)
 
+> **AUTHORITY NOTE (2026-06-10):** for whether a path/method EXISTS and whether it
+> requires bearer auth, `tracker-api-inventory.md` (generated from route code) is
+> authoritative and outranks everything below. This prose file documents request/
+> response SHAPES and is known to contain stale claims (e.g. components-pick was
+> marked NOT IMPLEMENTED here after it shipped). Full rewrite scheduled in WS2.
+
 > **POST-AUDIT AMENDMENTS (2026-04-29) — New endpoints:**
 >
 > ```
