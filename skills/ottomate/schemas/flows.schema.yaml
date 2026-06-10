@@ -1,0 +1,118 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "ottomate://schemas/flows.schema.yaml"
+title: "Doc 2 — User Flows"
+description: |
+  Per-project user flows. DB-backed (flows + flow_steps + flow_pre_conditions + flow_edge_cases + joins),
+  mirrored to flows.yaml in repo. Updated on commit + pack up.
+type: object
+required: [version, project_slug, flows]
+
+properties:
+  version: { type: string, const: "1" }
+  project_slug:
+    type: string
+    pattern: "^[a-z][a-z0-9-]+$"
+
+  flows:
+    type: array
+    items:
+      type: object
+      required: [id, title, type, priority, expected_outcome, steps, linked_features]
+      properties:
+        id:
+          type: string
+          pattern: "^flow-[a-z][a-z0-9-]+$"
+          description: "Auto-generated. Unique per project."
+        parent_id:
+          type: ["string", "null"]
+          pattern: "^flow-[a-z][a-z0-9-]+$"
+          description: "Self-FK for nested flows"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 80
+        trigger:
+          type: string
+          maxLength: 200
+          description: "What initiates the flow (e.g. 'user clicks search bar', 'scheduled job at 2am')"
+        expected_outcome:
+          type: string
+          minLength: 5
+          maxLength: 500
+          description: "Success state at end of flow"
+        type:
+          enum: [ui, backend, automated, mixed]
+        priority:
+          enum: [critical, important, nice-to-have]
+          default: important
+        test_status:
+          enum: [not-tested, passing, failing, partial]
+          default: not-tested
+          readOnly: true
+          description: "Derived from linked Playwright test result"
+        linked_playwright_test:
+          type: ["string", "null"]
+          description: "Path to test file, e.g. tests/flow-search.spec.ts"
+        last_tested_date:
+          type: ["string", "null"]
+          format: date-time
+        notes:
+          type: string
+
+        # Ordered steps (actor/action/result triples)
+        steps:
+          type: array
+          minItems: 2
+          items:
+            type: object
+            required: [actor, action, result]
+            properties:
+              actor: { enum: [user, system] }
+              action: { type: string, minLength: 3 }
+              result: { type: string, minLength: 3 }
+
+        pre_conditions:
+          type: array
+          items: { type: string }
+          description: "What must be true before flow starts"
+
+        edge_cases:
+          type: array
+          items: { type: string }
+          description: "Failure modes / unhappy paths — recommended for anti-gaslighting"
+
+        # M:N relationships
+        linked_features:
+          type: array
+          minItems: 1
+          items: { type: string, pattern: "^feat-[a-z][a-z0-9-]+$" }
+          description: "Feature IDs this flow exercises"
+
+        linked_pages:
+          type: array
+          items: { type: string, pattern: "^page-[a-z][a-z0-9-]+$" }
+          description: "Page IDs this flow traverses (required ≥1 for type:ui)"
+
+        linked_active_bugs:
+          type: array
+          items: { type: integer }
+          description: "Bug IDs currently open against this flow (system-maintained)"
+          readOnly: true
+
+        tags:
+          type: array
+          items: { type: string }
+
+        # Auto-tracked
+        created_at: { type: string, format: date-time, readOnly: true }
+        updated_at: { type: string, format: date-time, readOnly: true }
+
+      # Cross-validation: UI flows must have linked_pages
+      allOf:
+        - if:
+            properties:
+              type: { enum: [ui, mixed] }
+          then:
+            required: [linked_pages]
+            properties:
+              linked_pages: { minItems: 1 }

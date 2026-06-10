@@ -1,0 +1,70 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "ottomate://schemas/adr.schema.yaml"
+title: "Doc 8 — ADR (Architecture Decision Record)"
+description: |
+  Per-ADR YAML frontmatter (the markdown body has Context/Decision/Consequences sections).
+  10 components total: 7 lean + 3 added by audit (tags, linked_features, linked_risks).
+  ADRs are git-native at decisions/<date>-<slug>.md per project.
+type: object
+required: [id, title, date, status]
+
+properties:
+  # ===== Frontmatter =====
+  id:
+    type: string
+    pattern: "^adr-[0-9]{3}$"
+    description: "Auto-generated, sequential per project (adr-001, adr-002, ...)"
+
+  title:
+    type: string
+    minLength: 5
+    maxLength: 100
+    description: "Imperative statement, e.g. 'Use Drizzle for migrations'"
+
+  date:
+    type: string
+    format: date
+    description: "Decision date"
+
+  status:
+    enum: [proposed, accepted, deprecated, superseded]
+
+  superseded_by:
+    type: ["string", "null"]
+    pattern: "^adr-[0-9]{3}$"
+    description: "ID of the ADR that replaces this one"
+
+  deprecated_reason:
+    type: ["string", "null"]
+
+  tags:
+    type: array
+    items:
+      enum: [staging, initial, architecture, tech-choice, data, ui, risk-mitigation, process, scope-change, re-wire, revamp, performance, security]
+
+  linked_features:
+    type: array
+    items: { type: string, pattern: "^feat-[a-z][a-z0-9-]+$" }
+    description: "Features this decision affects"
+
+  linked_risks:
+    type: array
+    items:
+      type: object
+      properties:
+        risk_type_id: { type: string, description: "FK to risks_catalog" }
+        risk_instance_id: { type: ["integer", "null"], description: "Specific instance if known" }
+    description: "Risks this decision addresses (auto-populated when risk-resolution triggers ADR)"
+
+  # ===== Required body sections (markdown — checked by lint, not schema) =====
+  # The .md file must contain:
+  #   ## Context          — situation that prompted decision
+  #   ## Decision         — what we decided
+  #   ## Consequences     — positive + negative effects
+
+  # Optional auto-tracked
+  author_session_id:
+    type: ["string", "null"]
+  last_reviewed:
+    type: ["string", "null"]
+    format: date-time

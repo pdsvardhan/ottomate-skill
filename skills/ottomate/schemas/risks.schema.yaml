@@ -1,0 +1,211 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "ottomate://schemas/risks.schema.yaml"
+title: "Doc 7 — Risks (post-Codex P1 #10 — resolved-not-deleted)"
+description: |
+  Per-project risks, policies, third-party services, auth, secrets.
+  Risks use `resolved` status (with resolved_at + resolution_summary) instead of
+  deletion (per Codex P1 #10).
+  Polymorphic FKs replaced with explicit per-target join tables (per Codex P2 #17):
+  affected_features, affected_pages, affected_integrations, affected_secrets,
+  affected_data_tables.
+type: object
+required: [version, project_slug, policies]
+
+properties:
+  version: { type: string, const: "1" }
+  project_slug: { type: string, pattern: "^[a-z][a-z0-9-]+$" }
+
+  # ===== Risk instances (linked to global catalog) =====
+  risk_instances:
+    type: array
+    items:
+      type: object
+      required: [risk_type_id, status]
+      properties:
+        risk_type_id:
+          type: string
+          description: "FK to global risks_catalog (e.g. 'temp-api-key', 'no-auth', 'sql-injection')"
+        status:
+          enum: [open, accepted, resolved]
+          default: open
+          description: "open=active risk; accepted=known with sunset; resolved=fixed (hidden by default)"
+        sunset_date:
+          type: ["string", "null"]
+          format: date-time
+          description: "Required when status=accepted"
+        resolved_at:
+          type: ["string", "null"]
+          format: date-time
+          description: "Set when status=resolved"
+        resolution_summary:
+          type: ["string", "null"]
+          description: "Brief description of how it was resolved (encourages ADR for significant resolutions)"
+        hidden_by_default:
+          type: boolean
+          default: false
+          description: "True for resolved risks; heatmap shows resolved on demand"
+        severity_override:
+          enum: [low, medium, high, critical]
+          description: "Optional local override of catalog default"
+        notes:
+          type: string
+
+        # Explicit per-target affected lists (Codex P2 #17)
+        affected_features:
+          type: array
+          items: { type: string, pattern: "^feat-[a-z][a-z0-9-]+$" }
+        affected_pages:
+          type: array
+          items: { type: string, pattern: "^page-[a-z][a-z0-9-]+$" }
+        affected_integrations:
+          type: array
+          items: { type: string }
+          description: "Names from third_party_services list"
+        affected_secrets:
+          type: array
+          items: { type: string }
+          description: "Secret names (NOT values)"
+        affected_data_tables:
+          type: array
+          items: { type: string }
+
+      allOf:
+        - description: "Constraint: risk must affect at least one artifact (no floating risks)"
+          anyOf:
+            - properties: { affected_features: { minItems: 1 } }
+              required: [affected_features]
+            - properties: { affected_pages: { minItems: 1 } }
+              required: [affected_pages]
+            - properties: { affected_integrations: { minItems: 1 } }
+              required: [affected_integrations]
+            - properties: { affected_secrets: { minItems: 1 } }
+              required: [affected_secrets]
+            - properties: { affected_data_tables: { minItems: 1 } }
+              required: [affected_data_tables]
+        - description: "If accepted, sunset_date required"
+          if:
+            properties: { status: { const: accepted } }
+          then:
+            required: [sunset_date]
+        - description: "If resolved, resolved_at required"
+          if:
+            properties: { status: { const: resolved } }
+          then:
+            required: [resolved_at]
+
+  # ===== Policies (single integrated block per project) =====
+  policies:
+    type: object
+    required: [exposure, access_control, data_sensitivity_tier]
+    properties:
+      exposure:
+        enum: [public, intranet-only, invite-only, never-public]
+        default: never-public
+      access_control:
+        enum: [anonymous-ok, auth-required, roles-defined]
+        default: anonymous-ok
+      roles:
+        type: array
+        items:
+          type: object
+          properties:
+            name: { type: string }
+            permissions: { type: array, items: { type: string } }
+      data_sensitivity_tier:
+        enum: [none, personal-pii, financial, business-critical, mixed]
+        default: none
+      encryption_at_rest:
+        type: boolean
+      encryption_in_transit:
+        type: boolean
+      key_management:
+        enum: [none, env-vars, infisical, vault, aws-kms]
+      retention_by_data_type:
+        type: array
+        items:
+          type: object
+          properties:
+            data_type: { type: string }
+            duration: { type: string }
+            reason: { type: string }
+      rate_limiting:
+        type: object
+        properties:
+          enabled: { type: boolean }
+          requests_per_minute: { type: ["integer", "null"] }
+          requests_per_second: { type: ["integer", "null"] }
+      abuse_protection:
+        type: array
+        items:
+          enum: [captcha, fail2ban, blocklist, none]
+
+  # ===== Third-party services =====
+  third_party_services:
+    type: array
+    items:
+      type: object
+      required: [name, purpose]
+      properties:
+        name: { type: string }
+        purpose: { type: string }
+        data_shared: { type: string }
+        auth_method: { enum: [anonymous, api-key, oauth, basic-auth, bearer-token] }
+        failure_mode: { type: string, description: "Graceful degradation plan when service down" }
+        terms_acceptance: { enum: [accepted, pending, declined, n-a] }
+        compliance_imposed:
+          type: array
+          items: { type: string }
+
+  # ===== Auth =====
+  auth_config:
+    type: object
+    properties:
+      strategy:
+        enum: [none, password, magic-link, oauth, sso, custom]
+        default: none
+      providers:
+        type: array
+        items: { type: string }
+        description: "If oauth: list of providers (google/github/etc.)"
+      session_management:
+        enum: [client-jwt, server-session, cookie]
+      mfa_supported:
+        type: boolean
+      auth_library:
+        enum: [better-auth, auth-js, lucia, clerk, supabase-auth, custom, n-a]
+
+  # ===== Secrets (NO VALUES, only inventory) =====
+  secrets:
+    type: array
+    items:
+      type: object
+      required: [name, where_stored, what_for]
+      properties:
+        name:
+          type: string
+          description: "Secret name only — values stored in Infisical/env, NEVER in this file"
+        where_stored:
+          enum: [env-vars, infisical, vault, aws-kms, .env-file]
+        what_for:
+          type: string
+          description: "Purpose, e.g. 'OpenAI API auth', 'DB connection string'"
+        rotation_cadence:
+          enum: [never, monthly, quarterly, annual, ad-hoc]
+        last_rotated:
+          type: ["string", "null"]
+          format: date-time
+
+  # ===== Cross-cutting =====
+  last_security_review:
+    type: ["string", "null"]
+    format: date-time
+  compliance_checklist_refs:
+    type: array
+    items: { type: string, description: "Links/refs to OWASP/GDPR/SOC2 etc." }
+
+  tags:
+    type: array
+    items: { type: string }
+
+  created_at: { type: string, format: date-time, readOnly: true }
+  updated_at: { type: string, format: date-time, readOnly: true }

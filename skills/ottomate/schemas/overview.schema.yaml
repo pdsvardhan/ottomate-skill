@@ -1,0 +1,157 @@
+# JSON Schema for Doc 1 — Project Overview (manifest.yaml)
+# 14 components (13 original + `preferences` carried from ND1) + `target_devices` field added post-Stage-2 design
+# Total: 15 fields
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "ottomate://schemas/overview.schema.yaml"
+title: "Doc 1 — Project Overview"
+type: object
+description: |
+  Per-project canonical state. DB-backed, mirrored to overview.yaml in repo.
+  Updated on every commit + on pack up.
+
+required:
+  - slug
+  - display_name
+  - summary
+  - current_status
+  - lifecycle_phase
+  - scope_size
+  - target_devices
+  - hosting_target
+  - port
+  - public_url
+  - repository_url
+  - problem_statement
+  - non_goals
+  - success_criteria
+  - preferences
+
+properties:
+  slug:
+    type: string
+    pattern: "^[a-z][a-z0-9-]+$"
+    minLength: 3
+    maxLength: 40
+    description: "Kebab-case unique ID. Locked once set."
+
+  display_name:
+    type: string
+    minLength: 1
+    maxLength: 60
+
+  summary:
+    type: object
+    required: [tagline]
+    properties:
+      tagline:
+        type: string
+        maxLength: 80
+        description: "~10 words, fits on tracker cards"
+      short_description:
+        type: string
+        maxLength: 280
+        description: "2-3 sentences"
+      core_idea:
+        type: string
+        maxLength: 1000
+        description: "One paragraph pitch"
+
+  current_status:
+    type: string
+    enum: [building, shipped, paused, archived]
+    default: building
+
+  lifecycle_phase:
+    type: string
+    enum: [ideating, building, shipped, maintained, deprecated]
+    default: ideating
+
+  scope_size:
+    type: string
+    enum: [nano, small, medium, large, xl]
+
+  target_devices:
+    type: string
+    enum: [desktop, mobile, tablet, both]
+    default: both
+    description: "Locked at Stage 1; references Stage 2 UI master plan aspect ratios"
+
+  hosting_target:
+    type: string
+    enum: [vault7a-docker, public-server, hybrid]
+    default: vault7a-docker
+
+  port:
+    type: integer
+    minimum: 1024
+    maximum: 65535
+    description: "Unique across tracker DB. AI proposes next free."
+
+  public_url:
+    type: string
+    format: uri
+    pattern: "^https?://"
+    description: "Auto-generated from slug; editable"
+
+  repository_url:
+    type: string
+    format: uri
+    description: "Auto-generated when repo created"
+
+  problem_statement:
+    type: string
+    minLength: 50
+    maxLength: 5000
+    description: "Markdown allowed. What pain this solves."
+
+  non_goals:
+    type: array
+    minItems: 1
+    items:
+      type: string
+      minLength: 5
+    description: "Critical for anti-gaslighting. List of 'we will NOT build X' statements."
+
+  success_criteria:
+    type: array
+    minItems: 3
+    maxItems: 10
+    items:
+      type: string
+      minLength: 5
+    description: "Qualitative — how we know it's working"
+
+  preferences:
+    type: object
+    required: [likes, dislikes, must_haves, avoid]
+    description: "Carried from ND1. Used by Stage 2+ for component picking, theming, etc."
+    properties:
+      likes:
+        type: array
+        items: {type: string}
+      dislikes:
+        type: array
+        items: {type: string}
+      must_haves:
+        type: array
+        items: {type: string}
+      avoid:
+        type: array
+        items: {type: string}
+
+  tags:
+    type: array
+    items: {type: string}
+    description: "Free-form tags for cross-project search (added post-audit)"
+
+  # Auto-tracked (set by tracker DB)
+  created_at:
+    type: string
+    format: date-time
+    readOnly: true
+
+  updated_at:
+    type: string
+    format: date-time
+    readOnly: true

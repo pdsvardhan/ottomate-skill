@@ -1,0 +1,145 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "ottomate://schemas/verification-report.schema.yaml"
+title: "Verifier Sub-Agent Report (Stage 3.4 + Stage 4.7)"
+description: |
+  Output of the verifier sub-agent. Per Codex P0 #4: input contract is locked items +
+  acceptance criteria + expected artifact manifest + branch diff (NOT coder claims).
+  Coder claims are SECONDARY signal at most.
+type: object
+required: [version, ran_at, verifier_session_id, target, hard_failures, recommendation]
+
+properties:
+  version: { type: string, const: "1" }
+  ran_at: { type: string, format: date-time }
+  verifier_session_id: { type: string }
+
+  # Either Stage 3 (per-feature) or Stage 4 (per-iteration-item) target
+  target:
+    type: object
+    required: [kind, id]
+    properties:
+      kind:
+        enum: [stage-3-feature, stage-4-iteration-item]
+      id:
+        type: string
+        description: "feature-id or iteration_item.id"
+
+  # ===== Codex P0 #4 — input contract =====
+  input_contract:
+    type: object
+    required: [locked_items, acceptance_criteria, expected_artifacts, branch_diff_ref]
+    properties:
+      locked_items:
+        type: array
+        description: "What the user/system locked as the work to do"
+        items: { type: object }
+
+      acceptance_criteria:
+        type: array
+        description: "From features.yaml — verifier MUST check each"
+        items:
+          type: object
+          properties:
+            feature_id: { type: string }
+            criterion: { type: string }
+            test_path: { type: ["string", "null"] }
+
+      expected_artifacts:
+        type: object
+        description: "Manifest produced by coder — verifier checks against this, not free-text claims"
+        properties:
+          files_created: { type: array, items: { type: string } }
+          files_modified: { type: array, items: { type: string } }
+          endpoints_added: { type: array, items: { type: string } }
+          db_tables_modified: { type: array, items: { type: string } }
+          tests_added: { type: array, items: { type: string } }
+
+      branch_diff_ref:
+        type: string
+        description: "Reference to git branch + base for diff (e.g. 'iter-12 vs main')"
+
+      coder_claims:
+        type: ["object", "null"]
+        description: "OPTIONAL secondary signal — verifier uses input_contract above as primary"
+
+  # ===== 4-pass verification results =====
+
+  pass_a_code_reality:
+    type: object
+    description: "Each claimed file/function/endpoint exists and is real"
+    properties:
+      result: { enum: [pass, partial, fail] }
+      details:
+        type: array
+        items:
+          type: object
+          properties:
+            artifact: { type: string }
+            expected: { type: string }
+            actual: { type: string }
+            match: { type: boolean }
+
+  pass_b_stub_detection:
+    type: object
+    description: "HARD FAIL on hits — bypasses auto-fix loop"
+    properties:
+      result: { enum: [clean, stub-detected] }
+      hits:
+        type: array
+        items:
+          type: object
+          properties:
+            file: { type: string }
+            line: { type: integer }
+            pattern_matched: { type: string }
+            snippet: { type: string }
+
+  pass_c_data_correctness:
+    type: object
+    properties:
+      result: { enum: [pass, partial, fail, n-a] }
+      checks:
+        type: array
+        items:
+          type: object
+          properties:
+            check: { type: string }
+            expected: { type: string }
+            actual: { type: string }
+            verdict: { enum: [pass, fail] }
+
+  pass_d_acceptance_criteria:
+    type: object
+    description: "Independently runs each acceptance criterion test"
+    properties:
+      results:
+        type: array
+        items:
+          type: object
+          required: [feature_id, criterion, verdict]
+          properties:
+            feature_id: { type: string }
+            criterion: { type: string }
+            test_command: { type: string }
+            verdict: { enum: [pass, fail, no-test] }
+            evidence: { type: string }
+
+  # ===== Aggregate =====
+  hard_failures: { type: integer, minimum: 0 }
+  partial: { type: integer, minimum: 0 }
+  verified: { type: integer, minimum: 0 }
+
+  recommendation:
+    type: object
+    required: [overall, reason]
+    properties:
+      overall:
+        enum: [APPROVE, BLOCK, ITERATE]
+        description: "BLOCK = hard fail + mandatory user review (e.g. stub detected); ITERATE = soft fail, auto-fix may resolve"
+      reason: { type: string }
+      mandatory_user_review: { type: boolean }
+      suggested_action: { type: string }
+
+  # Audit
+  cost_tokens_used: { type: ["integer", "null"] }
+  duration_ms: { type: ["integer", "null"] }

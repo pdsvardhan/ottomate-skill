@@ -1,0 +1,285 @@
+# JSON Schema for ND1 (Stage 1 INPUT, ephemeral)
+# Validation source of truth — used by skill, tracker API, and verifier
+# YAML-formatted JSON Schema (draft-2020-12)
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "ottomate://schemas/nd1.schema.yaml"
+title: "ND1 — Stage 1 Input"
+type: object
+description: |
+  Output of Type 1 preprocessing OR T2P. Ephemeral — consumed by Stage 1
+  internal process, then archived to staging/archive/.
+
+  Mandatory fields populated for all journey types.
+  Conditional fields populated when applicable (Type 2 sources, data projects, etc.)
+
+required:
+  - proposed_slug
+  - proposed_display_name
+  - journey_type
+  - sanity_check_results
+  - core_idea
+  - problem_statement
+  - target_users
+  - non_goals_initial
+  - success_criteria_initial
+  - likes
+  - dislikes
+  - must_haves
+  - avoid
+  - features_sketch
+  - flows_sketch
+  - risk_concerns_initial
+  - created_at
+  - session_id
+
+properties:
+  # ===== Identity (mandatory) =====
+  proposed_slug:
+    type: string
+    pattern: "^[a-z][a-z0-9-]+$"
+    minLength: 3
+    maxLength: 40
+    description: "Kebab-case unique project ID"
+
+  proposed_display_name:
+    type: string
+    minLength: 1
+    maxLength: 60
+
+  journey_type:
+    type: integer
+    enum: [1, 2]
+    description: "1 = no docs (pure idea/conversation); 2 = artifacts present (F1-F4)"
+
+  # ===== Sanity check (mandatory) =====
+  sanity_check_results:
+    type: object
+    required: [stage, passed, ran_at, checks_run]
+    properties:
+      stage:
+        type: integer
+        const: 1
+      passed:
+        type: boolean
+        description: "False if any HARD check failed"
+      ran_at:
+        type: string
+        format: date-time
+      duration_ms:
+        type: integer
+        minimum: 0
+      checks_run:
+        type: integer
+        minimum: 1
+      passed_count:
+        type: integer
+      soft_warnings:
+        type: integer
+      hard_failures:
+        type: integer
+      details:
+        type: array
+        items:
+          type: object
+          required: [check_id, name, severity, result]
+          properties:
+            check_id: {type: integer}
+            name: {type: string}
+            severity: {enum: [HARD, SOFT, INFO]}
+            result: {enum: [pass, fail, warn]}
+            message: {type: string}
+            user_decision: {enum: [proceed-anyway, abort, accept]}
+      remediations_applied:
+        type: array
+        items:
+          type: object
+
+  # ===== Intent (mandatory) =====
+  core_idea:
+    type: string
+    minLength: 20
+    description: "One-paragraph pitch — what we're building"
+
+  problem_statement:
+    type: string
+    minLength: 10
+    description: "What pain this solves"
+
+  target_users:
+    type: array
+    items: {type: string}
+    minItems: 1
+
+  non_goals_initial:
+    type: array
+    items: {type: string}
+    minItems: 1
+    description: "Critical for anti-gaslighting — explicit boundaries"
+
+  success_criteria_initial:
+    type: array
+    items: {type: string}
+    minItems: 3
+    maxItems: 10
+    description: "Qualitative markers — how we know it's working"
+
+  # ===== Preferences (mandatory) =====
+  likes:
+    type: array
+    items: {type: string}
+
+  dislikes:
+    type: array
+    items: {type: string}
+
+  must_haves:
+    type: array
+    items: {type: string}
+
+  avoid:
+    type: array
+    items: {type: string}
+
+  # ===== Sketches (mandatory — feed Stage 1 internal process) =====
+  features_sketch:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required: [title]
+      properties:
+        title: {type: string}
+        rough_description: {type: string}
+        suggested_type: {enum: [ui, backend, automated, hybrid]}
+
+  flows_sketch:
+    type: array
+    minItems: 1
+    items:
+      type: object
+      required: [title]
+      properties:
+        title: {type: string}
+        rough_description: {type: string}
+
+  risk_concerns_initial:
+    type: array
+    items:
+      type: object
+      properties:
+        risk_type_hint: {type: string, description: "Match against global catalog"}
+        rationale: {type: string}
+
+  # ===== Meta (mandatory) =====
+  created_at:
+    type: string
+    format: date-time
+
+  session_id:
+    type: string
+
+  # ===== Conditional sections (10 fields) =====
+
+  inspirations:
+    type: array
+    description: "Sample sites / references mentioned (routes to central asset repo + preferences)"
+    items:
+      type: object
+      properties:
+        url_or_name: {type: string}
+        what_to_emulate: {type: string}
+        what_to_avoid: {type: string}
+
+  F1_code:
+    type: array
+    description: "Type 2 with code — per file"
+    items:
+      type: object
+      required: [path, summary, use_decision]
+      properties:
+        path: {type: string}
+        summary: {type: string}
+        use_decision:
+          enum: [overhaul, keep-as-is, selective-tweak, discard, identify-likes]
+        user_notes: {type: string}
+
+  F2_docs:
+    type: array
+    description: "Type 2 with docs — per doc"
+    items:
+      type: object
+      required: [path, summary]
+      properties:
+        path: {type: string}
+        summary: {type: string}
+        sections_to_use: {type: array, items: {type: string}}
+        sections_to_drop: {type: array, items: {type: string}}
+
+  F3_samples:
+    type: array
+    description: "Type 2 with sample URLs — per URL"
+    items:
+      type: object
+      required: [url]
+      properties:
+        url: {type: string, format: uri}
+        screenshot_ref: {type: string, description: "Path to cached screenshot"}
+        emulate: {type: array, items: {type: string}}
+        avoid: {type: array, items: {type: string}}
+
+  F4_data:
+    type: array
+    description: "Type 2 with data — per source"
+    items:
+      type: object
+      required: [location, source_type, use_decision]
+      properties:
+        location: {type: string}
+        source_type:
+          enum: [csv-upload, external-api, scraped-website, user-input, iot-device, manual-entry, generated]
+        shape:
+          type: object
+          description: "columns, types, row count, gaps"
+        use_decision:
+          enum: [use, transform, drop, identify-only]
+
+  data_sketch:
+    type: object
+    description: "For data-driven projects"
+    properties:
+      has_data_layer: {type: boolean}
+      sources_hint:
+        type: array
+        items: {type: string}
+
+  ui_hints:
+    type: object
+    description: "Captured if mentioned during dialog"
+    properties:
+      dark_mode_pref: {type: boolean}
+      palette_hint: {type: string}
+      animation_level: {enum: [none, subtle, smooth, playful]}
+      layout_style: {type: string}
+
+  tech_hints:
+    type: object
+    description: "Captured if mentioned"
+    properties:
+      framework_hint: {type: string}
+      db_hint: {type: string}
+      deploy_hint: {type: string}
+
+  integrations_initial:
+    type: array
+    description: "Third-party services mentioned"
+    items:
+      type: object
+      properties:
+        name: {type: string}
+        purpose: {type: string}
+
+  auth_intent:
+    type: string
+    description: "Auth strategy hint if mentioned"
+    enum: [none, password, magic-link, oauth, sso, custom, unspecified]

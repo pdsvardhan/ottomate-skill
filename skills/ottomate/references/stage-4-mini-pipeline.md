@@ -1,0 +1,299 @@
+# Stage 4 — Iterate (Mini-Pipeline per User Input)
+
+> **POST-AUDIT AMENDMENTS (2026-04-29):** Per `references/stage-amendments.md`:
+> - **4.2 Classify:** uses `prompts/classify-text.md` (updated with source-substring rule + lite context-packet, NOT full SO1). Confidence < 0.7 blocks 4.3 lock until clarified. Implicit/inferred items get `why_inferred` + force user confirmation.
+> - **4.3 Lock-In Gate:** server-side validation at lock — confidence ≥ 0.7 OR user_edited; **must_haves + non_goals respected** (regex check); violations require explicit override ADR. **must_haves + non_goals shown as visible rails** in panel. 1-hour inactivity → `pending_user_review` (Codex P2 #15).
+> - **4.7 Verifier:** No "trivial fix skip verifier" exception. Same trimmed prompt as 3.5 + same allowlist + escape hatch.
+> - **4.8 Trace Report:** anti-gaslight bedrock confirmation block in every report. AC regression check HARD before integrate. Stored permanently in `iterations.trace_report` for cross-session audit.
+> - **Phase ledger transitions:** `iteration_items.status: pending-review → locked → building → verifier-pending → verified → integrated` written to `iteration_item_transitions`. Features touched: `INTEGRATED → REGRESSED → BUILDING → VERIFIED → INTEGRATED`.
+> - 7 anti-gaslight detection rules (per `references/anti-gaslight-rules.md`) run at 4.7 verifier-result and 4.8 integrate; HARD halt on violations.
+
+The continuous-improvement loop. Each iteration is its own mini-pipeline with the same anti-gaslighting protections as the main flow. **The 4.3 lock-in gate is the most important step in this entire skill** — it's the explicit anti-gaslighting bridge between user intent and Claude's work.
+
+> **Ledger writes (2026-05-13):** every iteration that touches a feature must **POST a `feature_claim` row** at 4.6 mini-build completion (source: `iteration-summary`) and **PATCH it after 4.7 verifier** completes. See `references/ledger-writes.md`. Unreconciled iteration claims fire anti-gaslight Rule 1.
+
+## When this stage runs
+
+When project is past Stage 3 (deployed, lifecycle = `building` / `shipped` / `maintained`) and user submits feedback via:
+- Tracker per-flow bug report (single-flow context)
+- Tracker project-level mega-prompt (whole-project context, may span flows)
+- Direct chat with Claude (free-form)
+- (future) Auto-feedback from runtime monitoring (GlitchTip alerts, perf regressions)
+
+## Pre-flight: Stage 4 sanity check
+
+See `references/sanity-check.md` Stage 4 section. 6 checks. Halt on HARD; warn on SOFT.
+
+## Sub-stages (8)
+
+### 4.1 — Intake
+
+Capture raw text into `reports` table:
+
+```sql
+INSERT INTO reports (project_slug, flow_id, raw_text, status, submitted_at)
+VALUES (?, ?, ?, 'pending', NOW());
+```
+
+`flow_id` is NULL for project-level prompts. Original text preserved verbatim — never edit user input.
+
+### 4.2 — Classify (extract structured items)
+
+User triggers manually (clicks "Analyze" in Ottomate, or types "analyze" in chat). The classifier prompt is in `prompts/classify-text.md`.
+
+Produces a list of structured items, each with:
+- `type`: `bug` / `new_feature_request` / `feature_modification` / `flow_modification` / `page_modification` / `component_modification` / `risk_addition` / `re_wire` / `revamp` / `observation` / `question`
+- `title`: short statement (AI-generated)
+- `description`: cleaned excerpt from original text
+- `target`: which existing entity this affects (feature_id / flow_id / page_id / component_id / etc.) — null if new
+- `proposed_change`: structured representation of the change
+- `confidence`: 0.0-1.0 (low confidence triggers user clarification)
+
+If any item's confidence < 0.7, AI asks the user to confirm the split BEFORE proceeding to 4.3:
+
+```
+"I see 5 items in your message but I'm not sure about #3 — is it a bug 
+('search returns wrong results') or a feature request ('search should 
+filter by date')? Please clarify."
+```
+
+### 4.3 — 🆕 Propose & Confirm (LOCK-IN GATE)
+
+**This is the most important sub-stage.** Without it, Stage 4 is just gaslighting waiting to happen.
+
+The skill presents the extracted items to the user via the Ottomate UI's "Pending Approval" panel (or chat if Stage 4 is running in chat mode).
+
+Layout:
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│  ITERATION #N — Project: <slug>                                    │
+│                                                                    │
+│  [▾ ORIGINAL MESSAGE (collapsible)]                                │
+│  "the search is broken and we need a dashboard..."                 │
+│                                                                    │
+│  EXTRACTED ITEMS (review before locking):                          │
+│                                                                    │
+│  ┌────────────────────────────────────────────────────────────┐    │
+│  │ Item 1 — BUG                                  [edit][✗]    │    │
+│  │ Title: Search returns empty results                        │    │
+│  │ Affects: flow-search-add  ·  feat-search                  │    │
+│  │ Description: User reports search field returns no results │    │
+│  │ Confidence: 0.95                                           │    │
+│  └────────────────────────────────────────────────────────────┘    │
+│                                                                    │
+│  ┌────────────────────────────────────────────────────────────┐    │
+│  │ Item 2 — NEW FEATURE                          [edit][✗]    │    │
+│  │ Title: Dashboard page                                      │    │
+│  │ Affects: (new page) page-dashboard                         │    │
+│  │ Description: Add a dashboard view                          │    │
+│  │ Confidence: 0.6                                            │    │
+│  │ ⚠ Low confidence — please confirm                         │    │
+│  └────────────────────────────────────────────────────────────┘    │
+│                                                                    │
+│  [+ Add item I missed]   [✓ Approve all]   [✏ Edit list]   [✗ Cancel]│
+└────────────────────────────────────────────────────────────────────┘
+```
+
+User actions:
+- **Approve all** — locks the list as-is, proceeds to 4.4
+- **Edit individual item** — modifies title / description / target / proposed_change
+- **Split item** — one item becomes two (e.g., "this is actually 2 bugs, not 1")
+- **Merge items** — multiple items combine
+- **Reject item** — removes from list (e.g., "actually that's not a real issue")
+- **Add new item** — user types a new structured item
+
+When user clicks "Lock & build", the list is committed and 4.4 starts.
+
+**Critical:** No code changes happen before user clicks "Lock & build". The skill MUST NOT proceed past 4.3 without explicit lock action.
+
+### 4.4 — Route per locked item
+
+For each item in the locked list:
+
+| Item type | Route |
+|---|---|
+| `bug` (trivial — typo, color, copy fix) | Direct fix path (skip 4.5, go to 4.6 mini-build) |
+| `bug` (standard) | 4.5 mini-staging (light) → 4.6 mini-build |
+| `new_feature_request` | 4.5 mini-staging (full SO1 update) → 4.6 mini-build |
+| `feature_modification` / `flow_modification` / `page_modification` | 4.5 mini-staging (targeted SO1 update) → 4.6 mini-build |
+| `component_modification` (HARD: must route through component-pick) | **4.4.5 component-pick gate** → 4.5 mini-staging → 4.6 mini-build |
+| `new_feature_request` involving any UI component (HARD: must route through component-pick) | **4.4.5 component-pick gate** → 4.5 mini-staging (full SO1 update) → 4.6 mini-build |
+| `risk_addition` | 4.5 mini-staging (Doc 7 update) → no build needed unless triggers code change |
+| `re_wire` | 4.5 mini-staging (multi-doc cascading update + ADR) → 4.6 mini-build |
+| `revamp` | 4.5 mini-staging may invoke mini-Stage-2 (UI Master Plan re-run) → 4.6 mini-build |
+| `observation` | Log only — append to `iteration-log.md`, no code |
+| `question` | Respond in chat, no code |
+
+### 4.4.5 — Component-pick gate (UI items only)
+
+**Trigger:** any locked iteration item where `item_type = 'component_modification'`, OR `item_type = 'new_feature_request'` AND title/description/proposed_change refer to UI (button, card, modal, animation, layout, navigation, etc.). Err on the side of triggering — false positives just add a confirmation step; false negatives reproduce the gaslighting pattern that hit media-dashboard's Stage 2.
+
+**Process:**
+
+1. Skill: `GET /api/iterations/<id>/items/<itemId>/component-options?category=<inferred>&tags=<modern|animated|...>` → returns up to 6 candidates from `master_components`, ranked by relevance to the item's title + description.
+2. Skill renders a single message:
+   > *"This item touches a UI component. Open the asset library at `http://localhost:8110/iterations/<id>/items/<itemId>/pick-component` and click 'Use this' on your choice. I'll wait."*
+3. Skill polls `GET /api/iterations/<id>/items/<itemId>` every ~10s checking `proposed_change.picked_component`. Once set, proceed to 4.5.
+4. Chat-fallback (rare): if user prefers chat, render top 3 options as `AskUserQuestion` previews and POST `/pick-component` directly. UI page is the recommended path because it shows full source + framework tags + variants + previews.
+
+**Why this exists separate from Stage 2.4:** Stage 2.4 runs ONCE per project at initial setup (every page × every component). This 4.4.5 gate runs PER ITERATION ITEM, scoped only to what changed. Same `master_components` library, same ≥2-3-options-with-preview pattern. User direction: *"rather than making a stage 4 project go through a step of stage 2, lets add a similar process in stage 4 whenever ui components issues or new components are being added"*.
+
+If `picked_component` is already set on the item (user re-locked an item that had a previous pick), skip 4.4.5 unless the user explicitly requests another pick.
+
+### 4.5 — Mini-Staging
+
+Update the affected SO1/SO2 docs:
+
+- **For `new_feature_request`:** Add entry to `features.yaml` + derive related entries in `flows.yaml`, `ui.yaml`, `data.yaml`, `risks.yaml` as needed. AI proposes; user confirms via dialog if scope unclear.
+- **For `*_modification`:** Surgical update to the specific entry in the relevant doc. Validate cross-doc consistency (e.g., if a flow's linked features change, the feature row's linked_flows must update too).
+- **For `re_wire`:** Cascading updates across multiple docs + auto-create ADR (`decisions/<date>-iter-<N>-rewire-<topic>.md`) documenting the scope shift. Anti-gaslighting: re-wires must be explicit, not silent.
+- **For `revamp`:** May re-run Stage 2 sub-stages (UI Master Plan, component selection). Heavier; user confirms scope at start. Auto-create ADR.
+
+All staging updates are written to Ottomate DB (canonical) and reflected in YAML mirrors on next commit / pack up.
+
+### 4.6 — Mini-Build
+
+Scoped Stage 3 code generation:
+- Branch per iteration (e.g., `iter-<N>-<date>`)
+- Code change limited to files affected by the locked items
+- Tag-based test selection: only tests touching changed files run (using Playwright tags / Vitest patterns)
+- No full nightly suite — that runs on cron, not per iteration
+- Auto-fix loop with same 3-iteration bound
+
+### 4.7 — Verifier (MANDATORY)
+
+Run the full 4-pass verifier (see `references/stage-3-verifier.md`) PER ITEM, not per iteration. Each item gets independent verification.
+
+Output: per-item `verification_report` blocks merged into the iteration's report.
+
+**Stub detection still hard-fails.** No exceptions for "small fixes" — that's where stubs creep in.
+
+### 4.8 — Integrate + Trace Report
+
+When all items are verified:
+1. Merge iteration branch to main
+2. Run final regression check (existing acceptance criteria for affected features must still pass)
+3. Update Ottomate:
+   - Bugs: `status: open → fixed` with verifier evidence
+   - Feature requests: status `proposed → done`, linked features.yaml entry created
+   - Coverage updated (test coverage delta)
+   - Verification report appended
+4. Auto-create ADR if iteration was significant (re-wire, revamp, scope change)
+5. Notify user with **Trace Report**:
+
+```
+ITERATION #N — Trace Report
+
+Original message:
+"the search is broken and we need a dashboard"
+
+Items locked at 4.3 (after your edits):
+  ✅ Item 1 (bug):   "Search returns empty results"
+                      → flow: flow-search-add | feature: feat-search
+  ✅ Item 2 (mod):   "Add metrics widget to home page"
+                      → page: page-home | new component: metrics-widget
+                      (changed from "new feature: dashboard page" per your edit)
+
+Built per item:
+  Item 1 → 3 files changed (api/search.ts, hooks/use-search.ts, components/search-bar.tsx)
+           Tests: 5/5 pass | Verifier: ✅ verified | Stub-detection: clean
+  Item 2 → 4 files changed (app/page.tsx, components/metrics-widget.tsx, ...)
+           Tests: 8/8 pass | Verifier: ✅ verified | Stub-detection: clean
+
+Acceptance criteria status (regression check):
+  feat-search: 3/3 still passing
+  feat-home-overview: 4/4 still passing
+
+Coverage delta: +12% on flow-search-add, +5% on flow-home-load
+ADR: none required (no re-wire / revamp)
+
+🎯 Iteration complete. Live at https://<slug>.vault7a.xyz
+```
+
+The Trace Report makes the "what you asked → what got built → what's verified" mapping visible. **This is the anti-gaslighting payoff.**
+
+## Outputs (SO4 — per iteration)
+
+| Artifact | Where |
+|---|---|
+| Updated SO1/SO2/SO3 docs | Tracker DB + YAML mirrors |
+| Bug status updates | Tracker DB |
+| Feature additions | Tracker DB + `features.yaml` |
+| `iterations/iteration-<N>-<date>.yaml` | Project repo |
+| `decisions/<date>-iter-<N>-*.md` (ADRs for re-wires/scope shifts) | Project repo |
+| `verification-report.yaml` (appended to project's lifetime report) | Project repo |
+
+## Cost notes
+
+- Mini-build incremental — only changed files compile, only relevant tests run
+- Verifier scoped per item — verifier doesn't re-check unchanged code
+- Full nightly suite NOT triggered per iteration (runs on cron)
+- Tracker DB writes are cheap (local SQLite)
+- Most iteration cost: classifier prompt + per-item coder agent + per-item verifier dispatch
+
+Acceptable for the failure mode it prevents (gaslighting).
+
+## Concrete Ottomate API calls
+
+These map each sub-stage to the implemented Ottomate endpoint (see `references/tracker-api.md` for the full surface). All mutating calls require `Authorization: Bearer $(cat /opt/homeserver/ottomate/.token)`.
+
+| Sub-stage | API call | Notes |
+|---|---|---|
+| 4.1 Intake | `POST /api/projects/<slug>/reports` body `{raw_text, source, flow_id?}` | Returns `{report: {id, status: 'pending', …}}` |
+| 4.2 Classify (skill calls Claude itself, then submits) | `POST /api/reports/<id>/classify` body `{classified_by_session, items: [...]}` | Skill runs the classifier prompt locally → posts the structured items here. Returns `{iteration, items}`. Re-classify is rejected with 409. |
+| 4.3 Lock-in gate (user UI; skill polls) | `GET /api/iterations/<id>` (full state) and `GET /api/iterations/<id>/status` (terse) | Skill polls status until it transitions from `awaiting-lock` → `building`. |
+| 4.3 Add user-authored item | `POST /api/iterations/<id>/items` body `{item_type, title, description, target_kind, target_id, …}` | Always sets `user_edited=true`, `confidence=1`. |
+| 4.3 Edit item | `PATCH /api/iterations/<id>/items/<itemId>` partial body | Marks `user_edited=true`. Locked iterations are 409. |
+| 4.3 Reject item | `DELETE /api/iterations/<id>/items/<itemId>` | Soft-rejects (status='rejected') so the trace report keeps history. |
+| 4.3 Split item | `POST /api/iterations/<id>/items/<itemId>/split` body `{new_items: [...], delete_original}` | All split items are `user_edited=true`. |
+| 4.3 Lock | `POST /api/iterations/<id>/lock` | Server-side enforces confidence ≥ 0.7 OR user_edited; returns 400 with offending item IDs otherwise. Sets `lock_in_audit` JSON. |
+| 4.4 Route per item | (skill side, no API) | Skill iterates `items[]` and dispatches per item. |
+| 4.5 Mini-staging | Use the existing per-doc CRUD endpoints — `POST/PATCH /api/projects/<slug>/flows/...`, etc. | Each staging change is a normal SO1 mutation. |
+| 4.6 Mini-build status | `POST /api/iterations/<id>/items/<itemId>/build-status` body `{status: 'building'\|'verifier-pending'\|'verified'\|'failed', notes}` | Coder agent reports here. |
+| 4.7 Verifier result | `POST /api/iterations/<id>/items/<itemId>/verifier-result` body `{recommendation_overall: 'APPROVE'\|'BLOCK'\|'ITERATE', recommendation_reason, pass_a/b/c/d, mandatory_user_review, full_report, verifier_session_id}` | Inserts a row in `verification_reports` AND updates the item with a verifier-result summary. |
+| 4.8 Integrate | `POST /api/iterations/<id>/integrate` body `{trace_report, notes}` | Server validates all items are `verified` or `rejected`. Returns 400 with offending items otherwise. Sets `integrated_at`. |
+| 4.8 Trace report | `GET /api/iterations/<id>/trace` | Returns iteration + items + raw report + verifier reports + lock_in_audit + trace_report. |
+| Cancel anytime before integrate | `POST /api/iterations/<id>/cancel` body `{reason}` | Records reason in trace_report. |
+
+### Polling pattern
+
+The skill drives the build loop and polls between dispatches:
+
+```
+ITER_ID=...
+SESSION=...
+while true; do
+  STATUS=$(curl -sf http://127.0.0.1:8110/api/iterations/$ITER_ID/status | jq -r .status)
+  case $STATUS in
+    awaiting-lock|pending_user_review)
+      # User hasn't locked yet — wait + retry
+      sleep 30
+      ;;
+    building)
+      # Run next pending item, post build-status + verifier-result
+      ITEMS=$(curl -sf http://127.0.0.1:8110/api/iterations/$ITER_ID/status | jq -r '.items[] | select(.status=="locked") | .id')
+      for ID in $ITEMS; do
+        # ... dispatch coder + verifier ...
+        curl -X POST -H "Authorization: Bearer $TOKEN" \
+          http://127.0.0.1:8110/api/iterations/$ITER_ID/items/$ID/build-status \
+          -d '{"status":"verified"}'
+      done
+      ;;
+    integrated|cancelled)
+      break
+      ;;
+  esac
+done
+```
+
+### Skill events for audit
+
+Throughout, emit `POST /api/skill-events` with `event_type` keyed to lifecycle:
+- `stage-4-start` when intake captured
+- `lock-in-gate` when user reaches 4.3
+- `verifier-dispatched` per item
+- `verifier-result` per item
+- `stage-4-complete` when integrated
+
+These get logged for future audit + UI live-update streams.

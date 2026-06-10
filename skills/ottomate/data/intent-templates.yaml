@@ -1,0 +1,390 @@
+# Domain-keyed templates for Stage 0.7 (intent deepening) + Stage 0.8 (preferences)
+# Per audit: templates SEED candidates; Claude actively refines for project specificity.
+# Used by extract-intent prompt + per-stage rendering in 0.7/0.8 panels.
+#
+# Match criteria: skill computes domain hits from extracted_hints.domain_hints.
+# Multiple matches → union the templates; Claude dedupes + refines.
+# No match → Claude generates from scratch (with rejection_history input).
+
+version: 1
+domains:
+
+  # ============================================================================
+  # personal-tool — single-user, simple, no auth, no payments
+  # ============================================================================
+  personal-tool:
+    keywords: ["me", "myself", "personal", "single-user", "for myself", "my own", "household", "family"]
+
+    non_goals_templates:
+      - "No user accounts / login"
+      - "No payments or subscriptions"
+      - "No multi-tenancy"
+      - "No real-time multi-user features"
+      - "No email notifications to other users"
+
+    success_criteria_templates:
+      - "Loads in <1s on my hardware"
+      - "Runs on my home server (vault7a) without external dependencies"
+      - "Mobile + desktop both work"
+      - "I can use it without referring to docs"
+      - "Friends/family can use without me explaining"
+
+    likes_templates:
+      - "Snappy"
+      - "Minimal chrome"
+      - "Dark mode default"
+      - "Keyboard-friendly"
+      - "Single-page app feel"
+
+    dislikes_templates:
+      - "Login walls"
+      - "Modal popups for trivial confirms"
+      - "Page reloads"
+      - "Tracking/analytics"
+      - "Bloated SaaS aesthetics"
+
+    must_haves_templates:
+      - "Single-user (no accounts)"
+      - "Works offline / no external deps for core flow"
+      - "Easy to share without onboarding"
+      - "Keyboard navigation"
+
+    avoid_templates:
+      - "User accounts"
+      - "Ads or promoted content"
+      - "Tracking pixels / analytics SDKs"
+      - "Pop-up modals for trivial actions"
+
+  # ============================================================================
+  # dashboard — data-dense, multiple metrics, real-time-ish
+  # ============================================================================
+  dashboard:
+    keywords: ["dashboard", "metrics", "monitoring", "stats", "analytics", "overview", "panel"]
+
+    non_goals_templates:
+      - "No write/edit operations on data sources"
+      - "No data ingestion management UI (read-only dashboard)"
+      - "No alerting/notifications"
+      - "No multi-user permissions"
+
+    success_criteria_templates:
+      - "Dashboard renders all panels in <2s"
+      - "Data refreshes without full page reload"
+      - "Sparklines/charts visible without horizontal scroll on mobile"
+      - "Empty state shows clear next-action"
+      - "Loading skeleton matches eventual layout"
+
+    likes_templates:
+      - "Data-dense"
+      - "Real-time feel"
+      - "Filter-heavy"
+      - "Monospace numbers"
+      - "Cards with sparklines"
+      - "Color-coded status"
+
+    dislikes_templates:
+      - "Sparse layouts wasting space"
+      - "Floating point precision in display"
+      - "Charts without context (no axis labels)"
+      - "Animations that delay information"
+
+    must_haves_templates:
+      - "All panels visible without scrolling on desktop"
+      - "Sortable columns / filterable tables"
+      - "Last-updated timestamps visible"
+      - "Manual refresh button"
+
+    avoid_templates:
+      - "Auto-refresh that interrupts user reading"
+      - "Pop-up tooltips for every value"
+
+  # ============================================================================
+  # data-ingestion — pulls data from external sources, stores, displays
+  # ============================================================================
+  data-ingestion:
+    keywords: ["ingest", "scrape", "import", "etl", "pipeline", "feed", "sync", "fetch"]
+
+    non_goals_templates:
+      - "No write back to source systems"
+      - "No real-time streaming (manual or scheduled refresh only)"
+      - "No data transformation UI (transformations in code only)"
+
+    success_criteria_templates:
+      - "Ingestion completes in <expected_duration>"
+      - "Data freshness visible (last-ingest timestamp)"
+      - "Failed ingest surfaces clearly with retry option"
+      - "Schema validates before insert (no garbage rows)"
+      - "Backfill capability for missed periods"
+
+    likes_templates:
+      - "Visible ingest status"
+      - "Detailed error logs on failure"
+      - "Retry-with-backoff defaults"
+      - "Idempotent reruns"
+
+    dislikes_templates:
+      - "Silent failures"
+      - "Lost data on crashes"
+      - "Duplicate rows on retry"
+
+    must_haves_templates:
+      - "Failure handling defined per source"
+      - "Freshness alerts on staleness"
+      - "Audit log of every ingest run"
+      - "Deduplication strategy"
+
+    avoid_templates:
+      - "Schema drift without alerts"
+      - "External API calls without rate limiting"
+
+  # ============================================================================
+  # public-facing — discoverable on internet, anonymous users
+  # ============================================================================
+  public-facing:
+    keywords: ["public", "shareable", "marketing", "landing", "portfolio", "blog", "showcase"]
+
+    non_goals_templates:
+      - "No user-generated content (read-only)"
+      - "No comments / forums / chat"
+      - "No multi-language i18n in v1"
+
+    success_criteria_templates:
+      - "First Contentful Paint <1.5s"
+      - "Lighthouse score ≥90 across all 4 categories"
+      - "Works without JavaScript (progressive enhancement)"
+      - "SEO-friendly (meta tags, sitemap, robots.txt)"
+      - "Mobile-friendly responsive design"
+
+    likes_templates:
+      - "Fast first paint"
+      - "Polished hero section"
+      - "Smooth scroll animations"
+      - "Content-first design"
+
+    dislikes_templates:
+      - "Loading spinners on initial render"
+      - "Blocking JS for content"
+      - "Cookie banners stealing screen real estate"
+
+    must_haves_templates:
+      - "Accessibility (WCAG AA)"
+      - "SEO meta tags"
+      - "Responsive mobile design"
+      - "Clear CTA on every page"
+
+    avoid_templates:
+      - "Tracking without disclosure"
+      - "Pop-ups blocking content"
+      - "Auto-play media"
+
+  # ============================================================================
+  # crud-app — list, view, create, edit, delete entities
+  # ============================================================================
+  crud-app:
+    keywords: ["manage", "track", "log", "record", "list", "create", "edit"]
+
+    non_goals_templates:
+      - "No bulk operations in v1"
+      - "No undo/redo across sessions"
+      - "No audit trail of edits"
+
+    success_criteria_templates:
+      - "Create flow ≤3 fields visible at once"
+      - "Save persists; reload shows latest"
+      - "Edit confirmation explicit"
+      - "Delete requires confirm + offers undo"
+      - "List supports filter + sort + search"
+
+    likes_templates:
+      - "Inline editing where possible"
+      - "Optimistic UI on save"
+      - "Empty states with example items"
+      - "Keyboard shortcuts"
+
+    dislikes_templates:
+      - "Multi-step wizards for simple objects"
+      - "Modal forms when inline works"
+      - "Auto-save with no indicator"
+
+    must_haves_templates:
+      - "Create / read / update / delete on every entity"
+      - "Validation feedback inline"
+      - "Loading + error + empty states per page"
+
+    avoid_templates:
+      - "Lossy edits (no autosave or save indicator)"
+      - "Unconfirmed destructive actions"
+
+  # ============================================================================
+  # cms-like — content management, multiple entity types
+  # ============================================================================
+  cms-like:
+    keywords: ["content", "publish", "manage", "editor", "wysiwyg", "media library"]
+
+    non_goals_templates:
+      - "No multi-author workflow in v1"
+      - "No version history (latest only)"
+      - "No publishing approval workflow"
+
+    success_criteria_templates:
+      - "Editor saves drafts automatically"
+      - "Preview matches published output"
+      - "Media uploads complete in <5s for typical sizes"
+      - "Publish action has clear pre/post state"
+
+    likes_templates:
+      - "Markdown-based editor"
+      - "Drag-and-drop media uploads"
+      - "Preview-while-editing"
+
+    dislikes_templates:
+      - "WYSIWYG that produces dirty HTML"
+      - "Forms that lose input on validation error"
+
+    must_haves_templates:
+      - "Autosave drafts"
+      - "Media library with metadata"
+      - "Slug uniqueness check before publish"
+
+    avoid_templates:
+      - "Lossy editor switches (markdown ↔ rich text losing formatting)"
+
+  # ============================================================================
+  # api-only — backend service, no UI or minimal admin UI
+  # ============================================================================
+  api-only:
+    keywords: ["api", "service", "endpoint", "webhook", "integration", "microservice"]
+
+    non_goals_templates:
+      - "No public-facing UI"
+      - "No anonymous access (all requests authenticated)"
+      - "No rate limiting in v1 (add when scale requires)"
+
+    success_criteria_templates:
+      - "All endpoints return within SLO (e.g., p95 <300ms)"
+      - "Error responses match documented schema"
+      - "Auth failures return 401 with clear message"
+      - "Validation errors return 400 with field details"
+      - "Documented OpenAPI/Swagger spec"
+
+    likes_templates:
+      - "Zod validation"
+      - "Bearer token auth"
+      - "Structured error responses"
+      - "OpenAPI spec auto-generated"
+
+    dislikes_templates:
+      - "Inconsistent response shapes"
+      - "Silent 500 errors without context"
+      - "Auth via query params"
+
+    must_haves_templates:
+      - "Bearer token auth on mutations"
+      - "Input validation on every endpoint"
+      - "Structured error responses"
+      - "Health check endpoint"
+
+    avoid_templates:
+      - "Auth via URL parameters"
+      - "Plain text passwords / API keys in code"
+
+  # ============================================================================
+  # mobile-app — PWA or native; touch-first UX
+  # ============================================================================
+  mobile-app:
+    keywords: ["mobile", "phone", "ios", "android", "app", "pwa", "touch"]
+
+    non_goals_templates:
+      - "No desktop UI"
+      - "No native iOS/Android in v1 (PWA-first)"
+      - "No offline-first sync (online-only)"
+
+    success_criteria_templates:
+      - "Touch targets ≥44x44px"
+      - "Works on slow 3G in <3s first paint"
+      - "Add-to-home-screen prompts work"
+      - "Bottom-sheet patterns for primary actions"
+
+    likes_templates:
+      - "Bottom-tab navigation"
+      - "Swipe gestures"
+      - "Haptic feedback (where supported)"
+      - "Native scroll behavior"
+
+    dislikes_templates:
+      - "Hover-only UI"
+      - "Tiny click targets"
+      - "Modal overlays blocking entire screen"
+
+    must_haves_templates:
+      - "Touch targets sized for fingers"
+      - "Mobile-first responsive design"
+      - "Works in mobile Safari + Chrome"
+
+    avoid_templates:
+      - "Desktop-only patterns (right-click, hover tooltips)"
+      - "Forms requiring multiple fields visible at once"
+
+  # ============================================================================
+  # game-or-toy — playful, interactive, light state
+  # ============================================================================
+  game-or-toy:
+    keywords: ["game", "puzzle", "toy", "interactive", "play", "fun"]
+
+    non_goals_templates:
+      - "No user accounts (anonymous play)"
+      - "No leaderboards in v1"
+      - "No multiplayer"
+
+    success_criteria_templates:
+      - "Game state persists across page refresh"
+      - "First playable interaction in <2s of load"
+      - "Visual feedback on every interaction"
+      - "Clear restart/reset path"
+
+    likes_templates:
+      - "Smooth animations"
+      - "Sound effects (optional toggle)"
+      - "Unexpected delight moments"
+
+    dislikes_templates:
+      - "Forced tutorials"
+      - "Ads interrupting play"
+      - "Scoring without feedback"
+
+    must_haves_templates:
+      - "Restart action visible at all times"
+      - "Persistent state in localStorage"
+
+    avoid_templates:
+      - "Login walls before play"
+      - "Tracking play data without disclosure"
+
+  # ============================================================================
+  # default — fallback when no domain matches; minimal templates
+  # ============================================================================
+  default:
+    keywords: []
+
+    non_goals_templates:
+      - "No multi-user features in v1"
+      - "No user accounts"
+
+    success_criteria_templates:
+      - "Core flow completes in <2s"
+      - "Works on mobile and desktop"
+      - "Clear empty / loading / error states"
+
+    likes_templates:
+      - "Fast"
+      - "Clean"
+
+    dislikes_templates:
+      - "Cluttered UI"
+      - "Slow loading"
+
+    must_haves_templates:
+      - "Mobile responsive"
+
+    avoid_templates:
+      - "User-hostile patterns"

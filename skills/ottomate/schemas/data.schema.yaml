@@ -1,0 +1,159 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "ottomate://schemas/data.schema.yaml"
+title: "Doc 5 — Data Overview (Codex P1 #9 split)"
+description: |
+  Stage 1 captures CONCEPTUAL data overview (sources, ingestion strategy, retention policy).
+  Stage 2 captures DATA CONTRACT (schema, indexes, DB engine, migration tooling).
+  This file holds both blocks; Stage 1 fills `conceptual`, Stage 2 fills `contract`.
+type: object
+required: [version, project_slug, has_data_layer, conceptual]
+
+properties:
+  version: { type: string, const: "1" }
+  project_slug: { type: string, pattern: "^[a-z][a-z0-9-]+$" }
+
+  has_data_layer:
+    type: boolean
+    description: "If false, all other fields can be omitted (Doc 5 collapses to marker)"
+
+  # === Stage 1 conceptual block ===
+  conceptual:
+    type: object
+    properties:
+      sources:
+        type: array
+        description: "Data sources at high level — where data conceptually comes from"
+        items:
+          type: object
+          required: [name, source_type]
+          properties:
+            name: { type: string }
+            source_type:
+              enum: [csv-upload, external-api, scraped-website, user-input, iot-device, manual-entry, generated]
+            url_or_path:
+              type: ["string", "null"]
+            authentication:
+              enum: [anonymous, api-key, oauth, basic-auth, bearer-token]
+            ingestion_method:
+              enum: [one-time-upload, scheduled-fetch, webhook-receive, real-time-stream, user-triggered, manual]
+            ingestion_frequency:
+              type: string
+              description: "cron expression / interval (15m/1h/daily) / event-driven / on-demand"
+            failure_handling:
+              enum: [retry-with-backoff, alert-and-skip, alert-and-abort, silent-skip]
+
+            # Recurring-fetch fields (R1-R4 per design)
+            refresh_strategy:
+              enum: [full-refresh, incremental, append-only, upsert]
+            watermark_field:
+              type: ["string", "null"]
+              description: "Column tracking last-fetched position (only for incremental)"
+            deduplication_strategy:
+              enum: [primary-key, hash-based, last-write-wins, none]
+            backfill_capability:
+              type: object
+              properties:
+                supported: { type: boolean }
+                procedure: { type: string }
+
+      retention_policy:
+        type: object
+        properties:
+          policy_type:
+            enum: [forever, N-days, N-years, rotate-on-size, archive-after-period]
+          duration_value:
+            type: ["integer", "string", "null"]
+          reason:
+            type: string
+
+      seed_data_plan:
+        type: object
+        description: "What loads for empty-DB state"
+        properties:
+          seed_script:
+            type: ["string", "null"]
+          demo_data_location:
+            type: ["string", "null"]
+          env_separation:
+            type: string
+            description: "How prod vs demo data differ"
+
+      data_quality_rules:
+        type: array
+        items:
+          type: object
+          properties:
+            rule_type:
+              enum: [required, format, range, referential-integrity, custom]
+            applies_to: { type: string }
+            description: { type: string }
+
+      known_quality_issues:
+        type: array
+        items: { type: string }
+        description: "Drift areas, dirty bits to watch (grows over project lifetime)"
+
+      freshness_alerts:
+        type: object
+        properties:
+          threshold_hours:
+            type: ["integer", "null"]
+          notification_target:
+            enum: [email, log, silent, glitchtip]
+
+  # === Stage 2 contract block (filled later, not Stage 1) ===
+  contract:
+    type: ["object", "null"]
+    description: "Filled in Stage 2. May be null if Stage 2 not yet run."
+    properties:
+      database_engine:
+        enum: [sqlite, postgres, mysql, mongodb, redis, flatfile]
+      storage_location:
+        enum: [in-project-sqlite, external-db, volume-mount, cloud-blob]
+      migration_tooling:
+        enum: [drizzle, prisma, kysely, raw-sql, none]
+
+      tables:
+        type: array
+        items:
+          type: object
+          required: [name]
+          properties:
+            name: { type: string }
+            purpose: { type: string }
+
+            columns:
+              type: array
+              items:
+                type: object
+                required: [name, type]
+                properties:
+                  name: { type: string }
+                  type: { type: string }
+                  nullable: { type: boolean, default: false }
+                  default: { type: ["string", "number", "boolean", "null"] }
+                  description: { type: string }
+
+            indexes:
+              type: array
+              items:
+                type: object
+                properties:
+                  columns: { type: array, items: { type: string } }
+                  unique: { type: boolean, default: false }
+
+            constraints:
+              type: array
+              items: { type: string }
+
+      relationships:
+        type: array
+        description: "Foreign keys + M:N joins"
+        items:
+          type: object
+          properties:
+            from_table: { type: string }
+            from_column: { type: string }
+            to_table: { type: string }
+            to_column: { type: string }
+            kind: { enum: [one-to-many, many-to-many, one-to-one] }

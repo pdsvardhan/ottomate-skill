@@ -1,0 +1,105 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "ottomate://schemas/features.schema.yaml"
+title: "Doc 3 — Features"
+description: |
+  Per-project canonical feature tree. DB-backed + mirrored to features.yaml + per-feature detail
+  in features/<id>.md. Acceptance criteria are LOAD-BEARING for anti-gaslighting (test target).
+type: object
+required: [version, project_slug, features]
+
+properties:
+  version: { type: string, const: "1" }
+  project_slug:
+    type: string
+    pattern: "^[a-z][a-z0-9-]+$"
+
+  features:
+    type: array
+    items:
+      type: object
+      required: [id, title, type, status, priority, size, acceptance_criteria]
+      properties:
+        id:
+          type: string
+          pattern: "^feat-[a-z][a-z0-9-]+$"
+        parent_id:
+          type: ["string", "null"]
+          pattern: "^feat-[a-z][a-z0-9-]+$"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 80
+        short_description:
+          type: string
+          maxLength: 500
+          description: "Brief — long-form goes in features/<id>.md"
+        type:
+          enum: [ui, backend, automated, hybrid]
+        status:
+          enum: [planned, building, done, blocked, dropped]
+          default: planned
+        priority:
+          enum: [P0, P1, P2, P3]
+          default: P2
+        size:
+          enum: [XS, S, M, L]
+
+        # Acceptance criteria — anti-gaslighting test target
+        acceptance_criteria:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items:
+            type: object
+            required: [text]
+            properties:
+              text:
+                type: string
+                minLength: 10
+                description: "Single qualitative statement, e.g. 'Search returns results in <500ms'"
+              test_status:
+                enum: [passing, failing, not-tested]
+                default: not-tested
+                readOnly: true
+              linked_test:
+                type: ["string", "null"]
+                description: "Path to test that validates this criterion"
+
+        test_status:
+          enum: [passing, partial, failing, not-tested]
+          default: not-tested
+          readOnly: true
+          description: "Derived: AND of linked_flows.test_status (rule from design state)"
+
+        # M:N relationships
+        linked_flows:
+          type: array
+          items: { type: string, pattern: "^flow-[a-z][a-z0-9-]+$" }
+
+        linked_pages:
+          type: array
+          items: { type: string, pattern: "^page-[a-z][a-z0-9-]+$" }
+
+        dependencies:
+          type: array
+          items: { type: string, pattern: "^feat-[a-z][a-z0-9-]+$" }
+          description: "Other features that must come first"
+
+        tags:
+          type: array
+          items: { type: string }
+
+        notes:
+          type: string
+
+        created_at: { type: string, format: date-time, readOnly: true }
+        updated_at: { type: string, format: date-time, readOnly: true }
+
+      # Cross-validation: UI/hybrid features need flows
+      allOf:
+        - if:
+            properties:
+              type: { enum: [ui, hybrid] }
+          then:
+            properties:
+              linked_flows: { minItems: 1 }

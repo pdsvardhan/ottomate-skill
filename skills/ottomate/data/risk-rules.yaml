@@ -1,0 +1,327 @@
+# Static risk-matching rules for Stage 0.10 Phase B (mechanical overlay).
+# Used by skill at sketch-generation time to deterministically match risks
+# from risks_catalog to project state (features, integrations, auth, data, policies).
+# Claude only fires for unusual patterns; these rules cover ~80% of cases.
+#
+# Usage:
+#   for each rule, evaluate `condition` against project state.
+#   if matched, propose risk with `risk_type` (matched to risks_catalog).
+#   `affected_artifact` derived from rule's `applies_to` field.
+#
+# All risks must have an `affected_artifact_type` + `affected_artifact_id`
+# (per CC-7 Rule 2 — no floating risks).
+
+version: 1
+rules:
+
+  # ============================================================================
+  # baseline rules — apply to every project
+  # ============================================================================
+  - id: baseline-no-tests
+    risk_type: no-tests
+    severity: medium
+    condition:
+      always: true
+    sunset_trigger: "test files exist + CI green"
+    applies_to:
+      kind: global
+      reason: "Every project starts without tests; tests authored in Stage 3"
+
+  - id: baseline-no-error-tracking
+    risk_type: no-error-tracking
+    severity: low
+    condition:
+      tech_stacks_has: false
+      service: "GlitchTip|Sentry|equivalent"
+    sunset_trigger: "error tracking integrated"
+    applies_to:
+      kind: global
+
+  - id: baseline-no-rate-limit
+    risk_type: no-rate-limit
+    severity: medium
+    condition:
+      tech_stacks_has: false
+      pattern: "rate-limit middleware"
+      AND_policies_exposure_in: ["public", "intranet-only"]
+    sunset_trigger: "rate limiter middleware deployed"
+    applies_to:
+      kind: global
+      reason: "Public exposure without rate limiting → scraping/abuse risk"
+
+  # ============================================================================
+  # data-layer rules
+  # ============================================================================
+  - id: data-staleness-on-manual-refresh
+    risk_type: data-staleness
+    severity: medium
+    condition:
+      data_sources_has:
+        ingestion_method: "scheduled-fetch|webhook-receive|user-triggered"
+        refresh_strategy_NOT_in: ["real-time-stream"]
+    sunset_trigger: "freshness alerts configured"
+    applies_to:
+      kind: feature
+      from: "feature linked to data_sources matching"
+
+  - id: third-party-api-failure
+    risk_type: third-party-api-failure
+    severity: medium
+    condition:
+      data_sources_has:
+        source_type: "external-api|scraped-website"
+    sunset_trigger: "circuit breaker + retry-with-backoff"
+    applies_to:
+      kind: integration
+      from: "third_party_services row matching source"
+
+  - id: data-loss-on-crash
+    risk_type: data-loss
+    severity: high
+    condition:
+      data_sources_count: ">0"
+      AND_retention_policy_NOT_set: true
+    sunset_trigger: "retention_policy + backup plan"
+    applies_to:
+      kind: data_source
+      from: "every data_source"
+
+  - id: schema-drift-undetected
+    risk_type: schema-drift
+    severity: low
+    condition:
+      data_sources_has:
+        ingestion_method: "scheduled-fetch|webhook-receive"
+    sunset_trigger: "schema validation in ingest pipeline"
+    applies_to:
+      kind: data_source
+
+  - id: deduplication-missing
+    risk_type: deduplication-missing
+    severity: medium
+    condition:
+      data_sources_has:
+        refresh_strategy: "incremental|append-only"
+        AND_deduplication_strategy_NOT_set: true
+    sunset_trigger: "dedup strategy defined per source"
+    applies_to:
+      kind: data_source
+
+  # ============================================================================
+  # auth + integrations rules
+  # ============================================================================
+  - id: auth-bypass-on-permissions
+    risk_type: auth-bypass
+    severity: high
+    condition:
+      auth_intent_in: ["password", "magic-link", "oauth", "sso", "custom"]
+      AND_pages_have_permissions_in: ["logged-in", "admin", "custom"]
+    sunset_trigger: "auth middleware + e2e tests"
+    applies_to:
+      kind: feature
+      from: "every feature linked to a non-anonymous page"
+
+  - id: session-leak
+    risk_type: session-leak
+    severity: high
+    condition:
+      auth_intent_in: ["password", "magic-link", "oauth", "sso"]
+    sunset_trigger: "secure cookie flags + session expiry"
+    applies_to:
+      kind: integration
+      from: "auth_config row"
+
+  - id: oauth-redirect-tampering
+    risk_type: oauth-redirect-tampering
+    severity: high
+    condition:
+      auth_intent: "oauth"
+    sunset_trigger: "redirect_uri allowlist + state param"
+    applies_to:
+      kind: integration
+
+  - id: secret-in-code
+    risk_type: secret-in-code
+    severity: critical
+    condition:
+      always: true
+      AND_secrets_count: ">0"
+    sunset_trigger: "Trivy scan green + Infisical integration"
+    applies_to:
+      kind: secret
+      from: "every secret"
+
+  - id: third-party-vendor-lock
+    risk_type: vendor-lock-in
+    severity: low
+    condition:
+      third_party_services_count: ">2"
+    sunset_trigger: "abstraction layer per service"
+    applies_to:
+      kind: integration
+
+  # ============================================================================
+  # public-exposure rules
+  # ============================================================================
+  - id: ddos-exposure
+    risk_type: ddos-exposure
+    severity: medium
+    condition:
+      policies_exposure: "public"
+    sunset_trigger: "Cloudflare DDOS + rate limiting"
+    applies_to:
+      kind: global
+      reason: "Public-facing project; CF Tunnel handles edge"
+
+  - id: scraping-without-auth
+    risk_type: scraping-exposure
+    severity: medium
+    condition:
+      policies_exposure: "public"
+      AND_auth_intent: "none"
+      AND_data_sources_count: ">0"
+    sunset_trigger: "rate limit + bot detection"
+    applies_to:
+      kind: global
+
+  # ============================================================================
+  # ui-content rules
+  # ============================================================================
+  - id: xss-on-user-input
+    risk_type: xss
+    severity: high
+    condition:
+      features_mention: "user input|comment|post|message|form|search"
+    sunset_trigger: "input sanitization + CSP headers"
+    applies_to:
+      kind: feature
+      from: "every feature with user input"
+
+  - id: injection-on-search
+    risk_type: injection
+    severity: high
+    condition:
+      features_mention: "search|query|filter"
+      AND_data_sources_count: ">0"
+    sunset_trigger: "parameterized queries + zod validation"
+    applies_to:
+      kind: feature
+
+  - id: csrf-on-mutations
+    risk_type: csrf
+    severity: medium
+    condition:
+      auth_intent_in: ["password", "magic-link", "oauth", "sso"]
+      AND_features_have_mutations: true
+    sunset_trigger: "CSRF tokens or SameSite=Strict cookies"
+    applies_to:
+      kind: integration
+
+  # ============================================================================
+  # payment + financial rules
+  # ============================================================================
+  - id: pci-compliance
+    risk_type: pci-compliance
+    severity: critical
+    condition:
+      features_mention: "payment|checkout|card|billing"
+        OR_third_party_services_has:
+          name: "Stripe|Square|PayPal|Braintree"
+    sunset_trigger: "delegate to PCI-compliant processor (Stripe Checkout, etc.)"
+    applies_to:
+      kind: feature
+
+  - id: financial-data-without-encryption
+    risk_type: financial-data-exposure
+    severity: high
+    condition:
+      policies_data_sensitivity_tier: "financial"
+      AND_storage_location_NOT_in: ["external-db-encrypted"]
+    sunset_trigger: "encryption at rest + audit log"
+    applies_to:
+      kind: data_source
+
+  # ============================================================================
+  # PII + privacy rules
+  # ============================================================================
+  - id: pii-without-encryption
+    risk_type: pii-data-exposure
+    severity: high
+    condition:
+      policies_data_sensitivity_tier: "personal-pii"
+    sunset_trigger: "encryption at rest + GDPR/data-deletion path"
+    applies_to:
+      kind: data_source
+
+  - id: pii-retention-policy-missing
+    risk_type: pii-retention-missing
+    severity: medium
+    condition:
+      policies_data_sensitivity_tier: "personal-pii"
+      AND_retention_policy_NOT_set: true
+    sunset_trigger: "retention_policy defined with deletion path"
+    applies_to:
+      kind: data_source
+
+  # ============================================================================
+  # operational rules
+  # ============================================================================
+  - id: no-backup-strategy
+    risk_type: no-backup
+    severity: medium
+    condition:
+      data_sources_count: ">0"
+      AND_seed_data_plan_NOT_set: true
+    sunset_trigger: "backup script + restore drill"
+    applies_to:
+      kind: global
+
+  - id: no-monitoring
+    risk_type: no-monitoring
+    severity: low
+    condition:
+      always: true
+      AND_tech_stacks_has: false
+      service: "Plausible|GlitchTip|equivalent"
+    sunset_trigger: "monitoring service integrated"
+    applies_to:
+      kind: global
+      reason: "Operational visibility deferred until needed"
+
+  - id: deploy-without-healthcheck
+    risk_type: deploy-no-healthcheck
+    severity: medium
+    condition:
+      hosting_target: "vault7a-docker"
+      AND_dockerfile_NOT_has: "HEALTHCHECK"
+    sunset_trigger: "HEALTHCHECK in Dockerfile + healthcheck endpoint"
+    applies_to:
+      kind: global
+
+# ============================================================================
+# Evaluation order
+# ============================================================================
+# Skill iterates rules in order; for each rule:
+#   1. Evaluate condition (mechanical AND/OR logic)
+#   2. If matches, lookup risk_type in risks_catalog
+#   3. Compute affected_artifact_id from `applies_to.from`
+#   4. Insert risk_instance row with provenance: { source: rule_match, rule_id }
+#
+# Claude only fires AFTER mechanical pass to:
+#   - Catch project-specific risks not in this file
+#   - Refine `severity` if context suggests different level
+#   - Propose mitigation hints (1-2 lines per risk; not full mitigation)
+
+# ============================================================================
+# Adding new rules
+# ============================================================================
+# When you discover a new common risk pattern (e.g., during Stage 4 iterations
+# across projects), add a rule here. Each rule:
+#   - id: stable kebab-case identifier
+#   - risk_type: must exist in risks_catalog (or add it)
+#   - severity: low | medium | high | critical
+#   - condition: AND-OR logic referencing project state fields
+#   - sunset_trigger: when this risk can be marked resolved
+#   - applies_to: {kind, from} → tells skill how to compute affected_artifact_id
+#
+# Ensure rules are deterministic — no Claude judgment in the rule eval.

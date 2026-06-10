@@ -1,0 +1,153 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "ottomate://schemas/iterations.schema.yaml"
+title: "Stage 4 Iteration Record"
+description: |
+  Per-iteration record. Stored in `iterations` table (canonical) + serialized to
+  iterations/iteration-<N>-<date>.yaml in repo for audit history.
+  Includes lock_in_audit (Codex P2 #14) and pending_user_review status (Codex P2 #15).
+type: object
+required: [version, iteration_id, project_slug, iteration_number, trigger_source, status, items]
+
+properties:
+  version: { type: string, const: "1" }
+  iteration_id:
+    type: integer
+    description: "Tracker DB primary key"
+  project_slug:
+    type: string
+    pattern: "^[a-z][a-z0-9-]+$"
+  iteration_number:
+    type: integer
+    minimum: 1
+    description: "Per-project sequential counter"
+
+  trigger_source:
+    enum: [tracker-flow-bug, tracker-mega-prompt, chat, auto-feedback]
+
+  status:
+    enum: [classification-pending, awaiting-lock, pending_user_review, building, verifying, integrated, cancelled]
+    description: "pending_user_review = awaiting user lock action (Codex P2 #15)"
+
+  raw_text_id:
+    type: integer
+    description: "FK to reports.id; original raw text always preserved"
+
+  # ===== Lock-in audit (Codex P2 #14) =====
+  lock_in_audit:
+    type: object
+    description: "Full audit of the 4.3 lock-in gate"
+    properties:
+      original_raw_text:
+        type: string
+        description: "Verbatim user input — never edited"
+      classifier_initial_output:
+        type: array
+        items: { type: object }
+        description: "Items as classifier first proposed (pre-edits)"
+      user_edits:
+        type: array
+        description: "Each user action on items (split/merge/edit/reject/add)"
+        items:
+          type: object
+          properties:
+            timestamp: { type: string, format: date-time }
+            action: { enum: [edit, split, merge, reject, add, approve_all] }
+            item_id: { type: ["integer", "null"] }
+            before: { type: ["object", "null"] }
+            after: { type: ["object", "null"] }
+      final_locked_list:
+        type: array
+        description: "What was actually locked (after edits)"
+        items: { type: object }
+      locked_at:
+        type: string
+        format: date-time
+      locked_by_session: { type: string }
+
+  # ===== Items =====
+  items:
+    type: array
+    items:
+      type: object
+      required: [id, item_type, title, status]
+      properties:
+        id: { type: integer }
+        item_type:
+          enum: [bug, new_feature_request, feature_modification, flow_modification, page_modification, component_modification, risk_addition, re_wire, revamp, observation, question]
+        title: { type: string }
+        description: { type: string }
+
+        target:
+          type: object
+          properties:
+            kind:
+              enum: [feature, flow, page, component, integration, secret, "null"]
+            id: { type: ["string", "null"] }
+
+        proposed_change:
+          type: object
+          description: "Structured representation of the change"
+
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 1
+
+        user_edited:
+          type: boolean
+          default: false
+          description: "If true, confidence implicitly = 1.0"
+
+        status:
+          enum: [pending-review, locked, building, verified, integrated, rejected]
+
+        verifier_result:
+          type: ["object", "null"]
+          description: "Per-item verifier output (after Stage 4.7)"
+
+        notes:
+          type: string
+
+  # ===== Trace report (Stage 4.8 output) =====
+  trace_report:
+    type: ["object", "null"]
+    description: "Generated at integrate step"
+    properties:
+      original_message: { type: string }
+      items_locked_count: { type: integer }
+      built_per_item:
+        type: array
+        items:
+          type: object
+          properties:
+            item_id: { type: integer }
+            files_changed: { type: array, items: { type: string } }
+            tests_run: { type: array, items: { type: object } }
+            verifier_verdict: { enum: [verified, partial, stub-detected, failed] }
+
+      acceptance_criteria_regression:
+        type: array
+        description: "Existing criteria that must still pass"
+        items:
+          type: object
+          properties:
+            feature_id: { type: string }
+            criterion: { type: string }
+            status: { enum: [passing, failing] }
+
+      coverage_delta:
+        type: object
+        description: "Test coverage change"
+
+      adr_created:
+        type: ["string", "null"]
+        description: "Path to ADR if iteration was significant"
+
+  # ===== Timestamps =====
+  classification_started_at: { type: ["string", "null"], format: date-time }
+  classified_at: { type: ["string", "null"], format: date-time }
+  locked_at: { type: ["string", "null"], format: date-time }
+  build_started_at: { type: ["string", "null"], format: date-time }
+  verify_started_at: { type: ["string", "null"], format: date-time }
+  integrated_at: { type: ["string", "null"], format: date-time }
+  cancelled_at: { type: ["string", "null"], format: date-time }

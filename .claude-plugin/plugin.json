@@ -1,0 +1,17 @@
+{
+  "name": "ottomate",
+  "version": "2.0.0",
+  "description": "Ottomate — Web project pipeline skill: 5 stages (Stage 0 preprocessing → Stage 1 SO1 production → Stage 2 UI/Tech → Stage 3 Build/Test/Deploy → Stage 4 Iterate), anti-gaslighting verifier, 14 lock-in gates, companion tracker at 127.0.0.1:8110.",
+  "author": {
+    "name": "pdsv"
+  },
+  "homepage": "https://localhost:3300/pdsv/ottomate-tracker-v3",
+  "license": "MIT",
+  "keywords": [
+    "web-projects",
+    "pipeline",
+    "vault7a",
+    "tracker",
+    "anti-gaslighting"
+  ]
+}

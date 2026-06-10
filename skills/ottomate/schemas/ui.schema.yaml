@@ -1,0 +1,110 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "ottomate://schemas/ui.schema.yaml"
+title: "Doc 4 — UI Pages & Components"
+description: |
+  Per-project UI structure. Pages + nested components in YAML mirror;
+  separate DB tables (pages, page_entry_points, page_features, components,
+  component_variants, component_flows).
+type: object
+required: [version, project_slug, pages]
+
+properties:
+  version: { type: string, const: "1" }
+  project_slug: { type: string, pattern: "^[a-z][a-z0-9-]+$" }
+
+  pages:
+    type: array
+    items:
+      type: object
+      required: [id, title, route, purpose, layout_type, permissions, mobile_handling, linked_features]
+      properties:
+        id:
+          type: string
+          pattern: "^page-[a-z][a-z0-9-]+$"
+        title:
+          type: string
+          minLength: 1
+          maxLength: 60
+        route:
+          type: string
+          pattern: "^/"
+          description: "URL path, e.g. /search or /library/[id]"
+        purpose:
+          type: string
+          minLength: 5
+          maxLength: 300
+        layout_type:
+          enum: [dashboard, list, detail, form, wizard, modal, popup]
+        permissions:
+          enum: [anonymous, logged-in, admin, custom]
+          default: anonymous
+          description: "Cross-doc rule — non-anonymous requires Doc 7 auth_strategy != 'none'"
+        mobile_handling:
+          enum: [responsive, mobile-only, desktop-only, N-A]
+          default: responsive
+
+        empty_state:
+          type: string
+          maxLength: 200
+          description: "What shows when no data"
+        loading_state:
+          enum: [skeleton, spinner, progressive]
+        error_state:
+          type: string
+          maxLength: 200
+          description: "What shows on failure"
+
+        entry_points:
+          type: array
+          items: { type: string }
+          description: "How user reaches this page"
+
+        linked_features:
+          type: array
+          minItems: 1
+          items: { type: string, pattern: "^feat-[a-z][a-z0-9-]+$" }
+
+        linked_flows:
+          type: array
+          items: { type: string, pattern: "^flow-[a-z][a-z0-9-]+$" }
+          readOnly: true
+          description: "System-maintained from flows.linked_pages"
+
+        # Components nested per page (YAML view); DB has them flat with FK
+        components:
+          type: array
+          items:
+            type: object
+            required: [name, purpose_on_page, category]
+            properties:
+              name:
+                type: string
+                minLength: 1
+                maxLength: 60
+                description: "e.g. 'search bar', 'result card', 'filter dropdown'"
+              purpose_on_page:
+                type: string
+                minLength: 5
+                maxLength: 200
+              category:
+                enum: [input, display, navigation, feedback, layout, overlay]
+              possible_variants:
+                type: array
+                items: { type: string }
+                description: "e.g. ['dropdown', 'filter chips', 'combobox']"
+              data_consumed:
+                type: string
+                description: "What it reads (props/API/store)"
+              data_produced:
+                type: string
+                description: "What it emits (events/state)"
+              linked_flows:
+                type: array
+                items: { type: string, pattern: "^flow-[a-z][a-z0-9-]+$" }
+              picked:
+                type: boolean
+                default: false
+                description: "Stage 2 sets to true after picking from asset library"
+              asset_library_ref:
+                type: ["string", "null"]
+                description: "FK to master_components.id once picked"
