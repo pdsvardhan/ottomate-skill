@@ -1,11 +1,8 @@
 # Stage 3.1 — Scaffolding (repo init + Docker + NPM proxy + Gitea Actions)
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** (applied; changelog archived at `_archive/references/stage-amendments.md`):
+> **POST-AUDIT AMENDMENTS (2026-04-29):** applied (changelog archived at `_archive/references/stage-amendments.md`; restated lines collapsed 2026-06-10 — Gitea secrets are in step 9, skill-event reporting + Type-2 ordering in the body / SKILL.md stage table). Operative deltas:
 > - Pre-checks: drift detection (no manual edits to scaffold-target paths since 1.10)
-> - Gitea Actions secrets: TRACKER_API_TOKEN required (mutations need bearer auth per Codex Round 2 #2)
 > - Phase ledger transition: pages `PROPOSED → LAYOUT_LOCKED` after Tailwind tokens applied
-> - Skill events row: `event_type=stage_3_scaffold_complete`
-> - For Type 2 with held code: 3.3 fires AFTER 3.1 + 3.2; reformat plan determines USE-AS-IS / REFACTOR / REWRITE per module
 
 The first concrete write of code. Goal: project boots a `/api/health` endpoint inside Docker with auth-protected mutations.
 

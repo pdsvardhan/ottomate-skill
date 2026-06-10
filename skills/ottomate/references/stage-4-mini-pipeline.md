@@ -1,12 +1,9 @@
 # Stage 4 — Iterate (Mini-Pipeline per User Input)
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** (applied; changelog archived at `_archive/references/stage-amendments.md`):
-> - **4.2 Classify:** uses `prompts/classify-text.md` (updated with source-substring rule + lite context-packet, NOT full SO1). Confidence < 0.7 blocks 4.3 lock until clarified. Implicit/inferred items get `why_inferred` + force user confirmation.
-> - **4.3 Lock-In Gate:** server-side validation at lock — confidence ≥ 0.7 OR user_edited; **must_haves + non_goals respected** (regex check); violations require explicit override ADR. **must_haves + non_goals shown as visible rails** in panel. 1-hour inactivity → `pending_user_review` (Codex P2 #15).
-> - **4.7 Verifier:** No "trivial fix skip verifier" exception. Same trimmed prompt as 3.5 + same allowlist + escape hatch.
-> - **4.8 Trace Report:** anti-gaslight bedrock confirmation block in every report. AC regression check HARD before integrate. Stored permanently in `iterations.trace_report` for cross-session audit.
-> - **Phase ledger transitions:** `iteration_items.status: pending-review → locked → building → verifier-pending → verified → integrated` written to `iteration_item_transitions`. Features touched: `INTEGRATED → REGRESSED → BUILDING → VERIFIED → INTEGRATED`.
-> - 7 anti-gaslight detection rules (per `references/anti-gaslight-rules.md`) run at 4.7 verifier-result and 4.8 integrate; HARD halt on violations.
+> **POST-AUDIT AMENDMENTS (2026-04-29):** applied (changelog archived at `_archive/references/stage-amendments.md`; restated lines collapsed 2026-06-10 — confidence gate, no-skip verifier, AC regression are in the body; detection rules per `references/anti-gaslight-rules.md`). Operative deltas:
+> - **4.2 Classify:** uses lite context-packet, NOT full SO1; implicit/inferred items get `why_inferred` + forced user confirmation
+> - **4.3 Lock-In Gate:** **must_haves + non_goals shown as visible rails** in the panel; rails violations need an explicit override ADR; 1-hour inactivity → `pending_user_review` (Codex P2 #15)
+> - **Phase ledger:** `iteration_items.status: pending-review → locked → building → verifier-pending → verified → integrated` written to `iteration_item_transitions`; touched features go `INTEGRATED → REGRESSED → BUILDING → VERIFIED → INTEGRATED`
 
 The continuous-improvement loop. Each iteration is its own mini-pipeline with the same anti-gaslighting protections as the main flow. **The 4.3 lock-in gate is the most important step in this entire skill** — it's the explicit anti-gaslighting bridge between user intent and Claude's work.
 

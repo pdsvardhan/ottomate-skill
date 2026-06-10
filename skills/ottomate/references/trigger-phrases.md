@@ -1,15 +1,18 @@
 # Trigger Phrases
 
-> **POST-AUDIT AMENDMENTS (2026-04-29) — Detection discipline (CC-2):**
-> 1. **Position-aware:** phrases fire only at message **start** OR as **entire message**. "let's move on to discuss the API design" doesn't fire "let's move on" advance.
-> 2. **Phase-aware:** "next" disambiguates by **active context** — next-step / next-item / next-stage based on what dialog is open.
-> 3. **Question-mark suppresses** trigger firing (interrogatives, not commands). "Ready to test what?" doesn't fire "ready to test" trigger.
-> 4. **Exclusion list:** "next time" / "next week" / "next month" → not "next" advance. "I want to pause that feature" → not "pause" trigger.
-> 5. Implementation: regex-based but phase-context-aware. Skill scans every message; ambiguous matches surface AskUserQuestion to disambiguate.
->
-> Phrases below are unchanged; the new rules govern WHEN they fire.
+> **POST-AUDIT AMENDMENTS (2026-04-29):** applied — the CC-2 detection discipline was the operative delta; it now lives in the "Detection discipline" section below (banner collapsed 2026-06-10).
 
 The skill detects user phrases as transition signals. Detection runs continuously during work — at any sub-step, if the user types one of these, the skill advances or wraps.
+
+## Detection discipline (CC-2, 2026-04-29)
+
+These rules govern WHEN a phrase fires:
+
+1. **Position-aware:** phrases fire only at message **start** OR as **entire message**. "let's move on to discuss the API design" doesn't fire "let's move on" advance.
+2. **Phase-aware:** "next" disambiguates by **active context** — next-step / next-item / next-stage based on what dialog is open.
+3. **Question-mark suppresses** trigger firing (interrogatives, not commands). "Ready to test what?" doesn't fire "ready to test" trigger.
+4. **Exclusion list:** "next time" / "next week" / "next month" → not "next" advance. "I want to pause that feature" → not "pause" trigger.
+5. The skill scans every message; ambiguous matches surface AskUserQuestion to disambiguate (see the implementation note at the bottom — Claude is the parser, these are judgment rules).
 
 ## Forward transitions
 

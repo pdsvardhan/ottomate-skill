@@ -1,10 +1,6 @@
 # Stage 3.6 — Multi-Tier Testing (renumbered 3.5 → 3.6 post-audit)
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** (applied; changelog archived at `_archive/references/stage-amendments.md`):
-> - Tests come from AC strictly (1 spec per AC); coder authors at 3.4
-> - Trivy + Grype + OSV-Scanner (NOT Snyk per Codex P1 #11)
-> - Lost Pixel for visual regression
-> - Tag-based test selection in Stage 4.6 mini-build (only tests touching changed files)
+> **POST-AUDIT AMENDMENTS (2026-04-29):** applied; all deltas are restated in the body below or in `stage-4-mini-pipeline.md` (4.6 tag-based selection); the only non-body detail: the per-AC test specs are AUTHORED BY THE CODER at 3.4. (Banner collapsed 2026-06-10; changelog archived at `_archive/references/stage-amendments.md`.)
 
 After every feature's verifier-approved code, run the right tier. Anti-gaslighting bedrock: tests come from acceptance criteria, not from the coder's optimism.
 

@@ -1,12 +1,9 @@
 # Stage 3.5 — Verifier Sub-Agent (Anti-Gaslighting; renumbered 3.4 → 3.5 post-audit)
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** (applied; changelog archived at `_archive/references/stage-amendments.md`):
-> - Stub patterns externalized to `data/stub-patterns.md` (referenced not inlined; saves ~2-3K tokens per dispatch)
-> - Output schema referenced from `schemas/verification-report.schema.yaml` (not inlined in prompt)
+> **POST-AUDIT AMENDMENTS (2026-04-29):** applied (changelog archived at `_archive/references/stage-amendments.md`; prompt-location + Stage-4.7 lines collapsed 2026-06-10 — restated in body / stage-4 ref). Operative deltas:
+> - Stub patterns externalized to `data/stub-patterns.md` (canonical; the table below is illustrative) + output schema from `schemas/verification-report.schema.yaml` — neither is inlined in the dispatch prompt
 > - **`verifier_prompt_version` field stamped** on every verification_reports row (audit chain)
 > - Allowlist + escape hatch (Codex Round 2 #6): `**/*.test.ts`, `tests/**`, `docs/**` allowlisted; `// @intentional-placeholder` annotation requires lock-in approval count match
-> - Updated prompt at `prompts/verifier-prompts.md` (~4K target, down from ~9K)
-> - Stage 4.7 uses identical 4-pass logic per item (no "trivial fix skip verifier" exception)
 
 **Mandatory step.** Runs after each feature's code generation, BEFORE comprehensive testing. Catches stubs, lies, and "fake done" before tests give false positives on stub data.
 

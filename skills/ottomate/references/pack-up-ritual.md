@@ -1,11 +1,6 @@
 # Pack Up — Session-End Ritual
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** (applied; changelog archived at `_archive/references/stage-amendments.md`):
-> - **Step 2 (mirror sync):** Add drift detection BEFORE write (hash compare DB-canonical vs file). Drift surfaces via AskUserQuestion (import / overwrite / abort). drift_resolutions row written.
-> - **NEW step "Pack-Up Reconciliation Lock"** (Codex Round 2): final session-close screen showing done / not-done / deferred / risks-changed / commits — user confirms before push.
-> - **Step 5 (plugin auto-push):** only if remote exists (ottomate plugin currently no remote — skip with notice).
-> - **Anti-gaslight rules surface here:** SOFT warnings in pack-up summary if any rule violations detected (per `references/anti-gaslight-rules.md`).
-> - All YAML mirror writes idempotent + hash-checked (skip if unchanged).
+> **POST-AUDIT AMENDMENTS (2026-04-29):** applied; operative deltas (drift detection, reconciliation lock, anti-gaslight surfacing) are merged into the body below (banner collapsed 2026-06-10; changelog archived at `_archive/references/stage-amendments.md`). The stale "plugin has no remote" caveat was removed — the plugin pushes to Gitea `pdsv/ottomate` (SKILL.md rule 15).
 
 Triggered by: "pack up" / "done" / "good night" / "wrap up" / "that's all" / equivalent.
 
@@ -20,6 +15,8 @@ Check there are no half-edited files or incomplete dialogs:
 - Any uncommitted local edits to project files → confirm before commit
 
 ### 2. Sync Ottomate DB → YAML mirrors
+
+**Drift detection runs BEFORE any write** (hash compare DB-canonical vs file). Drift surfaces via AskUserQuestion (import / overwrite / abort); a `drift_resolutions` row is written.
 
 For every SO1 / SO2 / SO3 doc affected during this session:
 - Read canonical state from Ottomate DB
@@ -51,7 +48,9 @@ Append entry to `iteration-log.md` (per project) summarizing this session:
 **Next session context:** <what to pick up>
 ```
 
-### 4. Commit + push
+### 4. Pack-Up Reconciliation Lock, then commit + push
+
+**Before pushing** (Codex Round 2): show the final session-close screen — done / not-done / deferred / risks-changed / commits — and get user confirmation.
 
 ```bash
 ssh pdsv@192.168.1.10 'cd /mnt/storage/websites/<slug> && \
@@ -87,6 +86,8 @@ Same for `~/.claude/plugins/vault7a-ops/` (server-ops skill).
 - Set `last_session_at` timestamp
 
 ### 8. Show session summary to user
+
+Anti-gaslight rule violations surface here as SOFT warnings (run `GET /api/anti-gaslight/violations?project_slug=<slug>`; per `references/anti-gaslight-rules.md`).
 
 ```
 🧳 Pack up complete.

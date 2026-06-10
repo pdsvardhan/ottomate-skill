@@ -1,10 +1,7 @@
 # Stage 2.2 — UI Master Plan
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** (applied; changelog archived at `_archive/references/stage-amendments.md`):
-> - Replace single-shot "propose 2-3 themes" with **3-stage panel**: Stage A (2-3 directions) → Stage B (flesh-out + sample component preview) → Stage C (lock-in gate)
-> - **WCAG AA contrast HARD gate** (any sub-threshold pair blocks lock until fixed)
-> - Light palette derived mechanically from dark via culori/chroma-js
-> - Type scale + spacing + breakpoints derived from chosen ratios
+> **POST-AUDIT AMENDMENTS (2026-04-29):** applied (changelog archived at `_archive/references/stage-amendments.md`; restated items collapsed 2026-06-10 — the 3-stage panel + light-palette derivation live in the body Workflow). Operative deltas:
+> - **WCAG AA contrast HARD gate** — any sub-threshold pair blocks lock until fixed
 > - `ui_master_plans.version` row; Stage 4 changes require new version + ADR
 > - Conflict detection vs `Doc 1.preferences` (0.8) at every Claude pass
 

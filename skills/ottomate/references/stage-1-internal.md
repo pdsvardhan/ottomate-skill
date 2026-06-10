@@ -1,13 +1,6 @@
 # Stage 1 Internal Process — Consume ND1 → Produce SO1
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** This file's sub-step 2-11 behavior is amended per the locked audit. (Deltas below were applied; original changelog archived at `_archive/references/stage-amendments.md`.) Critical inline changes:
-> - **Sub-step 1:** ND1 archived in 1.1 (not 1.10). Transactional all-or-nothing stub creation. Initial staging ADR shell created here.
-> - **Sub-step 2:** Most fields already set in Stage 0 — only fill `summary.tagline` (template + Claude polish), `summary.short_description` (Claude composes), `tags` (mechanical extraction). target_devices captured at 0.8.
-> - **Sub-step 3-5 (Doc 3/2/4):** Per-feature/flow/page Claude **active critique pass** + cross-entity Claude pass for completeness gaps. Paginated card panel (10/page; soft warning at >30 features). Per `references/output-style.md`.
-> - **Sub-step 7 (Doc 5):** Skip if `has_data_layer=false`. Claude designs schema from features + sketches.
-> - **Sub-step 8 (Doc 7):** Catalog matching via `data/risk-rules.yaml` (mechanical) + Claude refinement pass for project-specific risks.
-> - **Sub-step 10:** See `references/anti-gaslight-rules.md` for the 7 detection rules; runs at every transition.
->
+> **POST-AUDIT AMENDMENTS (2026-04-29):** applied; the per-sub-step deltas are merged into the body below (banner collapsed 2026-06-10; original changelog archived at `_archive/references/stage-amendments.md`).
 > Source-substring rule applies to every Claude extraction.
 > Phase ledger transitions written to `feature_phase_transitions` etc. per `references/ledger-tables.md`.
 
@@ -23,6 +16,8 @@ After preprocessing (Stage 0) produces `staging/ND1.yaml`, this reference govern
 ## 11 sub-steps
 
 ### Sub-step 1: ND1 Consumption + Carryover Application
+
+Amendments (2026-04-29): the staging ND1 is archived HERE in sub-step 1 (not at handoff); stub creation is transactional all-or-nothing; the initial staging ADR shell (filled at sub-step 9) is created here.
 
 Apply the carryover map from ND1 → SO1:
 
@@ -43,13 +38,13 @@ Apply the carryover map from ND1 → SO1:
 
 ### Sub-step 2: Doc 1 Completion (Project Overview)
 
-From ND1: `proposed_slug`, `proposed_display_name`, intent fields, preferences.
+From ND1: `proposed_slug`, `proposed_display_name`, intent fields, preferences. Most fields were already set in Stage 0 — only fill `summary.tagline` (template + Claude polish), `summary.short_description` (Claude composes), `tags` (mechanical extraction).
 
 AI defaults:
 - `current_status`: `building` (default)
 - `lifecycle_phase`: `ideating` (transitions to `building` when Stage 2 starts)
 - `scope_size`: estimate from features count + complexity (nano: 1-3 features, S: 4-7, M: 8-15, L: 16-30, XL: 30+)
-- `target_devices`: ask user via `AskUserQuestion` (`desktop` / `mobile` / `tablet` / `both`)
+- `target_devices`: carried from ND1 (captured at Stage 0.8) — only re-ask via `AskUserQuestion` if missing
 - `hosting_target`: default `vault7a-docker`; user confirms if non-default
 - `port`: AI proposes next free port (query Ottomate DB for existing); user confirms
 - `public_url`: auto-generate `https://<slug>.vault7a.xyz`
@@ -58,6 +53,8 @@ AI defaults:
 Ask user via `AskUserQuestion` for confirmations on non-defaults. Write to Ottomate DB + `overview.yaml` mirror.
 
 ### Sub-step 3: Doc 3 Features Refinement
+
+Sub-steps 3-5 (Doc 3/2/4) each run a per-entity Claude **active critique pass** plus a cross-entity Claude pass for completeness gaps. Review uses the paginated card panel (10/page; soft warning at >30 features), rendered per `references/output-style.md`.
 
 For each entry in `features_sketch`:
 - AI assigns `feature_id` (`feat-<slug>`)
@@ -129,8 +126,8 @@ If `has_data_layer = false`: write only `has_data_layer: false` marker, skip res
 
 Apply carryover seeds (`integrations_initial`, `auth_intent`).
 
-For risk_concerns_initial from ND1:
-- Match each to global `risks_catalog` (e.g., "no API auth" → catalog entry `no-auth`)
+For risk_concerns_initial from ND1 (optional since 2026-06-10 — may be empty):
+- Match each to global `risks_catalog` (e.g., "no API auth" → catalog entry `no-auth`); catalog matching via `data/risk-rules.yaml` (mechanical) + a Claude refinement pass for project-specific risks
 - For each match: ask user `affected_artifact` (which feature/page/integration/secret/data_table) + `status` (`open` / `accepted`) + `sunset_date` if accepted
 
 Dialog for policies:
@@ -174,6 +171,8 @@ Commit to project repo.
 
 ### Sub-step 10: VERIFICATION (5-pass)
 
+The anti-gaslight detection rules (see `references/anti-gaslight-rules.md`; live check via `GET /api/anti-gaslight/violations`) also run at this and every transition.
+
 Run all 5 verification passes:
 
 **A. Format checks**
@@ -211,7 +210,7 @@ Run all 5 verification passes:
 ### Sub-step 11: Handoff
 
 If verification passes:
-1. Move `staging/ND1.yaml` → `staging/archive/ND1-<YYYY-MM-DD>-<HHMMSS>.yaml`
+1. Confirm `staging/ND1.yaml` was archived to `staging/archive/ND1-<YYYY-MM-DD>-<HHMMSS>.yaml` (done at sub-step 1 since the 2026-04-29 audit — not here)
 2. Append iteration log entry with Stage 1 summary
 3. Commit + push to Gitea
 4. Update Ottomate `lifecycle_phase: building` (transitions from `ideating`)

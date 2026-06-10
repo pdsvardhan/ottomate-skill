@@ -1,9 +1,6 @@
 # Stage 3.2 — Pipeline Setup (CI tools)
 
-> **POST-AUDIT AMENDMENTS (2026-04-29):** (applied; changelog archived at `_archive/references/stage-amendments.md`):
-> - Trivy + Grype + OSV-Scanner (NOT Snyk per Codex P1 #11) — locked
-> - Lost Pixel for visual regression (NOT Percy SaaS) — locked
-> - HARD halt before 3.3 if scaffold CI red, Lighthouse <80, or Trivy HIGH+
+> **POST-AUDIT AMENDMENTS (2026-04-29):** applied (changelog archived at `_archive/references/stage-amendments.md`; tool choices + HARD-halt lines collapsed 2026-06-10 — restated in the body tables and exit checks). Operative delta:
 > - Cloudflare Tunnel route check at deploy gate (per audit Missing-4)
 
 After scaffold lands on main. Configure CI to run all the always-on checks before any feature build starts.
