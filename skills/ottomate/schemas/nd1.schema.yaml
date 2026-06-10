@@ -13,6 +13,8 @@ description: |
   Mandatory fields populated for all journey types.
   Conditional fields populated when applicable (Type 2 sources, data projects, etc.)
 
+# likes / dislikes / risk_concerns_initial removed from required 2026-06-10
+# (ceremony drop per redesign — they remain capturable, just never mandatory)
 required:
   - proposed_slug
   - proposed_display_name
@@ -23,13 +25,10 @@ required:
   - target_users
   - non_goals_initial
   - success_criteria_initial
-  - likes
-  - dislikes
   - must_haves
   - avoid
   - features_sketch
   - flows_sketch
-  - risk_concerns_initial
   - created_at
   - session_id
 
@@ -120,11 +119,12 @@ properties:
   success_criteria_initial:
     type: array
     items: {type: string}
-    minItems: 3
+    minItems: 1   # ceremony floor removed 2026-06-10 per redesign (was 3)
     maxItems: 10
     description: "Qualitative markers — how we know it's working"
 
-  # ===== Preferences (mandatory) =====
+  # ===== Preferences =====
+  # likes / dislikes are optional style hints — captured when offered, never displayed (2026-06-10)
   likes:
     type: array
     items: {type: string}
@@ -137,6 +137,7 @@ properties:
     type: array
     items: {type: string}
 
+  # DEPRECATED 2026-06-10: fold into non_goals; kept for backward-compat reads
   avoid:
     type: array
     items: {type: string}
@@ -163,9 +164,10 @@ properties:
         title: {type: string}
         rough_description: {type: string}
 
+  # Fully optional since 2026-06-10 (ceremony floor removed; was required + minItems 3).
+  # Capture risk concerns when the dialog surfaces them; Stage 1 sub-step 8 catalogs risks regardless.
   risk_concerns_initial:
     type: array
-    minItems: 3   # Stage 0-to-1 gate requires >=3; encoded 2026-06-10
     items:
       type: object
       properties:

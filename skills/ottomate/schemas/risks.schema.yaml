@@ -1,15 +1,22 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
 $id: "ottomate://schemas/risks.schema.yaml"
-title: "Doc 7 — Risks (post-Codex P1 #10 — resolved-not-deleted)"
+title: "Doc 7 — Risks (thinned)"
 description: |
-  Per-project risks, policies, third-party services, auth, secrets.
-  Risks use `resolved` status (with resolved_at + resolution_summary) instead of
-  deletion (per Codex P1 #10).
-  Polymorphic FKs replaced with explicit per-target join tables (per Codex P2 #17):
-  affected_features, affected_pages, affected_integrations, affected_secrets,
-  affected_data_tables.
+  Per-project risk instances + simple security notes.
+
+  THINNED 2026-06-10; full compliance apparatus archived in git history.
+  Removed: policies (incl. encryption/key-management/retention/rate-limiting/
+  abuse-protection), third_party_services, auth_config, secrets inventory,
+  compliance refs. Exposure/access-control/auth capture still happens via the
+  tracker routes (/policies, /auth-config — server-side zod is authoritative);
+  this schema no longer mirrors that apparatus.
+
+  Risks use `resolved` status (resolved_at + resolution_summary), never deletion.
+  The tracker /risk-instances route validates risk_type_id / status /
+  severity_override / notes (see tracker-api-inventory.md); link routes exist
+  for features and pages only.
 type: object
-required: [version, project_slug, policies]
+required: [version, project_slug]
 
 properties:
   version: { type: string, const: "1" }
@@ -50,24 +57,13 @@ properties:
         notes:
           type: string
 
-        # Explicit per-target affected lists (Codex P2 #17)
+        # Affected-artifact links (only kinds with live link routes — 2026-06-10)
         affected_features:
           type: array
           items: { type: string, pattern: "^feat-[a-z][a-z0-9-]+$" }
         affected_pages:
           type: array
           items: { type: string, pattern: "^page-[a-z][a-z0-9-]+$" }
-        affected_integrations:
-          type: array
-          items: { type: string }
-          description: "Names from third_party_services list"
-        affected_secrets:
-          type: array
-          items: { type: string }
-          description: "Secret names (NOT values)"
-        affected_data_tables:
-          type: array
-          items: { type: string }
 
       allOf:
         - description: "Constraint: risk must affect at least one artifact (no floating risks)"
@@ -76,12 +72,6 @@ properties:
               required: [affected_features]
             - properties: { affected_pages: { minItems: 1 } }
               required: [affected_pages]
-            - properties: { affected_integrations: { minItems: 1 } }
-              required: [affected_integrations]
-            - properties: { affected_secrets: { minItems: 1 } }
-              required: [affected_secrets]
-            - properties: { affected_data_tables: { minItems: 1 } }
-              required: [affected_data_tables]
         - description: "If accepted, sunset_date required"
           if:
             properties: { status: { const: accepted } }
@@ -93,115 +83,19 @@ properties:
           then:
             required: [resolved_at]
 
-  # ===== Policies (single integrated block per project) =====
-  policies:
-    type: object
-    required: [exposure, access_control, data_sensitivity_tier]
-    properties:
-      exposure:
-        enum: [public, intranet-only, invite-only, never-public]
-        default: never-public
-      access_control:
-        enum: [anonymous-ok, auth-required, roles-defined]
-        default: anonymous-ok
-      roles:
-        type: array
-        items:
-          type: object
-          properties:
-            name: { type: string }
-            permissions: { type: array, items: { type: string } }
-      data_sensitivity_tier:
-        enum: [none, personal-pii, financial, business-critical, mixed]
-        default: none
-      encryption_at_rest:
-        type: boolean
-      encryption_in_transit:
-        type: boolean
-      key_management:
-        enum: [none, env-vars, infisical, vault, aws-kms]
-      retention_by_data_type:
-        type: array
-        items:
-          type: object
-          properties:
-            data_type: { type: string }
-            duration: { type: string }
-            reason: { type: string }
-      rate_limiting:
-        type: object
-        properties:
-          enabled: { type: boolean }
-          requests_per_minute: { type: ["integer", "null"] }
-          requests_per_second: { type: ["integer", "null"] }
-      abuse_protection:
-        type: array
-        items:
-          enum: [captcha, fail2ban, blocklist, none]
-
-  # ===== Third-party services =====
-  third_party_services:
+  # ===== Security notes (simple structure replacing the policies apparatus) =====
+  security_notes:
     type: array
+    description: "Free-form security observations — auth, exposure, secrets handling, third-party caveats"
     items:
       type: object
-      required: [name, purpose]
+      required: [note]
       properties:
-        name: { type: string }
-        purpose: { type: string }
-        data_shared: { type: string }
-        auth_method: { enum: [anonymous, api-key, oauth, basic-auth, bearer-token] }
-        failure_mode: { type: string, description: "Graceful degradation plan when service down" }
-        terms_acceptance: { enum: [accepted, pending, declined, n-a] }
-        compliance_imposed:
-          type: array
-          items: { type: string }
-
-  # ===== Auth =====
-  auth_config:
-    type: object
-    properties:
-      strategy:
-        enum: [none, password, magic-link, oauth, sso, custom]
-        default: none
-      providers:
-        type: array
-        items: { type: string }
-        description: "If oauth: list of providers (google/github/etc.)"
-      session_management:
-        enum: [client-jwt, server-session, cookie]
-      mfa_supported:
-        type: boolean
-      auth_library:
-        enum: [better-auth, auth-js, lucia, clerk, supabase-auth, custom, n-a]
-
-  # ===== Secrets (NO VALUES, only inventory) =====
-  secrets:
-    type: array
-    items:
-      type: object
-      required: [name, where_stored, what_for]
-      properties:
-        name:
-          type: string
-          description: "Secret name only — values stored in Infisical/env, NEVER in this file"
-        where_stored:
-          enum: [env-vars, infisical, vault, aws-kms, .env-file]
-        what_for:
-          type: string
-          description: "Purpose, e.g. 'OpenAI API auth', 'DB connection string'"
-        rotation_cadence:
-          enum: [never, monthly, quarterly, annual, ad-hoc]
-        last_rotated:
-          type: ["string", "null"]
-          format: date-time
-
-  # ===== Cross-cutting =====
-  last_security_review:
-    type: ["string", "null"]
-    format: date-time
-  compliance_checklist_refs:
-    type: array
-    items: { type: string, description: "Links/refs to OWASP/GDPR/SOC2 etc." }
+        category:
+          enum: [auth, exposure, secrets, third-party, data, other]
+        note: { type: string }
+        severity: { enum: [low, medium, high, critical] }
+        noted_at: { type: string, format: date-time }
 
   tags:
     type: array
