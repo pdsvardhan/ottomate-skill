@@ -1,12 +1,12 @@
 # Ottomate — status (generated)
 
-> Generated 2026-06-10T17:39:44+05:30 by `scripts/generate-status.sh`. Do not hand-edit (adr-016:
+> Generated 2026-06-10T19:43:29+05:30 by `scripts/generate-status.sh`. Do not hand-edit (adr-016:
 > every hand-written count in the previous STATUS drifted wrong).
 
-- Health: `{"status":"ok","version":"0.1.0","port":"3000","db":"connected","timestamp":"2026-06-10T12:09:44.068Z"}`
-- API route files: 106
-- Tracker repo head: c0b8901 2026-06-10 Regenerate API inventory: +verification-reports
-- Latest off-disk backup: ottomate-20260610T115318.db
+- Health: `{"status":"ok","version":"0.1.0","port":"3000","db":"connected","timestamp":"2026-06-10T14:13:29.719Z"}`
+- API route files: 105
+- Tracker repo head: 14f700d 2026-06-10 Regenerate API inventory: architecture GET+POST
+- Latest off-disk backup: ottomate-20260610T174106.db
 
 ## Projects (live)
 
