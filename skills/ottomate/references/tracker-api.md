@@ -59,7 +59,7 @@ Failed auth: 401 (no/malformed header) or 403 (wrong token).
 
 ## Per-doc CRUD pattern (consistent across all SO1 docs)
 
-For each doc (overview, flows, features, pages-components, data, risks, decisions):
+For each doc (overview via `/projects/{slug}`, flows, features, pages, data, risks, decisions). NOTE the real route segments differ from the doc names — verify against `tracker-api-inventory.md`:
 
 ```
 GET    /api/projects                                 List all projects
@@ -74,7 +74,14 @@ GET    /api/projects/{slug}/flows/{flow_id}          Flow detail
 PATCH  /api/projects/{slug}/flows/{flow_id}          Update flow
 DELETE /api/projects/{slug}/flows/{flow_id}          Delete flow
 
-# Same pattern for: /features, /pages, /components, /data, /risks, /decisions
+# Same CRUD shape for (REAL segments, per inventory):
+#   /features  /pages                         (named as the doc)
+#   /data-sources        (Doc 5 "data";   NOT /data)
+#   /risk-instances      (Doc 7 "risks";  NOT /risks; resolve-not-delete via /resolve)
+#   /adr-index           (Doc 8 "decisions"; NOT /decisions)
+#   /ui-master-plan (PUT) · /architecture (POST, per-kind diagrams)
+# There is no per-project /components route — components live under pages + the
+# global /master-components catalog.
 ```
 
 ## Stage 0 + cross-cutting endpoints (added post-audit 2026-04-29)
