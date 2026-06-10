@@ -71,7 +71,7 @@ journey_detection:
 
 ## 0.3 — Doc Translation (Type 2 only)
 
-Replaces the old 13-step T2P with 8 phases (A-H). See full spec at `references/stage-0-doc-translation.md` (deferred file, but design is in `DESIGN_LOCK.md`).
+Replaces the old 13-step T2P with 8 phases (A-H). The 8-phase summary below IS the operative spec; the full original design is archived in the `_archive/` planning docs (no separate doc-translation reference exists).
 
 **Phases:**
 - A: Mechanical inventory (file extension classification → F1/F2/F3/F4)
@@ -178,7 +178,7 @@ Problem statement only. If Type 2 with pre-fill from 0.3: show extracted draft +
 Three multiselects in one panel:
 - target_users (≥1; pre-filled from extracted_hints.target_users_candidates)
 - non_goals_initial (≥1; templates seed + Claude refines for project specificity per amendment D-AMEND.6)
-- success_criteria_initial (≥3, max 10; templates seed + Claude refines)
+- success_criteria_initial (≥1, max 10; templates seed + Claude refines — ceremony floor removed 2026-06-10)
 
 Each list shows AI-proposed candidates + "Add custom" + (Type 2) doc-extracted entries.
 
@@ -195,7 +195,7 @@ Heuristic: contains number / time-unit / specific verb (returns, renders, comple
 **Default OFF (anti-gaslight).** No auto-rewrite. Show raw verbatim + AskUserQuestion: *"Edit your phrasing? [No, keep raw / Yes, I'll edit / Show me a tightened version]"*. Only on explicit user opt-in does Claude rewrite.
 
 ### Completeness gate
-At end of Turn 2: validate problem ≥10 chars, target_users ≥1, non_goals ≥1, success ≥3. If short → AI proposes more candidates with rejection history.
+At end of Turn 2: validate problem ≥10 chars, target_users ≥1, non_goals ≥1, success ≥1 (floor relaxed 2026-06-10). If short → AI proposes more candidates with rejection history.
 
 ---
 

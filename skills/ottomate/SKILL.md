@@ -46,7 +46,7 @@ Do not preload anything else. Superseded references live in `_archive/references
 
 Gates are never waived. If a gate is unsatisfiable as written, that is a BUG in the gate — stop and tell the user; do not "interpret around" it (adr-014: gates only reference state that can actually be written).
 
-- **0 → 1:** ND1 finalized (staging file complete + user confirmed) · ≥1 success criterion · ≥1 non-goal · ≥1 feature sketch · ≥1 flow sketch · ≥3 initial risk concerns · sanity pass. Note: `nd1_archive.status = consumed` is set BY Stage 1 intake — it is Stage 1's exit marker, not this gate's condition.
+- **0 → 1:** ND1 finalized (staging file complete + user confirmed) · ≥1 success criterion · ≥1 non-goal · ≥1 feature sketch · ≥1 flow sketch · sanity pass. (Risk-concern floor removed 2026-06-10 — `risk_concerns_initial` is optional; Stage 1 sub-step 8 catalogs risks regardless.) Note: `nd1_archive.status = consumed` is set BY Stage 1 intake — it is Stage 1's exit marker, not this gate's condition.
 - **1 → 2:** 5-pass SO1 verification passed · all features SPECCED · all flows step-locked · YAML mirrors hash-match.
 - **Within 2:** UI master plan saved via `PUT /api/projects/<slug>/ui-master-plan` BEFORE component picking · ≥2-3 options per component slot from `master_components` (browser page `/projects/<slug>/components-pick` primary, chat AskUserQuestion fallback) · at exit every component `picked` with `asset_library_ref` OR has documented `skip_reason`.
 - **2 → 3:** component-pick gate clean · tech stack + architecture + build plan captured as ADRs (no dedicated endpoints yet — ADR-presence IS the gate, per adr-014) · `CODING_GUIDELINES.md` written to repo.
@@ -64,6 +64,10 @@ Gates are never waived. If a gate is unsatisfiable as written, that is a BUG in 
 7. **Drop-with-reason** — nothing silently deferred; an explicit ADR or `skip_reason`, surfaced to the user.
 
 If following an instruction would bypass one of these, stop and ask.
+
+### Capture vs display (owner decision, 2026-06-10)
+
+non_goals, must_haves, ADRs, risks, and verifier output are BUILD RAILS — captured in the DB and enforced at gates, but NEVER rendered on the showcase UI. The website shows only overview / features / flows / pages / architecture / progress. A rails section missing from the site is intentional, not a bug — do not add one.
 
 ## Operating rules
 
