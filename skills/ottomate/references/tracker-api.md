@@ -120,6 +120,33 @@ POST /api/skill-events                                   (timeline log)
      Body: { project_slug?, event_type, session_id, evidence?, ... }
 ```
 
+### Live-verified shapes + gotchas (comwatch Stage 0+1 run, 2026-06-12)
+
+- **Page ids are GLOBALLY unique across projects** (like ADR ids). `page-home` etc.
+  collide with other projects' pages — always use `page-<slug>-<name>`.
+- **Flow/page detail GETs return children at the TOP level**, not nested:
+  `{flow, steps, pre_conditions, edge_cases}` / `{page, entry_points, components}`.
+- **Link reads live at `GET /api/graph/{slug}`** → `{nodes: {flows,features,pages,components},
+  edges: {flow_features, flow_pages, page_features, page_components}}` (keyed lists,
+  e.g. `{flow_id, feature_id}`). There is no `?project_slug=` form — slug is a path segment.
+- **ADR↔risk links require a body**: `PUT .../adr-index/{id}/links/risks/{riskInstanceId}`
+  with `{"kind": "instance"}` (or `"type"`). riskId = numeric risk_instance id.
+  ADR↔feature links accept an empty JSON body.
+- **`POST intent-drafts` is capture-only + idempotent** (409 if core_idea_raw differs;
+  no PATCH; sketch fields exist in the table but no route writes them). **No nd1_archive
+  route exists either** (table only) — `staging/ND1.yaml` is the canonical Stage 0 artifact;
+  document this in the ND1's known_drift block.
+- **`risks_catalog` has no write route**; risk_instances 404 unknown `risk_type_id`s.
+  Map project-specific risks to nearest catalog entries (notes + severity_override)
+  and record unmappable ones in the staging ADR. (Catalog write API tracked as an
+  app improvement, 2026-06-12.)
+- **Gitea repo creation**: push-to-create is OFF. Create via
+  `POST http://192.168.1.10:3300/api/v1/user/repos` with `Authorization: token $(cat ~/.gitea-token)`
+  (server-side), then `git remote add origin ssh://gitea/pdsv/<slug>.git && git push -u origin master`.
+- **YAML mirrors**: `cd /opt/homeserver/ottomate && npm run mirror:write -- <slug>` —
+  also takes a DB backup. A "1 drift warning" on first run after DB edits is the writer
+  resolving DB-newer-than-mirror; re-run to confirm 0.
+
 ## Stage 1 endpoints
 
 ```
