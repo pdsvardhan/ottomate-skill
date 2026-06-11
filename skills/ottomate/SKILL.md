@@ -72,7 +72,7 @@ non_goals, must_haves, risks, and verifier output are BUILD RAILS — captured i
 ## Operating rules
 
 1. Everything on the server; local files are SCP staging.
-2. DB canonical; YAML mirrors written on commit + pack-up.
+2. DB canonical; YAML mirrors written + committed + pushed at every milestone — lock-in, integrate, pack-up — not only at pack-up (adr-018 Gitea recovery net).
 3. Be opinionated; choices via AskUserQuestion, never prose questions.
 4. Pull before work; push after.
 5. Scope escalations are explicit — ADR required.
@@ -86,6 +86,8 @@ non_goals, must_haves, risks, and verifier output are BUILD RAILS — captured i
 13. Bearer token on all mutations.
 14. ADR ids: `adr-NNN-<short-slug>` (API regex-enforces; `adr.schema.yaml` matches).
 15. Plugin and app repos are pushed at pack-up; STATUS.md regenerated via `scripts/generate-status.sh`, never hand-edited (adr-016).
+16. **ONE DOOR (adr-018):** never open `data/ottomate.db` with host `sqlite3` or any second SQLite client while the container runs — both 2026-06 data losses came from exactly that (WAL orphaned-shm cascade). All reads/writes via the API. Forensic read needed? `POST /api/backup` first, then read the dead snapshot. A mutation answering 503 `db_write_path_unsafe`, or `/api/health` returning `degraded`, is the split tripwire: STOP, rescue per adr-015, never restart first.
+17. Decisions are showcase content (iter-17): every new ADR gets a recruiter-readable title, the `curated` marker, and either one category tag (`cat:product` / `cat:system` / `cat:security` / `cat:reliability`) to display or no cat-tag to stay hidden. Curation record: tracker `docs/decisions-curation.md`.
 
 ## Output style + triggers
 

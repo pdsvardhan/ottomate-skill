@@ -41,7 +41,7 @@ Free, text-based, version-controllable. Author per the portfolio documentation l
   - **ux** — a user journey complex enough to need a visual map
   - **api** — an external/public API surface worth diagramming
 
-Curated decisions render below the diagrams automatically (accepted, non-superseded `adr-index` rows) — see adr-017; rails (must_haves/non_goals/risks/verifier) stay hidden.
+Curated decisions render below the diagrams automatically, grouped by category (iter-17): accepted, non-superseded `adr-index` rows carrying `cat:product` / `cat:system` / `cat:security` / `cat:reliability` show under recruiter-facing headings; `curated`-marked rows without a cat-tag stay hidden with a count line. Author every new ADR with a recruiter-readable title + `curated` + one cat-tag (or deliberately no cat-tag to hide). Rails (must_haves/non_goals/risks/verifier) stay hidden — adr-017/adr-018.
 
 ### Persist via the app (canonical)
 

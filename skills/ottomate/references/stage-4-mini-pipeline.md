@@ -170,6 +170,7 @@ Output: per-item `verification_report` blocks merged into the iteration's report
 
 When all items are verified:
 1. Merge iteration branch to main
+1b. Milestone mirror (adr-018): `npm run mirror:write -- <slug>` on the host, then commit + push the project repo — the Gitea recovery net fires at integrate, not only at pack-up
 2. Run final regression check (existing acceptance criteria for affected features must still pass)
 3. Update Ottomate:
    - Bugs: `status: open → fixed` with verifier evidence

@@ -1,12 +1,12 @@
 # Ottomate — status (generated)
 
-> Generated 2026-06-11T18:00:51+05:30 by `scripts/generate-status.sh`. Do not hand-edit (adr-016:
+> Generated 2026-06-11T23:59:08+05:30 by `scripts/generate-status.sh`. Do not hand-edit (adr-016:
 > every hand-written count in the previous STATUS drifted wrong).
 
-- Health: `{"status":"ok","version":"0.1.0","port":"3000","db":"connected","timestamp":"2026-06-11T12:30:51.575Z"}`
+- Health: `{"status":"ok","version":"0.1.0","port":"3000","db":"connected","db_fds":"clean","timestamp":"2026-06-11T18:29:08.246Z"}`
 - API route files: 105
-- Tracker repo head: d131fcc 2026-06-11 iter-16 wrap: regenerate API inventory
-- Latest off-disk backup: ottomate-20260611T023001.db
+- Tracker repo head: fdb2344 2026-06-11 iter-17 wrap: api inventory regen
+- Latest off-disk backup: ottomate-20260611T235431.db
 
 ## Projects (live)
 
@@ -32,8 +32,8 @@
 ## Totals (live)
 
 - DB tables: 71
-- ADRs: 75 | Iterations: 13 | Verification reports: 95
-- Master components: 193 | Open/accepted risks: 42
+- ADRs: 76 | Iterations: 14 | Verification reports: 98
+- Master components: 193 | Open/accepted risks: 40
 - flow_test_runs: 5 (0 = E2E wiring not yet live; see adr-014)
 
 ## Where everything lives
