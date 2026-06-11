@@ -1,12 +1,12 @@
 # Ottomate — status (generated)
 
-> Generated 2026-06-10T19:43:29+05:30 by `scripts/generate-status.sh`. Do not hand-edit (adr-016:
+> Generated 2026-06-11T18:00:51+05:30 by `scripts/generate-status.sh`. Do not hand-edit (adr-016:
 > every hand-written count in the previous STATUS drifted wrong).
 
-- Health: `{"status":"ok","version":"0.1.0","port":"3000","db":"connected","timestamp":"2026-06-10T14:13:29.719Z"}`
+- Health: `{"status":"ok","version":"0.1.0","port":"3000","db":"connected","timestamp":"2026-06-11T12:30:51.575Z"}`
 - API route files: 105
-- Tracker repo head: 14f700d 2026-06-10 Regenerate API inventory: architecture GET+POST
-- Latest off-disk backup: ottomate-20260610T174106.db
+- Tracker repo head: d131fcc 2026-06-11 iter-16 wrap: regenerate API inventory
+- Latest off-disk backup: ottomate-20260611T023001.db
 
 ## Projects (live)
 
@@ -20,7 +20,7 @@
 | home | building | 0 | 0 | 0 | 0 |
 | ingest | building | 0 | 0 | 0 | 0 |
 | leaploop | shipped | 6 | 14 | 7 | 29 |
-| mapsofbharat | building | 5 | 12 | 0 | 0 |
+| mapsofbharat | building | 5 | 12 | 1 | 7 |
 | media-dashboard | building | 8 | 15 | 18 | 41 |
 | ottomate | building | 54 | 20 | 18 | 30 |
 | paata | ideating | 0 | 0 | 0 | 0 |
@@ -32,9 +32,9 @@
 ## Totals (live)
 
 - DB tables: 71
-- ADRs: 73 | Iterations: 11 | Verification reports: 68
-- Master components: 193 | Open/accepted risks: 41
-- flow_test_runs: 0 (0 = E2E wiring not yet live; see adr-014)
+- ADRs: 75 | Iterations: 13 | Verification reports: 95
+- Master components: 193 | Open/accepted risks: 42
+- flow_test_runs: 5 (0 = E2E wiring not yet live; see adr-014)
 
 ## Where everything lives
 

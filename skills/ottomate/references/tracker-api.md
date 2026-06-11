@@ -79,7 +79,8 @@ DELETE /api/projects/{slug}/flows/{flow_id}          Delete flow
 #   /data-sources        (Doc 5 "data";   NOT /data)
 #   /risk-instances      (Doc 7 "risks";  NOT /risks; resolve-not-delete via /resolve)
 #   /adr-index           (Doc 8 "decisions"; NOT /decisions)
-#   /ui-master-plan (PUT) · /architecture (POST, per-kind diagrams)
+#   /ui-master-plan (PUT) · /architecture (POST, per-kind diagrams; kinds
+#     process/topology/platform/data/ux/api — platform added iter-16 2026-06-11)
 # There is no per-project /components route — components live under pages + the
 # global /master-components catalog.
 ```

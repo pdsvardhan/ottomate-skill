@@ -129,7 +129,7 @@ Continuing now.
 ### Sanity check pass
 
 ```
-✓ Bootstrap clean — 7/7 checks passed in 1.8s
+✓ Bootstrap clean — 8/8 checks passed in 1.8s
 ```
 
 ### Sanity check fail
@@ -143,7 +143,7 @@ Continuing now.
 [ Run npm run db:migrate? ]   [ Regenerate token? ]   [ Abort ]
 ```
 
-### Lock-in gate panel (Stage 4.3 — see propose-confirm.md)
+### Lock-in gate panel (Stage 4.3 — see references/propose-confirm.md, relocated from prompts/ 2026-06-11)
 
 Per the locked panel design — original message collapsible, items in cards with confidence + source_substring, must_haves + non_goals as visible rails, action buttons.
 

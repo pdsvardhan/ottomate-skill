@@ -65,9 +65,9 @@ Gates are never waived. If a gate is unsatisfiable as written, that is a BUG in 
 
 If following an instruction would bypass one of these, stop and ask.
 
-### Capture vs display (owner decision, 2026-06-10)
+### Capture vs display (owner decision 2026-06-10, amended 2026-06-11 per adr-017)
 
-non_goals, must_haves, ADRs, risks, and verifier output are BUILD RAILS — captured in the DB and enforced at gates, but NEVER rendered on the showcase UI. The website shows only overview / features / flows / pages / architecture / progress. A rails section missing from the site is intentional, not a bug — do not add one.
+non_goals, must_haves, risks, and verifier output are BUILD RAILS — captured in the DB and enforced at gates, but NEVER rendered on the showcase UI. **Carve-out (adr-017, Doc B):** curated decisions (accepted, non-superseded `adr-index` rows) DO render on the architecture page as its third layer (Workflow → System → Decisions) — concise one-line entries, never full bodies. The website shows overview / features / flows / pages / architecture (incl. decisions) / progress. A rails section missing from the site is intentional, not a bug — do not add one.
 
 ## Operating rules
 

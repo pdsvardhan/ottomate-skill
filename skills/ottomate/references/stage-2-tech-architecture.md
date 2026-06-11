@@ -25,22 +25,27 @@ Override only with reason. House defaults:
 
 Persist via `PUT /api/projects/<slug>/data-contracts` (database_engine, storage_location, migration_tooling) and a dedicated `tech_stacks` upsert when implemented.
 
-## Architecture diagrams (Mermaid) — redesigned 2026-06-10
+## Architecture diagrams (Mermaid) — layer model (iter-16, 2026-06-11; supersedes the 2026-06-10 redesign)
 
-Free, text-based, version-controllable. No longer 3 fixed `.mmd` repo files: author **2-4 RELEVANT named diagrams per project**, persisted via the app (canonical).
+Free, text-based, version-controllable. Author per the portfolio documentation layer model (Doc A/B/C + adr-017). The architecture page renders **stacked progressive sections in this order: Workflow → System → Platform → Decisions**, with the remaining kinds collapsed under "More detail".
 
 ### Which diagrams to author
 
-- **Always:** a bird's-eye **topology** diagram — boxes for the app, the user, every external service; arrows label data flow.
-- **Only where they genuinely fit** (never force all kinds):
-  - **process** — a multi-step background/business process worth mapping
-  - **data** — project has a data layer: sources → ingestion → DB tables → consumers
+- **Always (the 90-second read):**
+  - **process** (rendered as **Workflow**) — how value moves, trigger → output. Max 12 nodes, top→bottom, verb-based labels, no infrastructure.
+  - **topology** (rendered as **System**) — how the system is shaped: layers and relationships. Max 20 nodes; hide ports/containers/deployments.
+- **Portfolio-level (one project carries it):**
+  - **platform** — the ecosystem in one view: domains, data movement, build layer, external world. Currently attached to `portfolio`.
+- **Only where they genuinely fit** (collapsed under "More detail" on the page):
+  - **data** — sources → ingestion → DB tables → consumers
   - **ux** — a user journey complex enough to need a visual map
   - **api** — an external/public API surface worth diagramming
 
+Curated decisions render below the diagrams automatically (accepted, non-superseded `adr-index` rows) — see adr-017; rails (must_haves/non_goals/risks/verifier) stay hidden.
+
 ### Persist via the app (canonical)
 
-Write each diagram via `POST /api/projects/<slug>/architecture` (bearer) with body `{kind, title, mermaid_source, caption}`. The UI renders the kinds as zoomable named tabs.
+Write each diagram via `POST /api/projects/<slug>/architecture` (bearer) with body `{kind, title, mermaid_src, caption}` (field is `mermaid_src`, not `mermaid_source` — verified against live API 2026-06-11). Per-kind upsert; the page fits diagrams to the viewport on render.
 
 ```mermaid
 graph TD

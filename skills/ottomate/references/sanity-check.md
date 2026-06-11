@@ -10,20 +10,20 @@ Pre-gate validation runs before preprocessing dialogs and stage transitions. Two
 
 ```
 Phase 0 — Bootstrap        session start, before any user input    8 sub-checks
-Phase 1 — Identity Lock    after Stage 0.5 (slug+name+port set)    5 sub-checks
+Phase 1 — Identity Lock    after Stage 0.5 (slug+name+port set)    6 sub-checks
 Phase 2 — Intent Consistency  after Stage 0.2 (Journey Detection)   1 sub-check
 Phase 3 — External Refs    after Stage 0.6 (preferences captured)   2 sub-checks (conditional)
 ```
 
 Plus stage-transition phases:
 ```
-Stage 1 → 2 transition     7 checks (mostly already covered by 1.9)
-Stage 2 → 3 transition     8 checks (mostly already covered by 2.8)
-Stage 3 → 4 transition     6 checks (deploy gate per Codex Round 2)
-Stage 4 — per iteration    6 checks
+Stage 1 → 2 transition     3 checks (beyond 1.9 verification)
+Stage 2 → 3 transition     6 checks (beyond 2.8)
+Stage 3 → deploy gate      6 checks (per Codex Round 2)
+Stage 4 — per iteration    5 checks
 ```
 
-For Type 1 entry (the most common case), only Phase 0 + Phase 1 + (rarely) Phase 2 + (rarely) Phase 3 fire. Total ~13-15 sub-checks per session start; not 31 lumped together.
+For Type 1 entry (the most common case), only Phase 0 + Phase 1 + (rarely) Phase 2 + (rarely) Phase 3 fire. Total ~9-17 sub-checks per session start (8 always, the rest conditional); not 37 lumped together. (Counts re-audited 2026-06-11 against the section tables below.)
 
 ---
 
@@ -52,12 +52,12 @@ Runs after slug + display_name + port are set in 0.5. HARD-blocks lock-in if any
 
 | # | Check | Verdict on fail | Remediation |
 |---|---|---|---|
-| 8 | Slug format `^[a-z][a-z0-9-]+$`, length 3-40 | BLOCK | User retypes (back to 0.5 panel) |
-| 9 | Slug unique (SQL `SELECT 1 FROM projects WHERE slug = ?`) | BLOCK | User picks different (back to 0.5) |
-| 10 | Display name length 1-60 | BLOCK | User retypes |
-| 11 | Port available (DB `MAX(port)+1` AND `ss -tlnp` shows nothing on `<port>` server-side) | BLOCK | AI proposes next free; user confirms |
-| 12 | Domain not in NPM proxy hosts (`<slug>.vault7a.xyz`) | BLOCK | User picks different slug (back to 0.5) |
-| 13 | Repo dir status (`/mnt/storage/websites/<slug>/` exists?) | PROCEED+CONFIRM | If exists → revive route option in 0.5 (route ⓪) |
+| 9 | Slug format `^[a-z][a-z0-9-]+$`, length 3-40 | BLOCK | User retypes (back to 0.5 panel) |
+| 10 | Slug unique (SQL `SELECT 1 FROM projects WHERE slug = ?`) | BLOCK | User picks different (back to 0.5) |
+| 11 | Display name length 1-60 | BLOCK | User retypes |
+| 12 | Port available (DB `MAX(port)+1` AND `ss -tlnp` shows nothing on `<port>` server-side) | BLOCK | AI proposes next free; user confirms |
+| 13 | Domain not in NPM proxy hosts (`<slug>.vault7a.xyz`) | BLOCK | User picks different slug (back to 0.5) |
+| 14 | Repo dir status (`/mnt/storage/websites/<slug>/` exists?) | PROCEED+CONFIRM | If exists → revive route option in 0.5 (route ⓪) |
 
 ---
 
@@ -67,7 +67,7 @@ Runs once after Journey Detection.
 
 | # | Check | Verdict on fail | Remediation |
 |---|---|---|---|
-| 14 | Type matches attachments (deterministic regex: count fenced blocks + attachment count + file path patterns) | PROCEED+CONFIRM | If Type 1 + artifacts present OR Type 2 + no artifacts: AskUserQuestion "did you mean X?" |
+| 15 | Type matches attachments (deterministic regex: count fenced blocks + attachment count + file path patterns) | PROCEED+CONFIRM | If Type 1 + artifacts present OR Type 2 + no artifacts: AskUserQuestion "did you mean X?" |
 
 **Promoted from SOFT to BLOCK** per audit when ambiguity is high (e.g., user said Type 1 but pasted full code) — ambiguity at the gate is exactly when explicit confirm is required.
 
@@ -79,8 +79,8 @@ Only fires if user mentioned URLs in 0.7 or 0.8.
 
 | # | Check | Verdict on fail | Remediation |
 |---|---|---|---|
-| 15 | Inspirations URLs reachable (curl with 10s timeout per URL) | PROCEED+CONFIRM | "URL X is dead. Continue without / pick different / abort?" |
-| 16 | Integrations endpoints respond (curl with timeout) | PROCEED+CONFIRM | Same |
+| 16 | Inspirations URLs reachable (curl with 10s timeout per URL) | PROCEED+CONFIRM | "URL X is dead. Continue without / pick different / abort?" |
+| 17 | Integrations endpoints respond (curl with timeout) | PROCEED+CONFIRM | Same |
 
 ---
 
@@ -88,9 +88,9 @@ Only fires if user mentioned URLs in 0.7 or 0.8.
 
 | # | Check | Verdict |
 |---|---|---|
-| 17 | Mermaid CLI installed (`mmdc --version`) | PROCEED+CONFIRM (skip diagrams if missing) |
-| 18 | Master components scan feasible (existing projects scannable via SSH) | PROCEED |
-| 19 | Browser MCP available (for Stage 2.4 component variant fetching) | PROCEED+CONFIRM (chat fallback if missing) |
+| 18 | Mermaid CLI installed (`mmdc --version`) — diagrams render client-side in the app; CLI is only a local preview nicety | PROCEED+CONFIRM (skip local preview if missing) |
+| 19 | Master components scan feasible (existing projects scannable via SSH) | PROCEED |
+| 20 | Browser MCP available (for Stage 2.4 component variant fetching) | PROCEED+CONFIRM (chat fallback if missing) |
 
 ---
 
@@ -98,14 +98,14 @@ Only fires if user mentioned URLs in 0.7 or 0.8.
 
 | # | Check | Verdict |
 |---|---|---|
-| 20 | Repo doesn't exist at `git.vault7a.xyz/pdsv/<slug>` (or revive flow active) | BLOCK |
-| 21 | Gitea Actions runner reachable | BLOCK |
-| 22 | npm registry reachable (`curl -sf https://registry.npmjs.org/`) | BLOCK |
-| 23 | Test framework images pullable (`docker pull mcr.microsoft.com/playwright`) — **first-build only, not every transition** | PROCEED+CONFIRM |
-| 24 | Disk space for build (≥5GB free in `/opt`) | BLOCK |
-| 25 | Infisical reachable for secrets — **only fires when Infisical is deployed (currently using `.env` files)** | PROCEED+CONFIRM |
+| 21 | Repo doesn't exist at `git.vault7a.xyz/pdsv/<slug>` (or revive flow active) | BLOCK |
+| 22 | Gitea Actions runner reachable | BLOCK |
+| 23 | npm registry reachable (`curl -sf https://registry.npmjs.org/`) | BLOCK |
+| 24 | Test framework images pullable (`docker pull mcr.microsoft.com/playwright`) — **first-build only, not every transition** | PROCEED+CONFIRM |
+| 25 | Disk space for build (≥5GB free in `/opt`) | BLOCK |
+| 26 | Infisical reachable for secrets — **only fires when Infisical is deployed (currently using `.env` files; out of gates per adr-014)** | PROCEED+CONFIRM |
 
-(Dropped 2026-05-13: "Network reachable for npm/pip install" — redundant with #22 npm-registry-reachable.)
+(Dropped 2026-05-13: "Network reachable for npm/pip install" — redundant with #23 npm-registry-reachable.)
 
 ---
 
@@ -114,7 +114,7 @@ Only fires if user mentioned URLs in 0.7 or 0.8.
 | # | Check | Verdict |
 |---|---|---|
 | 27 | `auth_strategy != none` if any page `permissions != anonymous` | BLOCK |
-| 28 | All secrets in Doc 7 mapped to Infisical entries (verified by Trivy scan = no hardcoded secrets) | BLOCK |
+| 28 | No hardcoded secrets — gitleaks/Trivy scan clean; secrets live in `.env` outside git (adr-014: NOT Infisical) | BLOCK |
 | 29 | Backup plan defined (DB snapshot path + frequency in Doc 5 retention_policy) | BLOCK |
 | 30 | Data sensitivity tier acknowledged in Doc 7 policies | BLOCK |
 | 31 | Cloudflare Tunnel route configured | BLOCK |
@@ -122,7 +122,7 @@ Only fires if user mentioned URLs in 0.7 or 0.8.
 
 ---
 
-## Stage 4 — per iteration (4 checks)
+## Stage 4 — per iteration (5 checks)
 
 | # | Check | Verdict |
 |---|---|---|
@@ -179,7 +179,7 @@ sanity_check:
 ### Happy path (compact — per output-style.md)
 
 ```
-✓ Bootstrap clean — 7/7 checks passed in 1.8s
+✓ Bootstrap clean — 8/8 checks passed in 1.8s
 ```
 
 ### Blocked path
