@@ -68,7 +68,7 @@ If `~/.claude/plugins/ottomate/` has uncommitted changes:
 ```bash
 cd ~/.claude/plugins/ottomate && git add -A && \
   git commit -m "auto: sync from <slug> session" && \
-  git push origin master
+  git push origin main
 ```
 
 Same for `~/.claude/plugins/vault7a-ops/` (server-ops skill).
