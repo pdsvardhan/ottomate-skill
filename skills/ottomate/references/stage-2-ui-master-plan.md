@@ -30,8 +30,14 @@
 - Default: `both`. Tablet folds into desktop unless user picks tablet-explicit.
 
 ### Theme modes
-- **Both dark + light are MANDATORY.** No single-mode sites.
-- Generate light palette from dark palette using a contrast-preserving algorithm (or vice versa).
+- **Default: both dark + light.** Per owner decision 2026-06-12 ("becoming a frequent
+  issue on every project — not all require light and dark"), a project MAY ship
+  single-mode when the visual identity demands it (e.g. stateofus light-only newspaper).
+- Opt-out requires a **curated ADR** recording the decision + the missing mode as a
+  future design request. `ui_master_plans.palette_dark` (or `_light`) stays null;
+  verification treats a null palette + the ADR as satisfying this choice.
+- When both modes ship: generate the second palette with a contrast-preserving
+  algorithm from the first.
 
 ### Palette (per mode)
 - ≥3 accent colors per palette
