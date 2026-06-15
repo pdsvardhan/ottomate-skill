@@ -48,6 +48,10 @@ Append entry to `iteration-log.md` (per project) summarizing this session:
 **Next session context:** <what to pick up>
 ```
 
+### 3b. Update project to-dos
+
+Per `references/task-tracking.md`: for any to-do completed this session, `PATCH /api/todos/<id>` with `done=true`. `POST` any new out-of-scope items the user raised this session as fresh to-dos (drop-with-reason, anti-gaslight Rule 7). State lives in the DB — no file to commit.
+
 ### 4. Pack-Up Reconciliation Lock, then commit + push
 
 **Before pushing** (Codex Round 2): show the final session-close screen — done / not-done / deferred / risks-changed / commits — and get user confirmation.

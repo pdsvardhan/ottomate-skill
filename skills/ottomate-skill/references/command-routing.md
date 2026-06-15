@@ -36,6 +36,8 @@ Compute three signals:
 - `repo_on_disk` = test returned 0
 - `has_request` = user passed extra text after the slug
 
+**Then read the project to-dos** per `references/task-tracking.md`: `GET /api/projects/<slug>/todos` and keep open (`done=false`) items as `todo_open`. These are surfaced in the load status block alongside project status (template in `output-style.md`) — **informational, never routing-affecting**.
+
 ### Step 5 — Route based on state
 
 Apply the FIRST rule that matches:

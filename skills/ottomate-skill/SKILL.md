@@ -28,6 +28,7 @@ If two documents disagree, follow this order AND tell the user about the drift. 
 
 1. **Sanity:** `GET /api/sanity-check?phase=bootstrap` (server-side). Verdict BLOCK → surface the failing checks' `auto_fix` via AskUserQuestion; never execute fixes silently. Results cache 30 min (`sanity_check_runs`). A failing `wal-integrity` check means STOP — do not restart the container; follow adr-015.
 2. **Route:** per `references/command-routing.md` (argument parsing, project resolution, state assessment, routing rules).
+3. **Surface open tasks:** state assessment calls `GET /api/projects/<slug>/todos` (`references/task-tracking.md`) and lists open items in the load status block — informational, never blocking.
 
 ## Stage references — load only what the session needs
 
@@ -38,7 +39,7 @@ If two documents disagree, follow this order AND tell the user about the drift. 
 | 2 — UI + tech | `stage-2-ui-master-plan.md` → `stage-2-components.md` → `stage-2-tech-architecture.md` |
 | 3 — build | `stage-3-scaffolding.md` → `stage-3-pipeline-setup.md` → (Type 2 only: `stage-3-reformat.md`) → `stage-3-codegen.md` → `stage-3-verifier.md` → `stage-3-testing.md` |
 | 4 — iterate | `stage-4-mini-pipeline.md` |
-| cross-cutting | `output-style.md` + `trigger-phrases.md` (always); `ledger-writes.md` (when posting claims/artifacts/test runs); `anti-gaslight-rules.md` (rule definitions); `pack-up-ritual.md` (at wrap) |
+| cross-cutting | `output-style.md` + `trigger-phrases.md` (always); `task-tracking.md` (per-project Ottomate to-dos — read at load, updated at wrap); `ledger-writes.md` (when posting claims/artifacts/test runs); `anti-gaslight-rules.md` (rule definitions); `pack-up-ritual.md` (at wrap) |
 
 Do not preload anything else. Superseded references live in `_archive/references/` — never load them.
 

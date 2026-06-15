@@ -143,6 +143,15 @@ Continuing now.
 [ Run npm run db:migrate? ]   [ Regenerate token? ]   [ Abort ]
 ```
 
+### Project load — open tasks (to-do surface)
+
+Shown in the load status block per `references/task-tracking.md` (source: `GET /api/projects/<slug>/todos`). Open count in the header, one compact line per task. Zero open → `Tasks — none open`. More than ~8 → list 8 then `+N more — see project page`.
+
+```
+Tasks — stateofus (1 open)
+  • Fix red CI — pause tests, kill Chrome re-download · → .gitea/workflows/ci.yml
+```
+
 ### Lock-in gate panel (Stage 4.3 — see references/propose-confirm.md, relocated from prompts/ 2026-06-11)
 
 Per the locked panel design — original message collapsible, items in cards with confidence + source_substring, must_haves + non_goals as visible rails, action buttons.
