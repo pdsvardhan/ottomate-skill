@@ -1,6 +1,6 @@
 # Project Task Tracking (Ottomate to-dos)
 
-Per-project task tracking lives in the **Ottomate DB** (`project_todos`), surfaced on each project page by `components/project/TodoList.tsx`. The app owns this state (SKILL.md "app owns state") — there is **no task file in the repo**. Tasks are read and written via the API.
+Per-project task tracking lives in the **Ottomate DB** (`project_todos`), read/written via the API. The app owns this state (SKILL.md "app owns state") — there is **no task file in the repo**. There is also **no web UI**: the `components/project/TodoList.tsx` widget exists in the app repo but is NOT rendered — it was removed from the showcase in the 2026-06-10 redesign (to-dos are internal build-rails, capture≠display). To-dos are surfaced by the **skill at session load** (and via the API), never on the website.
 
 ## Endpoints
 

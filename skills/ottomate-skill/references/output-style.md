@@ -145,7 +145,7 @@ Continuing now.
 
 ### Project load — open tasks (to-do surface)
 
-Shown in the load status block per `references/task-tracking.md` (source: `GET /api/projects/<slug>/todos`). Open count in the header, one compact line per task. Zero open → `Tasks — none open`. More than ~8 → list 8 then `+N more — see project page`.
+Shown in the load status block per `references/task-tracking.md` (source: `GET /api/projects/<slug>/todos`). Open count in the header, one compact line per task. Zero open → `Tasks — none open`. More than ~8 → list 8 then `+N more (full list via GET /api/projects/<slug>/todos)`.
 
 ```
 Tasks — stateofus (1 open)
