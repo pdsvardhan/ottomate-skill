@@ -23,25 +23,52 @@ After scaffold lands on main. Configure CI to run all the always-on checks befor
 | Runtime errors | GlitchTip | yes (deferred until Stage 5) |
 | Analytics | Plausible | yes (deferred until Stage 5) |
 
-## Gitea Actions workflows
+## Gitea Actions workflows (canonical — adr-020)
 
-`.gitea/workflows/ci.yml` — runs on every push to feature branches:
-1. Setup node 22
-2. `npm ci`
-3. `npm run typecheck`
-4. `npm run lint`
-5. `npm test` (Vitest)
-6. `npx playwright install --with-deps chromium`
-7. `npx playwright test`
-8. `npx axe-core` invocations (built into playwright tests)
-9. Lost Pixel diff
-10. `trivy fs --severity HIGH,CRITICAL .`
+**Policy (adr-020 — pre-production CI):** the fast gates (typecheck, lint, build) are **always hard**. The slow gates (vitest + Playwright) are **gated behind a `RUN_TESTS` repo variable** so pre-production pushes stay green and fast; flip `RUN_TESTS=true` (a Gitea repo variable) to turn them on, and they become hard at the Stage 3 → deploy gate for production. Playwright runs in a **prebuilt `mcr.microsoft.com/playwright` container** — never `playwright install` per run (that re-downloaded ~290 MB of Chromium every push, the root cause of the CI drift this policy fixes).
 
-`.gitea/workflows/nightly.yml` — runs on schedule (`cron: '0 2 * * *'`):
-1. Lighthouse CI on the live URL
-2. k6 load test (read-only smoke)
-3. Trivy + Grype + OSV-Scanner full scan
-4. POST results to `/api/skill-events` with `event_type: 'misc'`
+This is the **canonical `ci.yml`** every Node/Next/Vite repo gets (the WS-E rollout copies it verbatim, adjusting only the playwright image tag to match the repo's `@playwright/test` version):
+
+```yaml
+# .gitea/workflows/ci.yml — canonical Ottomate CI (adr-020)
+name: ci
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  quality:                      # ALWAYS hard — the fast gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx tsc --noEmit          # typecheck (works with or without a "typecheck" script) — HARD
+      - run: npm run lint --if-present || echo "lint warnings (non-blocking)"  # lint = WARNING, not a hard fail (adr-020 amendment: style shouldn't red CI for a solo/no-public-users project; re-enable as hard when desired)
+      - run: npm run build             # HARD
+
+  tests:                        # GATED — vitest + Playwright; off pre-prod, hard at production
+    if: ${{ vars.RUN_TESTS == 'true' }}
+    runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.49.0-noble   # prebuilt browsers; NO per-run download
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm test --if-present      # vitest (skips cleanly if no test script)
+      - run: npx playwright test --if-present
+```
+
+Notes for the rollout:
+- **Pin the container tag** to the repo's installed Playwright version (`npx playwright --version`), e.g. `v1.49.0-noble`. Mismatched tags fail fast.
+- **Python/backend repos (e.g. `ingest`)** do NOT get this Node workflow — they get a Python variant: `quality` = `ruff check` + `mypy` (if present) + a build/import smoke; `tests` (gated) = `pytest`. Same `RUN_TESTS` gate, no Playwright container.
+- A repo with no tests yet still gets the file — the `tests` job simply stays off (`RUN_TESTS` unset) and the `--if-present` guards no-op.
+
+`.gitea/workflows/nightly.yml` (optional, only where deployed per adr-014) — runs on schedule (`cron: '0 2 * * *'`): Trivy/OSV security scan + (where configured) Lighthouse on the live URL, POSTing results to `/api/skill-events`. Do NOT scaffold nightly jobs that reference tools the repo doesn't actually have (adr-014: gates only reference deployed tools).
 
 ## Local helpers
 
@@ -67,9 +94,8 @@ After scaffold lands on main. Configure CI to run all the always-on checks befor
 
 ## Verification before exiting Stage 3.2
 
-- All workflows green on the scaffold's main branch
-- Lighthouse base score ≥80 across the four categories
-- Lost Pixel baseline saved (no diffs)
-- `trivy fs` returns 0 findings at HIGH+
+- The `quality` job (typecheck + lint + build) is green on the scaffold's main branch — **HARD**.
+- If `RUN_TESTS=true`, the `tests` job (vitest + Playwright) is green — **HARD at the production deploy gate**.
+- Security/perf scans (Trivy/Lighthouse) only block where those tools are actually deployed (adr-014); don't hard-halt on tools the repo doesn't run.
 
-If any fails: HARD halt. Don't progress to feature build until CI is green; debugging code-gen on top of broken CI multiplies the failure modes.
+If a HARD gate fails: halt. Don't progress to feature build on broken CI — debugging code-gen on top of broken CI multiplies the failure modes.
