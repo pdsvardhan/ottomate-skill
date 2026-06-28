@@ -17,24 +17,33 @@ The user's request: $ARGUMENTS
 If `$ARGUMENTS` is empty, ask:
 > "Adding a new master component. What category?"
 >
-> AskUserQuestion with options from the 15 taxonomy categories:
-> 1. Inputs
-> 2. Selection
-> 3. Buttons & Actions
-> 4. Display
-> 5. Navigation
-> 6. Feedback
-> 7. Overlay
-> 8. Layout
-> 9. Animation Primitives ⭐
-> 10. Transitions ⭐
-> 11. Data Visualisation
-> 12. Media
-> 13. Modern / Specialty ⭐
-> 14. Interactive Behaviours ⭐
-> 15. Forms & Validation
+> AskUserQuestion with options from the **13 refined categories** (taxonomy-refine
+> 2026-06-29 — the single source of truth is the app's `lib/categories.ts`; the
+> older 18-category list with empty utilitarian buckets was retired):
+> 1. `buttons-actions` — Buttons & Actions
+> 2. `cards` — Cards
+> 3. `text-type` — Text & Type
+> 4. `backgrounds-effects` — Backgrounds & Effects ⭐
+> 5. `navigation` — Navigation
+> 6. `media-galleries` — Media & Galleries
+> 7. `data-charts` — Data & Charts
+> 8. `feedback-progress` — Feedback & Progress
+> 9. `scroll-motion` — Scroll & Motion ⭐
+> 10. `layout` — Layout
+> 11. `forms-inputs` — Forms & Inputs
+> 12. `overlays` — Overlays
+> 13. `sections` — Sections
 
-If `$ARGUMENTS` matches a category name or keyword, pre-fill the category.
+The catalog is a **showcase of distinctive / animated components**, not an
+exhaustive primitive library. Bias toward eye-catching, self-contained pieces;
+every new component MUST render inline in the preview sandbox (a self-contained
+default export with no required props bundles + renders automatically — see the
+17 first-party components seeded under these gap categories). If `$ARGUMENTS`
+matches a category name or keyword, pre-fill the category.
+
+> **NOTE (drift guard):** the live `category` enum is whatever
+> `lib/categories.ts` exports — verify against it (or `GET /api/master-components`)
+> before seeding; do not trust this list if it has drifted.
 
 ### 2. Collect metadata via AskUserQuestion
 
