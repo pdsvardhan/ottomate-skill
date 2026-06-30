@@ -66,7 +66,7 @@ The substrate that catches scope drift, silent additions, missing verification, 
 
 ## Rule 3 — Silent drops
 
-**What:** A user idea disappeared without acknowledgment — a finalized ND1 sketch with no corresponding entity row and no ADR documenting the drop, or a locked iteration item that stalls in locked/building and never reaches integrated/rejected.
+**What:** A user idea disappeared without acknowledgment — a finalized ND1 sketch with no corresponding entity row and no ADR documenting the drop, or a locked iteration item that stalls in locked/building and never reaches integrated/rejected/deferred. A locked item the user decides not to build is closed via **defer-with-reason** (`POST /api/iterations/<id>/items/<itemId>` with a mandatory `reason` → status `deferred`); the reason is the acknowledgment that prevents this from being a silent drop.
 
 **Why:** Classic gaslight pattern: the user asked for it, it quietly never happened.
 
@@ -74,7 +74,7 @@ The substrate that catches scope drift, silent additions, missing verification, 
 
 **Live check:** rule `silent-drops` in `GET /api/anti-gaslight/violations` (items stuck >7 days after lock). The ND1-sketch variant is checked as prose during SO1 verification.
 
-**Remediation:** user either creates an ADR explaining the drop ("out of scope") or restores the item.
+**Remediation:** user either creates an ADR explaining the drop ("out of scope"), defers-with-reason, or restores the item. **Doc purge (adr from cointrail deep-dive):** when a feature is dropped/deferred, the Stage-4 doc-reconcile step (4.8) must also remove it from the rendered docs — README, architecture diagrams, pages, flows, public_docs — not just flip the DB row. A feature absent from the DB but still named in the showcase is itself a gaslight surface.
 
 ---
 

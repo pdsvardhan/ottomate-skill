@@ -3,7 +3,7 @@
 > **POST-AUDIT AMENDMENTS (2026-04-29):** applied (changelog archived at `_archive/references/stage-amendments.md`; restated lines collapsed 2026-06-10 — confidence gate, no-skip verifier, AC regression are in the body; detection rules per `references/anti-gaslight-rules.md`). Operative deltas:
 > - **4.2 Classify:** uses lite context-packet, NOT full SO1; implicit/inferred items get `why_inferred` + forced user confirmation
 > - **4.3 Lock-In Gate:** **must_haves + non_goals shown as visible rails** in the panel; rails violations need an explicit override ADR; 1-hour inactivity → `pending_user_review` (Codex P2 #15)
-> - **Phase ledger:** `iteration_items.status: pending-review → locked → building → verifier-pending → verified → integrated` written to `iteration_item_transitions`; touched features go `INTEGRATED → REGRESSED → BUILDING → VERIFIED → INTEGRATED`
+> - **Phase ledger:** `iteration_items.status: pending-review → locked → building → verifier-pending → verified → integrated` written to `iteration_item_transitions`; touched features go `INTEGRATED → REGRESSED → BUILDING → VERIFIED → INTEGRATED`. Terminal closed states that satisfy integrate: `verified`/`integrated`, `rejected` (pre-lock drop), `deferred` (post-lock drop-with-reason, #115).
 
 The continuous-improvement loop. Each iteration is its own mini-pipeline with the same anti-gaslighting protections as the main flow. **The 4.3 lock-in gate is the most important step in this entire skill** — it's the explicit anti-gaslighting bridge between user intent and Claude's work.
 
@@ -178,6 +178,11 @@ When all items are verified:
    - Coverage updated (test coverage delta)
    - Verification report appended
 4. Auto-create ADR if iteration was significant (re-wire, revamp, scope change)
+4b. **Doc-reconcile (post-lock → docs) — closes the SO1-lock backfill gap.** Post-lock spec edits previously stopped at the DB and never reached the rendered showcase. For every item in this iteration, propagate its outcome OUT to the docs + ADRs, not just the entity row:
+   - **dropped / deferred / rejected feature** → *purge* it from README, architecture diagrams, pages, flows, and `public_docs` — do not leave it named in the showcase (a feature absent from the DB but still rendered is a gaslight surface; anti-gaslight Rule 3).
+   - **modified feature / flow / page** → update the corresponding doc sections so the rendered overview/features/flows/pages/architecture match the new DB state.
+   - **re-wire / revamp / scope-shift** → confirm an ADR exists (id `adr-NNN-<slug>`, rule 14) and curate it for display (rule 17: recruiter title + `curated` + cat-tag or hide).
+   - Then run the milestone mirror (step 1b above already did `mirror:write`); verify the YAML + repo docs reflect the reconcile before notifying.
 5. Notify user with **Trace Report**:
 
 ```
@@ -243,14 +248,15 @@ These map each sub-stage to the implemented Ottomate endpoint (see `references/t
 | 4.3 Lock-in gate (user UI; skill polls) | `GET /api/iterations/<id>` (full state) and `GET /api/iterations/<id>/status` (terse) | Skill polls status until it transitions from `awaiting-lock` → `building`. |
 | 4.3 Add user-authored item | `POST /api/iterations/<id>/items` body `{item_type, title, description, target_kind, target_id, …}` | Always sets `user_edited=true`, `confidence=1`. |
 | 4.3 Edit item | `PATCH /api/iterations/<id>/items/<itemId>` partial body | Marks `user_edited=true`. Locked iterations are 409. |
-| 4.3 Reject item | `DELETE /api/iterations/<id>/items/<itemId>` | Soft-rejects (status='rejected') so the trace report keeps history. |
+| 4.3 Reject item (pre-lock) | `DELETE /api/iterations/<id>/items/<itemId>` | Soft-rejects (status='rejected') so the trace report keeps history. Gated to pre-lock statuses; 409 once locked. |
+| 4.8 Defer item (post-lock drop) | `POST /api/iterations/<id>/items/<itemId>` body `{reason}` | Defer-with-reason for a LOCKED item the user decides not to build: mandatory `reason` → appended to `notes`, status='deferred'. This is the post-lock drop-with-reason path (bedrock rule 7); without it integrate is unreachable. |
 | 4.3 Split item | `POST /api/iterations/<id>/items/<itemId>/split` body `{new_items: [...], delete_original}` | All split items are `user_edited=true`. |
 | 4.3 Lock | `POST /api/iterations/<id>/lock` | Server-side enforces confidence ≥ 0.7 OR user_edited; returns 400 with offending item IDs otherwise. Sets `lock_in_audit` JSON. |
 | 4.4 Route per item | (skill side, no API) | Skill iterates `items[]` and dispatches per item. |
 | 4.5 Mini-staging | Use the existing per-doc CRUD endpoints — `POST/PATCH /api/projects/<slug>/flows/...`, etc. | Each staging change is a normal SO1 mutation. |
 | 4.6 Mini-build status | `POST /api/iterations/<id>/items/<itemId>/build-status` body `{status: 'building'\|'verifier-pending'\|'verified'\|'failed', notes}` | Coder agent reports here. |
 | 4.7 Verifier result | `POST /api/iterations/<id>/items/<itemId>/verifier-result` body `{recommendation_overall: 'APPROVE'\|'BLOCK'\|'ITERATE', recommendation_reason, pass_a/b/c/d, mandatory_user_review, full_report, verifier_session_id}` | Inserts a row in `verification_reports` AND updates the item with a verifier-result summary. |
-| 4.8 Integrate | `POST /api/iterations/<id>/integrate` body `{trace_report, notes}` | Server validates all items are `verified` or `rejected`. Returns 400 with offending items otherwise. Sets `integrated_at`. |
+| 4.8 Integrate | `POST /api/iterations/<id>/integrate` body `{trace_report, notes}` | Server validates all items are closed: `verified` / `rejected` / `integrated` / `deferred`. Returns 400 with offending items otherwise. Sets `integrated_at`. Run doc-reconcile (step 4b) before/at integrate. |
 | 4.8 Trace report | `GET /api/iterations/<id>/trace` | Returns iteration + items + raw report + verifier reports + lock_in_audit + trace_report. |
 | Cancel anytime before integrate | `POST /api/iterations/<id>/cancel` body `{reason}` | Records reason in trace_report. |
 
