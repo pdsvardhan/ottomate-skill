@@ -1,6 +1,6 @@
 # API inventory (generated)
 
-> Generated 2026-06-10T19:41:28+05:30 by `scripts/generate-api-inventory.sh` from route code.
+> Generated 2026-07-02T03:02:03+05:30 by `scripts/generate-api-inventory.sh` from route code.
 > Path/method/auth existence here outranks any prose doc. Do not hand-edit.
 
 | route | methods | bearer-auth |
@@ -25,14 +25,15 @@
 | `/api/graph/[slug]` | GET | no |
 | `/api/health` | GET | no |
 | `/api/inbox` | GET | no |
-| `/api/inspirations/[id]` | GET | no |
-| `/api/inspirations` | GET | no |
+| `/api/inspirations/[id]` | GET PATCH DELETE | yes |
+| `/api/inspirations/[id]/thumbnail` | GET | no |
+| `/api/inspirations` | GET POST | yes |
 | `/api/iterations/[id]/cancel` | POST | yes |
 | `/api/iterations/[id]/integrate` | POST | yes |
 | `/api/iterations/[id]/items/[itemId]/build-status` | POST | yes |
 | `/api/iterations/[id]/items/[itemId]/component-options` | GET | no |
 | `/api/iterations/[id]/items/[itemId]/pick-component` | POST | yes |
-| `/api/iterations/[id]/items/[itemId]` | PATCH DELETE | yes |
+| `/api/iterations/[id]/items/[itemId]` | PATCH DELETE POST | yes |
 | `/api/iterations/[id]/items/[itemId]/split` | POST | yes |
 | `/api/iterations/[id]/items/[itemId]/verifier-result` | POST | yes |
 | `/api/iterations/[id]/items` | POST | yes |
@@ -44,6 +45,7 @@
 | `/api/master-components/[id]/source` | GET | no |
 | `/api/master-components` | GET POST | yes |
 | `/api/pack-up` | POST | yes |
+| `/api/previews/[...path]` | GET | no |
 | `/api/projects/[slug]/activity` | GET | no |
 | `/api/projects/[slug]/adr-index/[id]/links/features/[featureId]` | PUT DELETE | yes |
 | `/api/projects/[slug]/adr-index/[id]/links/risks/[riskId]` | PUT DELETE | yes |
@@ -111,6 +113,6 @@
 | `/api/todos/[id]` | PATCH DELETE | yes |
 | `/api/verification-reports` | GET POST | yes |
 
-Total route files: 105. Mutating routes WITHOUT bearer auth: 1 (must be 0 or each one justified below).
+Total route files: 107. Mutating routes WITHOUT bearer auth: 1 (must be 0 or each one justified below).
 
 - UNAUTHENTICATED MUTATION: `/api/[...notfound]`

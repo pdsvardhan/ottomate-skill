@@ -6,7 +6,15 @@ The `/ottomate` slash command delegates here for full routing logic. The command
 
 ### Step 1 — Sanity check (informational, NEVER blocking)
 
-Run the appropriate sanity checks per `references/sanity-check.md` (BLOCK/PROCEED model). A BLOCK verdict stops (e.g. SSH unreachable, Ottomate down, disk full, wal-integrity fail); everything else is reported in a short status block and ignored. Specifically: untracked YAML mirrors, unpushed commits, lifecycle phase mismatches — these are NOT blockers. Do not ask the user to "resolve git state" before continuing.
+Run the bootstrap check directly — do NOT read `references/sanity-check.md` first:
+
+```bash
+ssh pdsv@192.168.1.10 'curl -sf "http://127.0.0.1:8110/api/sanity-check?phase=bootstrap"'
+```
+
+- **Verdict PROCEED, no failing checks** → one status line in the load block; move on. (This is the common case — the 13KB sanity reference stays unread.)
+- **Verdict BLOCK, or any check failed/warned** → NOW open `references/sanity-check.md` for the BLOCK/PROCEED model + per-check recovery. A BLOCK stops (SSH unreachable, Ottomate down, disk full, wal-integrity fail); everything else is reported in a short status block and ignored. Specifically: untracked YAML mirrors, unpushed commits, lifecycle phase mismatches — these are NOT blockers. Do not ask the user to "resolve git state" before continuing.
+- If the SSH itself fails, that IS the BLOCK — surface it.
 
 ### Step 2 — Parse `$ARGUMENTS`
 
@@ -26,9 +34,18 @@ If `slug` provided: validate via GET `/api/projects/<slug>`. If 404, ask whether
 
 ### Step 4 — Project state assessment
 
-Fetch context-packet: GET `/api/projects/<slug>/context-packet?include=flows,features,pages,risks,decisions`.
+**Batch these into ONE ssh invocation** (one round-trip, not three — SSH handshakes are the dominant session-load cost):
 
-Check repo on disk: `ssh pdsv@192.168.1.10 'test -d /mnt/storage/websites/<slug>'`.
+```bash
+ssh pdsv@192.168.1.10 '
+  curl -sf "http://127.0.0.1:8110/api/projects/<slug>/context-packet?include=flows,features,pages,risks,decisions";
+  echo "---TODOS---";
+  curl -sf "http://127.0.0.1:8110/api/projects/<slug>/todos";
+  echo "---REPO---";
+  test -d /mnt/storage/websites/<slug> && echo present || echo missing'
+```
+
+(When the slug is already known at Step 1, fold the sanity curl into this same invocation.)
 
 Compute three signals:
 
@@ -36,7 +53,7 @@ Compute three signals:
 - `repo_on_disk` = test returned 0
 - `has_request` = user passed extra text after the slug
 
-**Then read the project to-dos** per `references/task-tracking.md`: `GET /api/projects/<slug>/todos` and keep open (`done=false`) items as `todo_open`. These are surfaced in the load status block alongside project status (template in `output-style.md`) — **informational, never routing-affecting**.
+**Project to-dos** (already fetched in the batch above; semantics per `references/task-tracking.md`): keep open (`done=false`) items as `todo_open`. These are surfaced in the load status block alongside project status (template in `output-style.md`) — **informational, never routing-affecting**. If an open to-do the user picks up references concrete paths/files/datasets, existence-check them (one `ls` in the same ssh batch where possible) and surface any mismatch between the to-do's claim and reality BEFORE planning around it.
 
 ### Step 5 — Route based on state
 

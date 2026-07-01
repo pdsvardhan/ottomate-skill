@@ -86,40 +86,52 @@ NEW COMPONENT — confirm before save
   License:      MIT (Aceternity UI)
   Primary:      react.tsx (245 lines)
 
-  Will write to: /mnt/storage/ottomate/assets/components/mc-button-magnetic/
-  And insert: master_components row id=mc-button-magnetic
+  One POST → app writes /mnt/storage/ottomate/assets/components/mc-button-magnetic/react.tsx
+             + inserts master_components row id=mc-button-magnetic
 
 [ Save ]   [ Edit a field ]   [ Cancel ]
 ```
 
-### 5. Write to filesystem + DB (on Save)
+### 5. Single POST — the API writes file + DB row (on Save)
+
+> **2026-07-02:** the route accepts `source_code` + `primary_file` in the body and
+> writes the source file itself (container `/asset-library/components/<id>/<file>`
+> = host `/mnt/storage/ottomate/assets/components/<id>/<file>`), then fills
+> `source_paths`. The old two-step (SSH mkdir + cat, then POST with
+> `source_code_path`) is retired — one call does both. Field names: `source_paths`
+> (array) and `variants` — NOT the old `source_code_path` / `variants_json`.
+
+Write the JSON payload locally (Write tool), SCP it up, POST server-side:
 
 ```bash
-ssh pdsv@192.168.1.10 'mkdir -p /mnt/storage/ottomate/assets/components/<id>/'
-# SCP source code or write via SSH
-ssh pdsv@192.168.1.10 'cat > /mnt/storage/ottomate/assets/components/<id>/<primary_file>' <<< "<source>"
+scp payload.json pdsv@192.168.1.10:/tmp/mc-payload.json
+ssh pdsv@192.168.1.10 'curl -sf -X POST http://127.0.0.1:8110/api/master-components \
+  -H "Authorization: Bearer $(cat /opt/homeserver/ottomate/.token)" \
+  -H "Content-Type: application/json" \
+  --data-binary @/tmp/mc-payload.json; rm /tmp/mc-payload.json'
 ```
 
-Then insert DB row via REST API:
+Payload shape (zod: `lib/validation/master-components.ts`):
 
-```bash
-curl -X POST http://127.0.0.1:8110/api/master-components \
-  -H "Authorization: Bearer $(ssh pdsv@192.168.1.10 'cat /opt/homeserver/ottomate/.token')" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "id": "<id>",
-    "name": "<name>",
-    "category": "<category>",
-    "description": "<description>",
-    "source_code_path": "/mnt/storage/ottomate/assets/components/<id>/",
-    "primary_file": "<primary_file>",
-    "framework_tags": ["react", "next"],
-    "tags": ["animated", "modern"],
-    "dependencies": ["framer-motion"],
-    "variants_json": ["primary", "ghost"],
-    "preview_url": "<url>",
-    "license_note": "<license>"
-  }'
+```json
+{
+  "id": "<id>",
+  "name": "<name>",
+  "category": "<category>",
+  "description": "<description>",
+  "source_code": "<full component source — route writes the file>",
+  "primary_file": "<primary_file>",
+  "framework_tags": ["react", "next"],
+  "tags": ["animated", "modern"],
+  "dependencies": ["framer-motion"],
+  "variants": ["primary", "ghost"],
+  "preview_url": "<url>",
+  "license_note": "<license>",
+  "library": "<magicui|react-bits|aceternity|custom|...>",
+  "source_url": "<upstream URL if ported>",
+  "quality_grade": "A|B|C",
+  "ingestion_method": "clone|gist|hand-authored|manual"
+}
 ```
 
 ### 6. Confirm + summary
@@ -141,16 +153,26 @@ Add another? [Yes / No, done]
 | Source code empty | Abort with "no source provided; aborting" |
 | API returns 401 | Bearer token issue; surface check `references/credentials.md` |
 | API returns 409 (duplicate) | Same as ID-exists; offer rename |
-| File write fails | Surface filesystem error; abort DB insert |
+| API returns 500 (source file write failed) | Route aborts before DB insert; surface `detail` and retry or fall back to metadata-only + manual SCP |
 
 ## Bulk path
 
-For >10 components, prefer the bulk script:
+For >10 components, batch through the SAME API (ONE DOOR — never a direct-DB script; the old `import-master-components.ts` is deprecated for exactly that):
 
 ```bash
-# Prepare seed-batch.yaml offline with N entries
-ssh pdsv@192.168.1.10 'cd /opt/homeserver/ottomate && tsx scripts/import-master-components.ts ./seed-batch.yaml'
+# Prepare seed-batch.json offline: a JSON ARRAY of create payloads (shape as step 5,
+# source_code inline per entry). Then:
+scp seed-batch.json pdsv@192.168.1.10:/tmp/seed-batch.json
+ssh pdsv@192.168.1.10 'TOKEN=$(cat /opt/homeserver/ottomate/.token); \
+  jq -c ".[]" /tmp/seed-batch.json | while read -r row; do \
+    echo "$row" | jq -r .id; \
+    curl -sf -X POST http://127.0.0.1:8110/api/master-components \
+      -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+      -d "$row" -o /dev/null -w "  -> %{http_code}\n"; \
+  done; rm /tmp/seed-batch.json'
 ```
+
+201 per row = created; 409 = id exists (skip or rename); anything else → stop and inspect.
 
 ## Anti-gaslight
 
@@ -162,10 +184,10 @@ ssh pdsv@192.168.1.10 'cd /opt/homeserver/ottomate && tsx scripts/import-master-
 
 User reaches Stage 2.4 (per-component selection) for a project. Skill detects gap (category X has 0-2 entries; user's project needs ≥3 options). Skill suggests:
 
-> ⚠ Category 11 (Data Visualisation) has 1 entry; need ≥3 for this project's chart features.
+> ⚠ Category `data-charts` has 1 entry; need ≥3 for this project's chart features.
 >
 > Options:
-> [1] Add 2 more components now (`/ottomate seed-component data-visualisation`)
+> [1] Add 2 more components now (`/ottomate seed-component data-charts`)
 > [2] Continue with what's available (skill will offer 1 + "build new")
 > [3] Pause and seed later
 

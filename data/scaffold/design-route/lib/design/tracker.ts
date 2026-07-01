@@ -30,12 +30,12 @@ export type MasterComponent = {
   name: string;
   category: string;
   description: string | null;
-  source_code_path: string | null;
+  source_paths: string[] | null;
   primary_file: string | null;
   framework_tags: string[] | null;
   tags: string[] | null;
   dependencies: string[] | null;
-  variants_json: string[] | null;
+  variants: string[] | null;
   preview_url: string | null;
   license_note: string | null;
 };

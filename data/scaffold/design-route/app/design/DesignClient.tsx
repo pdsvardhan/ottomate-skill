@@ -32,12 +32,12 @@ type MasterComponent = {
   name: string;
   category: string;
   description: string | null;
-  source_code_path: string | null;
+  source_paths: string[] | null;
   primary_file: string | null;
   framework_tags: string[] | null;
   tags: string[] | null;
   dependencies: string[] | null;
-  variants_json: string[] | null;
+  variants: string[] | null;
   preview_url: string | null;
   license_note: string | null;
 };
@@ -334,7 +334,7 @@ function SlotDrawer({
                 ) : (
                   <p className="mt-3 text-[11px] italic text-[var(--fg-muted,_#64748b)]">
                     No preview image. Source at{" "}
-                    <code className="font-mono">{opt.source_code_path || "—"}</code>.
+                    <code className="font-mono">{opt.source_paths?.[0] || "—"}</code>.
                   </p>
                 )}
                 {opt.tags && opt.tags.length > 0 && (

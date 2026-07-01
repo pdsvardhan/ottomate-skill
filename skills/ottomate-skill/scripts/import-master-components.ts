@@ -1,6 +1,16 @@
 /**
  * scripts/import-master-components.ts
  *
+ * ⛔ DEPRECATED 2026-07-02 — DO NOT RUN.
+ * Doubly obsolete: (1) opens data/ottomate.db with better-sqlite3 directly,
+ * which violates ONE DOOR (SKILL.md rule 16 / adr-018 — both 2026-06 data
+ * losses came from a second SQLite client); (2) INSERT uses retired columns
+ * (source_code_path, variants_json → now source_paths, variants).
+ * Bulk seeding now goes through the API: see "Bulk path" in
+ * commands/seed-component.md (JSON batch + per-entry POST /api/master-components,
+ * which writes the source file itself when given `source_code`).
+ * Kept for history only.
+ *
  * Bulk import master_components from a YAML batch file (CC-2.3 Path 3).
  *
  * Usage:

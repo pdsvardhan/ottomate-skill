@@ -45,8 +45,11 @@ Append entry to `iteration-log.md` (per project) summarizing this session:
 - Captured 3 risks (open) linked to features
 
 **Decisions:** <list of ADRs created>
+**Friction:** <failures/workarounds hit this session, each tagged env-limitation / API-change / data-mismatch / tooling; "none" if clean>
 **Next session context:** <what to pick up>
 ```
+
+Friction entries feed detection of systemic problems (e.g. "pdftoppm missing" three sessions running = install it). If a friction item is RECURRING or actionable, also `POST` it as a to-do at 3b — one-off flakes just stay in the log.
 
 ### 3b. Update project to-dos
 
@@ -67,6 +70,15 @@ If commit fails (no changes): skip silently.
 If push fails (network / auth): warn but continue ritual.
 
 ### 5. Auto-push plugin repos
+
+**5a. API-inventory sync (2026-07-02 — closes the doc-drift gap):** if `/opt/homeserver/ottomate` received commits this session, regenerate the inventory into the plugin BEFORE committing it:
+
+```bash
+ssh pdsv@192.168.1.10 'cd /opt/homeserver/ottomate && bash scripts/generate-api-inventory.sh' \
+  > ~/.claude/plugins/ottomate/skills/ottomate-skill/references/tracker-api-inventory.md
+```
+
+Then eyeball the diff: any NEW route the skill's stage references should know about → add its shape to `tracker-api.md` (or file a to-do on the `ottomate` project if it needs more than a few lines). The inventory went 3 weeks stale in June because nothing owned this step.
 
 If `~/.claude/plugins/ottomate/` has uncommitted changes:
 ```bash

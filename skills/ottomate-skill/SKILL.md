@@ -26,7 +26,7 @@ If two documents disagree, follow this order AND tell the user about the drift. 
 
 ## Session start (every session)
 
-1. **Sanity:** `GET /api/sanity-check?phase=bootstrap` (server-side). Verdict BLOCK → surface the failing checks' `auto_fix` via AskUserQuestion; never execute fixes silently. Results cache 30 min (`sanity_check_runs`). A failing `wal-integrity` check means STOP — do not restart the container; follow adr-015.
+1. **Sanity:** `GET /api/sanity-check?phase=bootstrap` (server-side). Clean PROCEED → one status line, move on; open `references/sanity-check.md` ONLY when the verdict is BLOCK or a check failed (2026-07-02 — stop pre-reading 13KB for the common all-green case). Verdict BLOCK → surface the failing checks' `auto_fix` via AskUserQuestion; never execute fixes silently. Results cache 30 min (`sanity_check_runs`). A failing `wal-integrity` check means STOP — do not restart the container; follow adr-015.
 2. **Route:** per `references/command-routing.md` (argument parsing, project resolution, state assessment, routing rules).
 3. **Surface open tasks:** state assessment calls `GET /api/projects/<slug>/todos` (`references/task-tracking.md`) and lists open items in the load status block — informational, never blocking.
 
@@ -89,6 +89,8 @@ non_goals, must_haves, risks, and verifier output are BUILD RAILS — captured i
 15. Plugin and app repos are pushed at pack-up; STATUS.md regenerated via `scripts/generate-status.sh`, never hand-edited (adr-016).
 16. **ONE DOOR (adr-018):** never open `data/ottomate.db` with host `sqlite3` or any second SQLite client while the container runs — both 2026-06 data losses came from exactly that (WAL orphaned-shm cascade). All reads/writes via the API. Forensic read needed? `POST /api/backup` first, then read the dead snapshot. A mutation answering 503 `db_write_path_unsafe`, or `/api/health` returning `degraded`, is the split tripwire: STOP, rescue per adr-015, never restart first.
 17. Decisions are showcase content (iter-17): every new ADR gets a recruiter-readable title, the `curated` marker, and either one category tag (`cat:product` / `cat:system` / `cat:security` / `cat:reliability`) to display or no cat-tag to stay hidden. Curation record: tracker `docs/decisions-curation.md`.
+18. **Batch server calls** — one ssh invocation carrying several curls/tests (separated by echo markers), never one ssh round-trip per call. SSH handshakes are the dominant latency in every session (2026-07-01 cap-a session: 19 ssh ops for 26 API calls).
+19. **Background sub-agents only for work nothing pending depends on.** If the next step consumes the output, run the agent foreground — backgrounded agents are orphaned by any interrupt/restart and their work is silently lost (2026-07-01 windfall-labs session lost 2).
 
 ## Output style + triggers
 

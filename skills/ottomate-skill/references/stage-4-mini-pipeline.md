@@ -138,6 +138,14 @@ For each item in the locked list:
 
 If `picked_component` is already set on the item (user re-locked an item that had a previous pick), skip 4.4.5 unless the user explicitly requests another pick.
 
+### 4.4.6 — Design-taste pre-pick (aesthetic items only, 2026-07-02)
+
+**Trigger:** any locked item whose acceptance is a matter of TASTE, not correctness — palette / color scheme, typography, visual style, "make it look better". (Distinct from 4.4.5, which picks a component; this picks a *direction*.)
+
+**Rule: options BEFORE build, never after.** Present 2-3 concrete directions cheaply — swatches, a reference URL, one mocked screenshot region, or the existing/official design as a named option — via AskUserQuestion, and let the user pick before any full variant is built. Building N complete variants and asking afterwards wastes the build AND the user's attention (2026-07-01 cap-a: two full color schemes built, verdict *"i hate both, i like the official one the best"* — the official palette was never offered as an option).
+
+Always include "keep the current/official look" as one of the options when an official or statutory design exists.
+
 ### 4.5 — Mini-Staging
 
 Update the affected SO1/SO2 docs:

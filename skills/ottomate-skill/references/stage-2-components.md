@@ -5,9 +5,10 @@
 ## Storage redesign
 
 Master components stored as:
-- **DB row** = lightweight index (id, name, category, description, source_code_path, primary_file, framework_tags, tags, dependencies, variants_json, preview_url, license_note)
-- **Filesystem** = source code at `/mnt/storage/ottomate/assets/components/<id>/<primary_file>`
-- DB row points to filesystem; no large blob columns
+- **DB row** = lightweight index (id, name, category, description, source_paths, primary_file, framework_tags, tags, dependencies, variants, preview_url, license_note, library, source_url, quality_grade, ingestion_method, dark_light_compat, responsive)
+- **Filesystem** = source code at `/mnt/storage/ottomate/assets/components/<id>/<primary_file>` (container path `/asset-library/components/<id>/`)
+- DB row points to filesystem (`source_paths` array); no large blob columns
+- Category enum single source of truth: app `lib/categories.ts` (13 categories, taxonomy-refine 2026-06-29) — verify there or via `GET /api/master-components` if this doc seems to have drifted
 
 Schema migration: `tracker-migrations/sql/0004_master_components_simplification.sql`.
 
@@ -26,19 +27,20 @@ Verify the master_components catalog can serve THIS project's component needs be
 ### Logic (mechanical, but MAPPED — the two category vocabularies differ)
 
 > 2026-06-10: a naive `mc.category = c.category` join is broken by construction —
-> live project components use ~24 ad-hoc values, the catalog uses 18 different ids,
-> with only 6 incidental overlaps. Until this mapping moves into the tracker as code,
-> apply it here when computing coverage:
+> live project components use ~24 ad-hoc values while the catalog has its own enum.
+> **Remapped 2026-07-02** onto the 13-category taxonomy (`lib/categories.ts`,
+> taxonomy-refine 2026-06-29; old 18-id list retired). Until this mapping moves
+> into the tracker as code, apply it here when computing coverage:
 
 | Project category (Doc 4) | Catalog categories to count |
 |---|---|
-| input, button, filter, toolbar | input, button-action, forms-validation, selection |
-| display, card, badge, pill, list, grid, row, cell, callout, panel | display, modern-specialty |
-| viz, progress, timeline | dataviz, display |
-| navigation, tabs | navigation, dashboard-shells |
-| feedback | feedback |
-| layout, hero | layout, dashboard-shells |
-| overlay, drawer | overlay |
+| input, button, filter, toolbar | buttons-actions, forms-inputs |
+| display, card, badge, pill, list, grid, row, cell, callout, panel | cards, layout |
+| viz, progress, timeline | data-charts, feedback-progress |
+| navigation, tabs | navigation |
+| feedback | feedback-progress |
+| layout, hero | layout, sections |
+| overlay, drawer | overlays |
 | *anything unmapped* | WARN — surface to user, never silently pass |
 
 ```sql
@@ -46,11 +48,11 @@ Verify the master_components catalog can serve THIS project's component needs be
 SELECT COUNT(*) FROM master_components WHERE category IN (<mapped list>);
 ```
 
-(Catalog-only categories — animation, transition, interactive, ai-blocks, auth-screens, media, auth — are matched via tags during option ranking, not via this gap check.)
+(Catalog-only categories — backgrounds-effects, text-type, scroll-motion, media-galleries — are matched via tags during option ranking, not via this gap check.)
 
 For categories with `catalog_count`:
-- **0 entries** → HARD halt: *"`Category 11 (Data Visualisation)` has 0 entries. Seed before continuing — see `/components-browser` to add."*
-- **<3 entries** → SOFT warn: *"`Category 6 (Feedback)` has 2 entries. 2.4 will offer 2 options + 'build new'. Continue?"*
+- **0 entries** → HARD halt: *"`data-charts` has 0 entries. Seed before continuing — see `/components-browser` to add."*
+- **<3 entries** → SOFT warn: *"`feedback-progress` has 2 entries. 2.4 will offer 2 options + 'build new'. Continue?"*
 - **≥3 entries** → pass
 
 Plus user-bias check: if `Doc 1.preferences.likes` includes "animated", verify category has ≥3 entries with `tags LIKE '%animated%'`.
@@ -98,11 +100,11 @@ Output: for each component, ≥2-3 ranked options from `master_components`, prio
 
 ```sql
 -- Bind variables:
---   :cat         = e.g. 'button-action'
+--   :cat         = e.g. 'buttons-actions'
 --   :prefer_lib  = library to prefer (from ui_master_plan), e.g. 'aceternity' or '' for any
 --   :prefer_tag  = single tag the project favours, e.g. 'modern' or '' for any
 SELECT id, name, description, category, framework_tags, tags,
-       library, quality_grade, source_code_path, primary_file, preview_url
+       library, quality_grade, source_paths, primary_file, preview_url
 FROM master_components
 WHERE category = :cat
   AND (:prefer_tag = '' OR tags LIKE '%' || :prefer_tag || '%')
@@ -166,7 +168,7 @@ Inconsistencies surface for user reconciliation.
 
 ### Variant selection
 
-When a picked master_component has `variants_json: ["primary", "ghost", "icon-only"]`, Claude proposes which variant fits the slot. User confirms.
+When a picked master_component has `variants: ["primary", "ghost", "icon-only"]`, Claude proposes which variant fits the slot. User confirms.
 
 ### Phase ledger transitions
 
@@ -214,7 +216,7 @@ Justified — picking wrong components compounds into Stage 3 rebuild waste.
 |---|---|
 | Cross-project scan during project flow | One-time seeding activity (separate from project flow) |
 | 7-phase classify+dedup+seed-walk in 2.3 | 2.3 = SQL gap check only |
-| `master_components.source_code` blob column | `source_code_path` pointer to filesystem |
+| `master_components.source_code` blob column | filesystem pointer (today: `source_paths` array; was `source_code_path` until 2026-06) |
 | 2.4 sometimes silently skipped (media-dashboard regression) | HARD enforcement: every component must exit `picked=true` OR `skip_reason IS NOT NULL` |
 | Cross-page consistency post-hoc | Claude review pass at end of 2.4 |
 | Variants implicit | Variant selection sub-pick when applicable |

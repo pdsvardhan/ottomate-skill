@@ -5,6 +5,12 @@
 > authoritative and outranks everything below. This prose file documents request/
 > response SHAPES and is known to contain stale claims (e.g. components-pick was
 > marked NOT IMPLEMENTED here after it shipped). Full rewrite scheduled in WS2.
+>
+> **Before grepping route source for a body shape:** check this file, then
+> `task-tracking.md` (todos), then the owning stage reference. Grep the app's
+> `app/api/` source only if all three miss — and when they do, add what you
+> learned back here (2026-07-01 windfall session burned 5 greps re-discovering
+> documented shapes).
 
 > **POST-AUDIT AMENDMENTS (2026-04-29):** applied. The endpoints added then are in the
 > generated inventory (authoritative); their request shapes moved to the body section
@@ -114,10 +120,36 @@ GET  /api/anti-gaslight/violations?project_slug={slug?}  → canonical live rule
 GET  /api/audit/{slug}/anti-gaslight-violations          → per-project wrapper, same rules
 
 POST /api/master-components                              (one-time seed Path 2)
-     Body: { id, name, category, description, source_code_path, ... }
+     Body: { id, name, category, description, source_code?, primary_file?,
+             source_paths?, variants?, framework_tags?, tags?, dependencies?,
+             library?, source_url?, quality_grade?, ingestion_method?, ... }
+     If source_code + primary_file are sent, the ROUTE writes the file to
+     /asset-library/components/<id>/<primary_file> and fills source_paths —
+     single-call seeding; no manual SSH file write. (zod:
+     lib/validation/master-components.ts; category enum: lib/categories.ts.)
 
 POST /api/skill-events                                   (timeline log)
      Body: { project_slug?, event_type, session_id, evidence?, ... }
+```
+
+## Component/asset surfaces added 2026-06-23 → 06-30 (iter-8/36/77/11, taxonomy)
+
+```
+GET   /api/master-components?q=&category=&tag=            filtered catalog list
+GET   /api/master-components/{id}                         row detail
+PUT   /api/master-components/{id}                         partial update (same schema minus id; can add source_code later)
+DELETE /api/master-components/{id}
+GET   /api/master-components/{id}/source                  raw source of primary file
+
+GET   /api/inspirations?…                                 list (existed pre-iter-8)
+POST  /api/inspirations                                   create (write API, iter-8)
+GET   /api/inspirations/{id}                              detail
+PATCH /api/inspirations/{id}                              update
+DELETE /api/inspirations/{id}
+GET   /api/inspirations/{id}/thumbnail                    self-hosted thumbnail serve
+
+GET   /api/previews/[...path]                             serves built inline-preview bundles
+                                                          (esbuild sandbox output; components page)
 ```
 
 ### Live-verified shapes + gotchas (comwatch Stage 0+1 run, 2026-06-12)
