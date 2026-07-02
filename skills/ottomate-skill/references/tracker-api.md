@@ -158,6 +158,10 @@ GET   /api/previews/[...path]                             serves built inline-pr
   collide with other projects' pages — always use `page-<slug>-<name>`.
 - **Flow/page detail GETs return children at the TOP level**, not nested:
   `{flow, steps, pre_conditions, edge_cases}` / `{page, entry_points, components}`.
+- **context-packet flows/pages do NOT embed steps/children** — judging "flow has
+  no steps" from the context-packet is a false alarm; only the detail GET tells
+  (2026-07-02: two audit agents independently made this mistake). Same trap:
+  architecture diagrams' source field is `mermaid_src`, not `source`.
 - **Link reads live at `GET /api/graph/{slug}`** → `{nodes: {flows,features,pages,components},
   edges: {flow_features, flow_pages, page_features, page_components}}` (keyed lists,
   e.g. `{flow_id, feature_id}`). There is no `?project_slug=` form — slug is a path segment.
