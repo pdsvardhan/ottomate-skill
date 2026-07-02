@@ -26,6 +26,31 @@ Tokenise the user's request (whitespace-split). Then:
 - **`<slug>`** (single token) → Go to Step 3 with that slug, no extra request.
 - **`<slug> <rest...>`** → Go to Step 3 with that slug. The rest is held for Step 5 routing.
 
+### Step 2.5 — Quick-resume fast path (2026-07-02)
+
+When `$ARGUMENTS` names a slug, check session freshness inside the Step 4 batch (one extra curl):
+
+```bash
+curl -sf "http://127.0.0.1:8110/api/skill-events?project_slug=<slug>&limit=1"
+```
+
+**If the latest event is `session-packed-up` AND `event_at` is < 2 hours old → QUICK RESUME:**
+
+- Skip re-reading `output-style.md` and `task-tracking.md` — the only template needed is inlined below. Still obey the core style rules: compact one-liners, no markdown tables, ≤30 lines, no preambles, no emoji.
+- Skip the Rule E "how do you want to work" AskUserQuestion when the user's message already carries a request (route it directly); otherwise ask with the last session's pickup as the first option.
+- Render this block and nothing more:
+
+```
+QUICK RESUME — <slug> (last session <N>min ago)
+  Last: <notes from the session-packed-up event>
+  Tasks open: <count> — <top 1-2 one-liners>
+  <stage/lifecycle one-liner from context-packet>
+
+Continue where you left off, or something else?
+```
+
+**Fall back to the FULL load path** (Steps 3-5 as written, all refs) if ANY of: sanity verdict not clean · latest event is not `session-packed-up` or is stale · context-packet contradicts the event's notes (lifecycle/stage moved) · the user's request clearly targets different work than last session. Quick-resume trades ~5 reference reads for a little drift risk — the fallback list is the drift guard; when in doubt, full load.
+
 ### Step 3 — Resolve which project
 
 If `slug == null`: GET `/api/projects`, then render the compact one-line listing per `references/output-style.md` (NOT a markdown table; NOT a per-item paragraph). If `category_filter` is set (`personal` / `cv`), client-side filter the list to rows whose `tags` array contains that value before rendering, and put the filter in the header (`PROJECTS (personal) — ...`). AskUserQuestion only for the top 3-4 candidates; longer lists rely on the user typing a slug.
@@ -67,7 +92,7 @@ Apply the FIRST rule that matches:
 
 **Rule D — User typed extra text after slug = Stage 4 intake.** POST `/api/projects/<slug>/reports` with the rest as raw_text. Run classifier prompt at `prompts/classify-text.md`. POST `/api/reports/<id>/classify` with structured items. Tell user: open the lock-in gate at `http://localhost:8110/iterations/<iter_id>`.
 
-**Rule E — SO1 populated, no extra request.** AskUserQuestion: Continue Stage 2 / Continue Stage 3 / Run a Stage 4 iteration / Pack up / Just open in chat. Read `references/trigger-phrases.md` to gauge intent from free-text.
+**Rule E — SO1 populated, no extra request.** AskUserQuestion: Continue Stage 2 / Continue Stage 3 / Run a Stage 4 iteration / Pack up / Just open in chat. Use the trigger table in `references/output-style.md` to gauge intent from free-text.
 
 ### Step 6 — Server access
 

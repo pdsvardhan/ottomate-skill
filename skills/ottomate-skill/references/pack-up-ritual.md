@@ -99,7 +99,7 @@ Same for `~/.claude/plugins/vault7a-ops/` (server-ops skill).
 
 - Update project status / lifecycle if changed during session
 - Mark current stage's progress
-- Set `last_session_at` timestamp
+- **Post the session beacon** (2026-07-02 — replaces the aspirational `last_session_at`, which was never a real column): `POST /api/skill-events` with `{project_slug, event_type: "session-packed-up", session_id, notes: "<one-line session summary + next pickup>"}`. This event is what the quick-resume fast path (command-routing.md) keys off — skipping it silently breaks quick-resume for the next session.
 
 ### 8. Show session summary to user
 
