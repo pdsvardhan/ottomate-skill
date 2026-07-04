@@ -98,6 +98,7 @@
 | `/api/projects/[slug]/secrets` | GET POST | yes |
 | `/api/projects/[slug]/success-criteria/[id]` | PATCH DELETE | yes |
 | `/api/projects/[slug]/success-criteria` | GET POST | yes |
+| `/api/projects/[slug]/tech-stack` | GET PUT | yes |
 | `/api/projects/[slug]/third-party-services/[id]` | PATCH DELETE | yes |
 | `/api/projects/[slug]/third-party-services` | GET POST | yes |
 | `/api/projects/[slug]/todos` | GET POST | yes |
