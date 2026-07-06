@@ -273,6 +273,20 @@ POST   /api/iterations/{iteration_id}/cancel
        → Cancels iteration; reports.status = "ignored"; no code changes
 ```
 
+## Media / reel endpoints (#165, 2026-07-07)
+
+```
+GET    /api/projects/{slug}/media
+       → { files: [{name,url,mime,kind,size}], reel } — filesystem-as-truth under
+         data/media/<slug>/; reel = file named reel.* else first sorted. Public.
+POST   /api/projects/{slug}/media           (bearer)
+       → multipart form-data: file (+ optional name). Ext allowlist
+         mp4/webm/gif/png/jpg/jpeg/webp/avif, 60MB cap. Upload as name=reel.<ext>
+         to set the hero/home reel. 201 → fresh listing.
+GET    /api/projects/{slug}/media/{file}    → serves bytes (public, 1h cache)
+DELETE /api/projects/{slug}/media/{file}    (bearer)
+```
+
 ## Cross-cutting endpoints
 
 ```
