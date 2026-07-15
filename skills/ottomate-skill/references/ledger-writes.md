@@ -36,7 +36,7 @@ Capture the returned `id` — needed for the reconcile PATCH.
 
 ### Stage 3.5 — after verifier completes, PATCH the claim
 
-After dispatching the verifier sub-agent and reading its `verification_report` row, reconcile the claim:
+After dispatching the verifier sub-agent and reading its `verification_report` row, reconcile the claim. Here `reconciler_id` is the `report.id` returned by the Stage-3 `POST /api/verification-reports` (see the verification_reports section). Stage-4 iteration claims use `verification_report.id` from `verifier-result` instead — same field, different source:
 
 ```bash
 # verifier APPROVE
@@ -65,7 +65,7 @@ curl -sf -X PATCH "$BASE/api/feature-claims?id=$CLAIM_ID" \
 
 ### Stage 4.6 — iteration mini-build
 
-Same pattern: POST a claim with `source: 'iteration-summary'` after the iteration coder reports done, PATCH after verifier (4.7) returns.
+Same pattern: POST a claim with `source: 'iteration-summary'` after the iteration coder reports done, PATCH after verifier (4.7) returns. The `reconciler_id` for that PATCH is the `verification_report.id` returned by the 4.7 `verifier-result` call — do NOT POST a separate `/api/verification-reports` for the item (single-write design; see the verification_reports section).
 
 ### Chat-asserted "done" — catch-all
 
@@ -160,7 +160,11 @@ curl -sf -X POST "$BASE/api/test-runs" \
 
 ## When to POST `verification_reports`
 
-After each verifier sub-agent completes (Stage 3 verification, Stage 4 item verification). The endpoint takes a FLAT shape (verified against live API 2026-06-10 — the nested `verification-report.schema.yaml` YAML goes in `full_report`):
+**Two writers, split by stage — never both for the same report** (single-write design, 2026-07-16). Each verification report is written exactly once: Stage-3 features go through the standalone endpoint below; Stage-4 iteration items are written *by* the `verifier-result` endpoint and must NOT also be POSTed here. Before this rule, Stage 4 double-wrote — the skill POSTed here AND `verifier-result` inserted its own row — producing near-duplicate reports every item verification (observed: mapsofbharat iter 78/79, report ids 471–478). Reports are immutable, so the historical dupes stay; this just stops new ones.
+
+### Stage 3 feature verification → `POST /api/verification-reports` (sole writer here)
+
+After a Stage-3 verifier sub-agent completes. The endpoint takes a FLAT shape (verified against live API 2026-06-10 — the nested `verification-report.schema.yaml` YAML goes in `full_report`):
 
 ```bash
 curl -sf -X POST "$BASE/api/verification-reports" \
@@ -184,9 +188,25 @@ curl -sf -X POST "$BASE/api/verification-reports" \
   }'
 ```
 
-Required: `project_slug`, `target_id`, `verifier_session_id`, `recommendation_overall`. Response: `{report: {id, ...}}` — that `id` is the `reconciler_id` for the claim PATCH above. GET filter: `?project_slug=<slug>`. No PATCH route exists — reports are immutable once posted.
+Required: `project_slug`, `target_id`, `verifier_session_id`, `recommendation_overall`. Response: `{report: {id, ...}}` (201) — that `report.id` is the `reconciler_id` for the Stage-3 claim PATCH above. GET filter: `?project_slug=<slug>`. No PATCH route exists — reports are immutable once posted.
 
-Related discovery (same date): `POST /api/projects/<slug>/reports` (Stage 4 intake) requires `source` from the enum `tracker-flow-bug | tracker-mega-prompt | chat | auto-feedback` — skill-side intake uses `chat`.
+**`target_kind: "stage-4-iteration-item"` is rejected here with 400** (single-write guard added 2026-07-16). Do not route Stage-4 verifications through this endpoint — use `verifier-result` below.
+
+### Stage 4 item verification → the report is written BY `verifier-result` (do NOT POST here)
+
+`POST /api/iterations/<id>/items/<itemId>/verifier-result` (Stage 4.7, `stage-4-mini-pipeline.md`) is the **sole writer** of the `stage-4-iteration-item` report. In one call it inserts the `verification_reports` row, links it to the item (`item.verifier_result.report_id`), and returns it as `verification_report` in the response body. **Never also POST `/api/verification-reports` for a Stage-4 item — that was the duplicate-row bug.**
+
+Reconcile the iteration `feature_claim` against the id from that same response (no second call to fetch it):
+
+```bash
+# RESP = the verifier-result response body
+REPORT_ID=$(echo "$RESP" | jq -r '.verification_report.id')   # also on .item.verifier_result.report_id
+curl -sf -X PATCH "$BASE/api/feature-claims?id=$CLAIM_ID" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"reconciled_with\":\"verified\",\"reconciler_id\":$REPORT_ID}"
+```
+
+Related discovery (2026-06-10): `POST /api/projects/<slug>/reports` (Stage 4 intake) requires `source` from the enum `tracker-flow-bug | tracker-mega-prompt | chat | auto-feedback` — skill-side intake uses `chat`.
 
 ## Read endpoints (for the rules + dashboards)
 

@@ -7,7 +7,7 @@
 
 The continuous-improvement loop. Each iteration is its own mini-pipeline with the same anti-gaslighting protections as the main flow. **The 4.3 lock-in gate is the most important step in this entire skill** — it's the explicit anti-gaslighting bridge between user intent and Claude's work.
 
-> **Ledger writes (2026-05-13):** every iteration that touches a feature must **POST a `feature_claim` row** at 4.6 mini-build completion (source: `iteration-summary`) and **PATCH it after 4.7 verifier** completes. See `references/ledger-writes.md`. Unreconciled iteration claims fire anti-gaslight Rule 1.
+> **Ledger writes (2026-05-13):** every iteration that touches a feature must **POST a `feature_claim` row** at 4.6 mini-build completion (source: `iteration-summary`) and **PATCH it after 4.7 verifier** completes. See `references/ledger-writes.md`. Unreconciled iteration claims fire anti-gaslight Rule 1. The PATCH's `reconciler_id` is the `verification_report.id` returned by the 4.7 `verifier-result` call — that endpoint is the single writer of the item's report; do **not** also POST `/api/verification-reports` (single-write design, 2026-07-16; it now 400s for stage-4 items).
 
 ## When this stage runs
 
@@ -172,6 +172,8 @@ Run the full 4-pass verifier (see `references/stage-3-verifier.md`) PER ITEM, no
 
 Output: per-item `verification_report` blocks merged into the iteration's report.
 
+**Single-write (2026-07-16):** post each item's verdict ONCE, via `POST /api/iterations/<id>/items/<itemId>/verifier-result`. That single call inserts the `verification_reports` row, links it to the item (`item.verifier_result.report_id`), and returns it as `verification_report` in the response. Take `verification_report.id` from that response as the `reconciler_id` for the 4.6 feature-claim PATCH. **Do NOT also POST `/api/verification-reports`** — that produced two near-duplicate rows per item (mapsofbharat iter 78/79) and now 400s for stage-4 items. See `references/ledger-writes.md`.
+
 **Stub detection still hard-fails.** No exceptions for "small fixes" — that's where stubs creep in.
 
 ### 4.8 — Integrate + Trace Report
@@ -263,7 +265,7 @@ These map each sub-stage to the implemented Ottomate endpoint (see `references/t
 | 4.4 Route per item | (skill side, no API) | Skill iterates `items[]` and dispatches per item. |
 | 4.5 Mini-staging | Use the existing per-doc CRUD endpoints — `POST/PATCH /api/projects/<slug>/flows/...`, etc. | Each staging change is a normal SO1 mutation. |
 | 4.6 Mini-build status | `POST /api/iterations/<id>/items/<itemId>/build-status` body `{status: 'building'\|'verifier-pending'\|'verified'\|'failed', notes}` | Coder agent reports here. |
-| 4.7 Verifier result | `POST /api/iterations/<id>/items/<itemId>/verifier-result` body `{recommendation_overall: 'APPROVE'\|'BLOCK'\|'ITERATE', recommendation_reason, pass_a/b/c/d, mandatory_user_review, full_report, verifier_session_id}` | Inserts a row in `verification_reports` AND updates the item with a verifier-result summary. |
+| 4.7 Verifier result | `POST /api/iterations/<id>/items/<itemId>/verifier-result` body `{recommendation_overall: 'APPROVE'\|'BLOCK'\|'ITERATE', recommendation_reason, pass_a/b/c/d, mandatory_user_review, full_report, verifier_session_id}` | **Single writer** of the item's report: inserts one `verification_reports` row, links it to the item, and returns `{verification_report, item}`. Use `verification_report.id` as the feature-claim `reconciler_id`. Do NOT also POST `/api/verification-reports` (single-write design, 2026-07-16). |
 | 4.8 Integrate | `POST /api/iterations/<id>/integrate` body `{trace_report, notes}` | Server validates all items are closed: `verified` / `rejected` / `integrated` / `deferred`. Returns 400 with offending items otherwise. Sets `integrated_at`. Run doc-reconcile (step 4b) before/at integrate. |
 | 4.8 Trace report | `GET /api/iterations/<id>/trace` | Returns iteration + items + raw report + verifier reports + lock_in_audit + trace_report. |
 | Cancel anytime before integrate | `POST /api/iterations/<id>/cancel` body `{reason}` | Records reason in trace_report. |
