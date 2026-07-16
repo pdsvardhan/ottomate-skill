@@ -97,6 +97,8 @@ curl -sf -X POST "$BASE/api/deploy-artifacts" \
   }'
 ```
 
+Response: flat `{ "id": <deploy_artifact id>, "status": "recorded" }` (201) — NOT nested.
+
 `feature_ids` should list every feature whose code is in this deploy commit. Pull from the merged PR's feature targets.
 
 ### Rollback
@@ -155,6 +157,8 @@ curl -sf -X POST "$BASE/api/test-runs" \
     "triggered_by": "manual"
   }'
 ```
+
+Response (both paths): flat `{ "id": <test_run id>, "status": "recorded" }` (201) — NOT nested. Use that `id` as `smoke_test_run_id` when posting the deploy artifact.
 
 ---
 

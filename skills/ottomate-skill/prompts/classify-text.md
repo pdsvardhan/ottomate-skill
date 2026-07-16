@@ -42,7 +42,7 @@ CRITICAL RULES:
 3. Don't fabricate. If the user is vague, mark confidence < 0.7 and surface in
    `clarifications_needed`.
 4. Don't merge unrelated items.
-5. Tag each item with its `target` (existing entity ID, or null if new).
+5. Tag each item with its `target_kind` + `target_id` (existing entity, or null if new).
 6. Don't claim work you can't verify. If user says "tests are failing", that's
    an `observation`, not auto-classified as a bug unless they're requesting fix.
 7. Reject items that violate locked must_haves or non_goals (surface in 
@@ -83,14 +83,12 @@ OUTPUT JSON ONLY (no prose, no markdown):
 {
   "items": [
     {
-      "type": "<item_type>",
+      "item_type": "<item_type>",
       "title": "<short statement, AI-generated, ≤80 chars>",
       "description": "<cleaned excerpt, 1-3 sentences>",
       "source_substring": "<verbatim from user text>",
-      "target": {
-        "kind": "feature"|"flow"|"page"|"component"|"integration"|"secret"|null,
-        "id": "<existing ID>"|null
-      },
+      "target_kind": "feature"|"flow"|"page"|"component"|"integration"|"secret"|null,
+      "target_id": "<existing ID>"|null,
       "proposed_change": {
         "kind": "<bug_fix|new_feature|modification|...>",
         "action_summary": "<1-line of what would be built/changed>",
@@ -127,6 +125,17 @@ OUTPUT JSON ONLY (no prose, no markdown):
 ```
 
 ---
+
+## Posting to the API (live shape — verified 2026-07-16)
+
+Claude emits the JSON above. The skill runs the validation pass below, then POSTs
+`{ classified_by_session, items: [...] }` to `POST /api/reports/<id>/classify`. Each
+item must match the live `ClassifiedItemSchema` (flat, not nested):
+`{ item_type, title, description?, target_kind?, target_id?, proposed_change?, confidence? }`
+— `target_kind` ∈ `feature|flow|page|component|integration|secret`. The endpoint
+creates the iteration (`awaiting-lock`) and inserts each item at `pending-review`.
+`source_substring` and `notes` are skill-side only (anti-hallucination validation +
+audit); they are not columns on `iteration_items` and are stripped on POST.
 
 ## Validation pass (mechanical post-Claude)
 

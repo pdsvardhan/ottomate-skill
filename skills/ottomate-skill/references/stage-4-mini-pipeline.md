@@ -38,11 +38,11 @@ VALUES (?, ?, ?, 'pending', NOW());
 
 User triggers manually (clicks "Analyze" in Ottomate, or types "analyze" in chat). The classifier prompt is in `prompts/classify-text.md`.
 
-Produces a list of structured items, each with:
-- `type`: `bug` / `new_feature_request` / `feature_modification` / `flow_modification` / `page_modification` / `component_modification` / `risk_addition` / `re_wire` / `revamp` / `observation` / `question`
+Produces a list of structured items, each with (flat shape, matching the live `POST /api/reports/<id>/classify` body — see `prompts/classify-text.md`):
+- `item_type`: `bug` / `new_feature_request` / `feature_modification` / `flow_modification` / `page_modification` / `component_modification` / `risk_addition` / `re_wire` / `revamp` / `observation` / `question`
 - `title`: short statement (AI-generated)
 - `description`: cleaned excerpt from original text
-- `target`: which existing entity this affects (feature_id / flow_id / page_id / component_id / etc.) — null if new
+- `target_kind` + `target_id`: which existing entity this affects — `target_kind` ∈ `feature|flow|page|component|integration|secret`, `target_id` the entity id (both null if new)
 - `proposed_change`: structured representation of the change
 - `confidence`: 0.0-1.0 (low confidence triggers user clarification)
 
@@ -264,7 +264,7 @@ These map each sub-stage to the implemented Ottomate endpoint (see `references/t
 | 4.3 Lock | `POST /api/iterations/<id>/lock` | Server-side enforces confidence ≥ 0.7 OR user_edited; returns 400 with offending item IDs otherwise. Sets `lock_in_audit` JSON. |
 | 4.4 Route per item | (skill side, no API) | Skill iterates `items[]` and dispatches per item. |
 | 4.5 Mini-staging | Use the existing per-doc CRUD endpoints — `POST/PATCH /api/projects/<slug>/flows/...`, etc. | Each staging change is a normal SO1 mutation. |
-| 4.6 Mini-build status | `POST /api/iterations/<id>/items/<itemId>/build-status` body `{status: 'building'\|'verifier-pending'\|'verified'\|'failed', notes}` | Coder agent reports here. |
+| 4.6 Mini-build status | `POST /api/iterations/<id>/items/<itemId>/build-status` body `{status: 'building'\|'verifier-pending'\|'verified'\|'failed', notes}` | Coder agent reports progress. Server maps `building`+`verifier-pending`→item status `building` (so **`verifier-pending` is a no-op label**, not a distinct state), `verified`→`verified`, `failed`→`rejected`. Do not rely on `verifier-pending` to advance the item — the canonical verdict + report come from 4.7 `verifier-result`. |
 | 4.7 Verifier result | `POST /api/iterations/<id>/items/<itemId>/verifier-result` body `{recommendation_overall: 'APPROVE'\|'BLOCK'\|'ITERATE', recommendation_reason, pass_a/b/c/d, mandatory_user_review, full_report, verifier_session_id}` | **Single writer** of the item's report: inserts one `verification_reports` row, links it to the item, and returns `{verification_report, item}`. Use `verification_report.id` as the feature-claim `reconciler_id`. Do NOT also POST `/api/verification-reports` (single-write design, 2026-07-16). |
 | 4.8 Integrate | `POST /api/iterations/<id>/integrate` body `{trace_report, notes}` | Server validates all items are closed: `verified` / `rejected` / `integrated` / `deferred`. Returns 400 with offending items otherwise. Sets `integrated_at`. Run doc-reconcile (step 4b) before/at integrate. |
 | 4.8 Trace report | `GET /api/iterations/<id>/trace` | Returns iteration + items + raw report + verifier reports + lock_in_audit + trace_report. |
