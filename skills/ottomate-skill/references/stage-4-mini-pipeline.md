@@ -264,7 +264,7 @@ These map each sub-stage to the implemented Ottomate endpoint (see `references/t
 | 4.3 Lock | `POST /api/iterations/<id>/lock` | Server-side enforces confidence ≥ 0.7 OR user_edited; returns 400 with offending item IDs otherwise. Sets `lock_in_audit` JSON. |
 | 4.4 Route per item | (skill side, no API) | Skill iterates `items[]` and dispatches per item. |
 | 4.5 Mini-staging | Use the existing per-doc CRUD endpoints — `POST/PATCH /api/projects/<slug>/flows/...`, etc. | Each staging change is a normal SO1 mutation. |
-| 4.6 Mini-build status | `POST /api/iterations/<id>/items/<itemId>/build-status` body `{status: 'building'\|'verifier-pending'\|'verified'\|'failed', notes}` | Coder agent reports progress. Server maps `building`+`verifier-pending`→item status `building` (so **`verifier-pending` is a no-op label**, not a distinct state), `verified`→`verified`, `failed`→`rejected`. Do not rely on `verifier-pending` to advance the item — the canonical verdict + report come from 4.7 `verifier-result`. |
+| 4.6 Mini-build status | `POST /api/iterations/<id>/items/<itemId>/build-status` body `{status: 'building'\|'verifier-pending'\|'failed', notes}` | Coder agent reports **progress only**. Server maps `building`+`verifier-pending`→item status `building` (so **`verifier-pending` is a no-op label**, not a distinct state), `failed`→`rejected`. **`verified` is rejected with 400** (2026-07-16): a coder agent may not self-certify (bedrock rule 4) — `verified` is terminal and satisfies integrate, so only 4.7 `verifier-result` may set it, because that call writes the `verification_reports` row proving it. |
 | 4.7 Verifier result | `POST /api/iterations/<id>/items/<itemId>/verifier-result` body `{recommendation_overall: 'APPROVE'\|'BLOCK'\|'ITERATE', recommendation_reason, pass_a/b/c/d, mandatory_user_review, full_report, verifier_session_id}` | **Single writer** of the item's report: inserts one `verification_reports` row, links it to the item, and returns `{verification_report, item}`. Use `verification_report.id` as the feature-claim `reconciler_id`. Do NOT also POST `/api/verification-reports` (single-write design, 2026-07-16). |
 | 4.8 Integrate | `POST /api/iterations/<id>/integrate` body `{trace_report, notes}` | Server validates all items are closed: `verified` / `rejected` / `integrated` / `deferred`. Returns 400 with offending items otherwise. Sets `integrated_at`. Run doc-reconcile (step 4b) before/at integrate. |
 | 4.8 Trace report | `GET /api/iterations/<id>/trace` | Returns iteration + items + raw report + verifier reports + lock_in_audit + trace_report. |
@@ -285,13 +285,20 @@ while true; do
       sleep 30
       ;;
     building)
-      # Run next pending item, post build-status + verifier-result
+      # Run next pending item: build-status = progress, verifier-result = verdict
       ITEMS=$(curl -sf http://127.0.0.1:8110/api/iterations/$ITER_ID/status | jq -r '.items[] | select(.status=="locked") | .id')
       for ID in $ITEMS; do
-        # ... dispatch coder + verifier ...
+        # progress only — build-status may NOT set 'verified' (400 by design, see 4.6)
         curl -X POST -H "Authorization: Bearer $TOKEN" \
           http://127.0.0.1:8110/api/iterations/$ITER_ID/items/$ID/build-status \
-          -d '{"status":"verified"}'
+          -d '{"status":"building"}'
+        # ... dispatch coder, then the INDEPENDENT verifier sub-agent ...
+        # the verdict advances the item AND writes its single report; capture the id
+        REPORT_ID=$(curl -sf -X POST -H "Authorization: Bearer $TOKEN" \
+          http://127.0.0.1:8110/api/iterations/$ITER_ID/items/$ID/verifier-result \
+          -d '{"recommendation_overall":"APPROVE","recommendation_reason":"<one-liner>","verifier_session_id":"verifier-'$ID'-<date>"}' \
+          | jq -r '.verification_report.id')
+        # reconcile the 4.6 feature-claim against $REPORT_ID (see ledger-writes.md)
       done
       ;;
     integrated|cancelled)
