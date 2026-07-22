@@ -8,6 +8,8 @@ Used in Stage 4.2 to extract structured items from raw user feedback (tracker su
 
 User submits text via tracker or chat → row in `reports` (status=`pending`) → user clicks "Analyze" (or types "analyze" in chat) → this prompt runs.
 
+**Visual-QA batches (Task 1, 2026-07-23):** a `source='visual-qa'` report's `raw_text` is the DOM-commenter comments concatenated (`#N [category] url\n<text>`). Classify each comment as its own mini-message — use its `category`/`url`/`page`/`locator`/`provenance` (from the `report_comments` rows) as strong signals for `target_kind`/`target_id`. Same rules below (source-substring, split, confidence, rails). Throwaway or tool-meta comments → `observation` or `rejected_excerpts`; never fabricate an item. See `references/stage-4-visual-qa.md`.
+
 ---
 
 ## Inputs (substituted at dispatch time)

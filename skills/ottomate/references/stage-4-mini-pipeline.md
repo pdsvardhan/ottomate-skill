@@ -15,6 +15,7 @@ When project is past Stage 3 (deployed, lifecycle = `building` / `shipped` / `ma
 - Tracker per-flow bug report (single-flow context)
 - Tracker project-level mega-prompt (whole-project context, may span flows)
 - Direct chat with Claude (free-form)
+- **Visual-QA batch** (DOM-commenter export) — see `references/stage-4-visual-qa.md` (Task 1, 2026-07-23)
 - (future) Auto-feedback from runtime monitoring (GlitchTip alerts, perf regressions)
 
 ## Pre-flight: Stage 4 sanity check
