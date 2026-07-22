@@ -56,7 +56,7 @@ and inserts one `report_comments` row per comment (`locator`/`provenance` as JSO
 ## Classify (4.2) — visual-aware
 
 Run the classifier (`prompts/classify-text.md`, visual-QA section) over the report's comments, then
-POST items to `/api/reports/<report_id>/classify` (existing endpoint, `{classified_by_session, items}`).
+POST items to `/api/reports/<report_id>/classify` (existing endpoint, `{classified_by_session, items}`). **Put the source comment id(s) in each item's `proposed_change.source_comment_ids`** (the `report_comments` row ids from the import response) — the 4.3 lock-in view renders each item beside *its* screenshot thumbnail(s) from this (precise per-item mapping, not just the batch view).
 Each **comment** is its own mini `raw_text`; use its `url/page/category/locator/provenance` as strong
 signals for `target_kind`/`target_id`. Keep the bedrock rules:
 - **source-substring** per item (source = the comment `text`); drop hallucinations.
