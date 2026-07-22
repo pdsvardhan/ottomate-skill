@@ -75,7 +75,7 @@ If push fails (network / auth): warn but continue ritual.
 
 ```bash
 ssh pdsv@192.168.1.10 'cd /opt/homeserver/ottomate && bash scripts/generate-api-inventory.sh' \
-  > ~/.claude/plugins/ottomate/skills/ottomate-skill/references/tracker-api-inventory.md
+  > ~/.claude/plugins/ottomate/skills/ottomate/references/tracker-api-inventory.md
 ```
 
 Then eyeball the diff: any NEW route the skill's stage references should know about → add its shape to `tracker-api.md` (or file a to-do on the `ottomate` project if it needs more than a few lines). The inventory went 3 weeks stale in June because nothing owned this step.

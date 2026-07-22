@@ -1,5 +1,5 @@
 ---
-name: ottomate-skill
+name: ottomate
 description: Load and manage Ottomate web project sessions on VAULT7A. Triggered by `/ottomate`, `/ottomate <project-slug>`, or when the user mentions a tracked web project by name. Routes through 5 stages (Stage 0 preprocessing → Stage 1 spec → Stage 2 UI/tech → Stage 3 build → Stage 4 iterate) with anti-gaslighting protections, lock-in gates, an independent verifier sub-agent, and a traceability ledger. Persists state in the Ottomate app at http://127.0.0.1:8110 (server-side).
 ---
 
