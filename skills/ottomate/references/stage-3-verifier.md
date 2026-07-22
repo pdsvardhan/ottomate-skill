@@ -7,6 +7,8 @@
 
 **Mandatory step.** Runs after each feature's code generation, BEFORE comprehensive testing. Catches stubs, lies, and "fake done" before tests give false positives on stub data.
 
+> **Sibling (Task 3):** this is the CODE verifier — *is the code correct/complete?* Its independent sibling, the **feature verifier** (`stage-3-feature-verifier.md`, `prompts/feature-verifier-prompt.md`), answers *does it work for a user?* by driving the real app and asserting **system state**. For a **user-facing** feature, "done" = both green (block cv/public, warn personal — adr-014). The feature verifier runs after this one (Stage 3) and per-item in Stage 4.7.
+
 > **Ledger writes (2026-05-13):** Before dispatching the verifier, **POST a `feature_claim` row** capturing the coder's "done" assertion. After the verifier completes, **PATCH the claim's `reconciled_with`** based on verdict. See `references/ledger-writes.md` for the curl commands and verdict → reconciled_with mapping. Without these writes, anti-gaslight Rule 1 has nothing to query.
 
 ## When to run

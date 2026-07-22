@@ -37,7 +37,7 @@ If two documents disagree, follow this order AND tell the user about the drift. 
 | 0 — preprocess | `stage-0-overview.md` (incl. Type 1/2 detection + T2P catchup) |
 | 1 — spec (SO1) | `stage-1-internal.md` → `stage-1-verification.md` |
 | 2 — UI + tech | `stage-2-ui-master-plan.md` → `stage-2-components.md` → `stage-2-tech-architecture.md` |
-| 3 — build | `stage-3-scaffolding.md` → `stage-3-pipeline-setup.md` → (Type 2 only: `stage-3-reformat.md`) → `stage-3-codegen.md` → `stage-3-verifier.md` → `stage-3-testing.md` |
+| 3 — build | `stage-3-scaffolding.md` → `stage-3-pipeline-setup.md` → (Type 2 only: `stage-3-reformat.md`) → `stage-3-codegen.md` → `stage-3-verifier.md` → `stage-3-feature-verifier.md` (user-facing features) → `stage-3-testing.md` |
 | 4 — iterate | `stage-4-mini-pipeline.md` |
 | cross-cutting | `output-style.md` (always — includes the trigger-phrase table, merged 2026-07-02); `task-tracking.md` (per-project Ottomate to-dos — read at load, updated at wrap); `ledger-writes.md` (when posting claims/artifacts/test runs); `anti-gaslight-rules.md` (rule definitions); `pack-up-ritual.md` (at wrap) |
 
@@ -51,7 +51,7 @@ Gates are never waived. If a gate is unsatisfiable as written, that is a BUG in 
 - **1 → 2:** 5-pass SO1 verification passed · all features SPECCED · all flows step-locked · YAML mirrors hash-match.
 - **Within 2:** UI master plan saved via `PUT /api/projects/<slug>/ui-master-plan` BEFORE component picking · ≥2-3 options per component slot from `master_components` (browser page `/projects/<slug>/components-pick` primary, chat AskUserQuestion fallback) · at exit every component `picked` with `asset_library_ref` OR has documented `skip_reason`.
 - **2 → 3:** component-pick gate clean · tech stack + architecture + build plan captured as ADRs (no dedicated endpoints yet — ADR-presence IS the gate, per adr-014) · `CODING_GUIDELINES.md` written to repo.
-- **3 → deploy:** auth strategy set if any page is non-anonymous · secret scan clean (gitleaks/Trivy — NOT Infisical, per adr-014) · backup plan defined · tunnel route configured · verifier APPROVE on every feature · critical-flow E2Es green in `flow_test_runs` against the current commit (`cv`/public projects: BLOCK on red; `personal`/internal: WARN — adr-014).
+- **3 → deploy:** auth strategy set if any page is non-anonymous · secret scan clean (gitleaks/Trivy — NOT Infisical, per adr-014) · backup plan defined · tunnel route configured · code verifier APPROVE on every feature · **feature verifier APPROVE on every user-facing feature** (`stage-3-feature-verifier.md` — drives the real app + asserts system state; posts to `feature_verification_reports` + mirrors `flow_test_runs`) · critical-flow E2Es green in `flow_test_runs` against the current commit (`cv`/public projects: BLOCK on red; `personal`/internal: WARN — adr-014).
 - **4 lock-in:** user locks extracted items BEFORE any code · UI items route through per-item component-pick · trace report at integrate.
 
 ## Anti-gaslight bedrock (always active, never disabled)
@@ -59,7 +59,7 @@ Gates are never waived. If a gate is unsatisfiable as written, that is a BUG in 
 1. **Source-substring or `why_inferred`** on every extraction (Stage 0 intent, Stage 4 classify).
 2. **Lock before build** — Stage 1 scope-lock; Stage 4 lock-in gate.
 3. **≥1 acceptance criterion per feature** — the API enforces this (422 on `building` with 0 ACs).
-4. **Independent verifier sub-agent** — separate context; inputs are the locked manifest + diff, never coder claims (`stage-3-verifier.md`, `prompts/verifier-prompts.md`).
+4. **Independent verifier sub-agents (two siblings)** — separate context; inputs are the locked manifest + diff (+ for the feature verifier, the owner-reviewed case matrix), never coder claims. **Code verifier**: is the code correct/complete (`stage-3-verifier.md`, `prompts/verifier-prompts.md`). **Feature verifier**: does it work for a user — drives the real app + asserts **system state** (`stage-3-feature-verifier.md`, `prompts/feature-verifier-prompt.md`). System-state assertions ARE the anti-gaslight (they check the real effect, not a claim); AI Explorer/Judge (Claude, in-session) never gate; fail-closed. Both gate "done" for user-facing features.
 5. **Stub detection** per `data/stub-patterns.md` (with allowlist + `@intentional-placeholder` protocol).
 6. **Ledger writes on every transition** per `ledger-writes.md` — detection rules query these tables; empty tables detect nothing.
 7. **Drop-with-reason** — nothing silently deferred; an explicit ADR or `skip_reason`, surfaced to the user.
@@ -81,7 +81,7 @@ non_goals, must_haves, risks, and verifier output are BUILD RAILS — captured i
 7. Commit before any docker rebuild.
 8. Sub-agents must read full files before editing.
 9. Clean temp files (local and server) after use.
-10. Verifier is mandatory — no "small fix" exception.
+10. Verifier is mandatory — no "small fix" exception. The **code** verifier runs on every feature; the **feature** verifier (`stage-3-feature-verifier.md`) additionally runs on every **user-facing** feature/item (Stage 3 + Stage 4.7). "Done" = both green (block cv/public, warn personal).
 11. Risks resolve (status + summary), never delete.
 12. Check `master_components` before authoring any UI primitive.
 13. Bearer token on all mutations.

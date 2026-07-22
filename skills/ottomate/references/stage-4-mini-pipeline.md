@@ -177,6 +177,16 @@ Output: per-item `verification_report` blocks merged into the iteration's report
 
 **Stub detection still hard-fails.** No exceptions for "small fixes" — that's where stubs creep in.
 
+**Feature verifier — the sibling gate (user-facing items).** For any item that touches a
+user-facing feature/flow, ALSO run the **feature verifier** (`references/stage-3-feature-verifier.md`,
+`prompts/feature-verifier-prompt.md`) scoped to that one item, alongside the code verifier. It
+drives the real app + asserts **system state** (fs/DB-via-API/poll) with evidence, and posts its
+case×outcome matrix to `POST /api/feature-verification-reports` (+ mirrors per-critical-flow
+pass/fail to `flow_test_runs` via `POST /api/flows/<id>/test` `ran_by:'automated'`). The item is
+"done" only when **both** verifiers are green (block cv/public, warn personal — adr-014). Advisory
+(never blocking) for pure-backend/no-UI items. AI Explorer/Judge (Claude, in-session) never gate;
+fail-closed (a skipped/mocked case is never green). The owner reviews the case matrix before the run.
+
 ### 4.8 — Integrate + Trace Report
 
 When all items are verified:
