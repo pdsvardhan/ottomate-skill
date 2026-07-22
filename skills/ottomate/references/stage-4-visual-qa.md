@@ -74,12 +74,15 @@ Screenshots are evidence: each `report_comments` row has its shot on the asset v
 browser via the visual-qa screenshot route once the lock-in view enhancement lands). After lock, the
 normal `stage-4-mini-pipeline.md` runs (route → component-pick/taste → mini-build → verifier → integrate → trace).
 
-## Status (2026-07-23)
+## Status (2026-07-23) — all shipped
 
-- **LIVE:** extension v2 capture; `import-visual-qa` endpoint + `report_comments` table + screenshot
-  storage (app commit `33e7e0e`); tested end-to-end (report 118 on screenroom, 3 comments + 3 shots).
-- **Pending polish:** the 4.3 lock-in **view** rendering each item beside its screenshot thumbnail
-  (frontend + a screenshot-serving route). Until then, review items in the existing lock-in UI; the
-  screenshots live on the asset volume for reference.
-- **Phase 2 (later):** extension "Send to Ottomate" direct push (kills the file step); `data-oid`
-  scaffolding for exact component mapping.
+Everything below is LIVE + verified:
+- Extension v2 capture (screenshot + category + locator + `data-oid` detect); export **zip** OR
+  **"Send to Ottomate"** direct push (no download; token stored locally, POSTs via the service worker).
+- `POST …/import-visual-qa` + `report_comments` + screenshot storage; classify → 4.3 lock-in.
+- The 4.3 lock-in **view renders screenshot thumbnails** — the batch in the left column, and **per-item**
+  on each card via `proposed_change.source_comment_ids`. Shots served by `/api/asset/[...path]`.
+- `DELETE /api/reports/[id]` removes a report + its comments + screenshots (cleanup).
+- **`data-oid` provenance** stamped by codegen on component/section roots
+  (`references/stage-3-codegen.md` → "Provenance stamping") → exact comment→component mapping; also
+  Task 3's stable test selectors.
