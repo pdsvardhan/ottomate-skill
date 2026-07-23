@@ -2,6 +2,15 @@
 
 **REWRITTEN 2026-04-29 per audit (D-S2.3.1 through D-S2.3.8).** Old design had cross-project scan + classification during project flow; new design separates one-time seeding from the per-project gap check.
 
+> **Design method (Task 2, 2026-07-23).** The per-component pick below is the *state layer*; the
+> *method* that decides each pick — showing **2–4 real interactive `master_components` variants side by
+> side, tagged by source, picked/mixed by the owner** (fidelity-ladder Step B) — lives in
+> `stage-2-design-method.md`. The variants are shown as one evolving **Claude Artifact** at a stable
+> URL (`scripts/preview-build/`), not static SpotlightCards, when the slot is taste-driven. The chosen
+> variant + rationale is written to the `ui_master_plans.design_ledger` (uncapped) AND to
+> `components.asset_library_ref` / `picked` as today. Honour the **colour-budget rule** and **vary on
+> the open axis** (§6/§7 of the method).
+
 ## Storage redesign
 
 Master components stored as:
@@ -220,3 +229,30 @@ Justified — picking wrong components compounds into Stage 3 rebuild waste.
 | 2.4 sometimes silently skipped (media-dashboard regression) | HARD enforcement: every component must exit `picked=true` OR `skip_reason IS NOT NULL` |
 | Cross-page consistency post-hoc | Claude review pass at end of 2.4 |
 | Variants implicit | Variant selection sub-pick when applicable |
+
+---
+
+## Theme-from-content (Task 2 — the core differentiator, "the whole identity")
+
+For **asset-rich** projects, derive per-item design tokens from the **real content itself** rather than
+fixed hues — e.g. each media card's border colour from that poster's dominant vibrant colour. Borders
+then always harmonise with real artwork (impossible with a fixed palette). In the Screenroom run this
+was **not garnish — the poster-derived border WAS the product's identity.**
+
+**Extractor recipe** (ImageMagick, pluggable — `scripts/preview-build/theme-extract.mjs`):
+
+1. Downscale + quantise to ~8 colours: `convert <img> -resize 120x120 -colors 8 -depth 8 histogram:info:-`.
+2. Parse the histogram (count + hex per colour). For each, compute HSV.
+3. **Score = saturation × value × prevalence**; **skip near-black (V < ~0.15) and near-grey (S < ~0.12)**.
+4. Pick the top; **boost for contrast** against the card background (nudge lightness so the border reads
+   on both light + dark). Emit the hex as that item's `--card-accent` token.
+
+**Colour-budget still applies:** the derived accent goes on the **poster edge only** (+ maybe one CTA) —
+neutral everywhere else; do NOT tint ratings/specs/tables with it (the #1 rework in the real run). Keep
+purposeful colour elsewhere (stat tiles, semantic states) — restraint ≠ monochrome.
+
+**Wiring:** the one-command preview pipeline (`stage-2-design-method.md` §4) runs the fetcher + extractor
+and injects `{{IMG_x}}` (data: URI) + `{{--card-accent}}` per card into the self-contained Artifact
+template. Per-project asset-source config (where the real assets come from — a media path, Radarr/TMDB,
+a project API) is the only reason theme-from-content is sequenced as a first-class Phase-2 wire rather
+than default-on. Derive tokens from real content **wherever it improves cohesion**, not only posters.

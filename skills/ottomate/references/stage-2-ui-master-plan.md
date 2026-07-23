@@ -7,6 +7,17 @@
 
 **The lock-in gate for the visual identity.** Theme + palette + fonts + animation level + aspect ratios get locked here. Stage 3 cannot change them without going back through this gate.
 
+> **Design method + ledger (Task 2, 2026-07-23).** The *how* — deriving the theme/palette/identity by
+> showing real interactive options and extracting taste by selection — lives in
+> `stage-2-design-method.md` (the A→B→C fidelity ladder, run before/at this lock). This row is also the
+> **decision-ledger home**: the full, uncapped design ledger persists as JSON in
+> `ui_master_plans.design_ledger` (context · worklist · ladder state · per-component decisions +
+> rationale · colour-budget · locked-vs-open · preview Artifact URL). `GET .../ui-master-plan` reloads
+> it on resume; a YAML mirror is written to the project repo at each lock. NEVER store decisions as
+> `project_todos.title` — that field is capped at 300 chars and truncated decisions twice in the real run.
+> **Theme-from-content** (poster → dominant-colour token) is first-class for asset-rich projects — wire
+> the fetcher + extractor early (`scripts/preview-build/`, §Theme-from-content in `stage-2-components.md`).
+
 ## Inputs
 
 - Doc 4 from Stage 1 (Pages — gives count + types)

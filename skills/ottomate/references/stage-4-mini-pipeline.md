@@ -147,6 +147,14 @@ If `picked_component` is already set on the item (user re-locked an item that ha
 
 Always include "keep the current/official look" as one of the options when an official or statutory design exists.
 
+**Scale the fidelity to the item (Task 2, 2026-07-23).** A cheap item (one button colour, a font tweak)
+stays swatch-level as above. A **whole-surface restyle** ("redesign the card", "make the dashboard feel
+premium") runs the full **A→B→C visual loop** (`references/stage-2-design-method.md`): show 2–4 **real
+interactive variants** (from `master_components`, tagged by source) as one evolving **Claude Artifact** at
+a stable URL, pick/mix, rebuild the same URL, lock. Honour the **colour-budget** + **vary-on-the-open-axis**
+rules and record each decision to `ui_master_plans.design_ledger` (uncapped). Options are ALWAYS before
+build — never build N full variants and ask after.
+
 ### 4.5 — Mini-Staging
 
 Update the affected SO1/SO2 docs:

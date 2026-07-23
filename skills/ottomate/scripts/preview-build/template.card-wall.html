@@ -1,0 +1,138 @@
+<!-- Screenroom poster-wall preview template (Task 2, theme-from-content). BODY-CONTENT-ONLY —
+     no doctype/html/head/body — so it publishes directly via the Artifact tool. build-preview.mjs
+     fills the TITLE, SUBTITLE and PREVIEW_DATA placeholders (named without braces here on purpose:
+     a literal token in this comment would swallow the real substitution). Each card's border is the
+     poster's OWN dominant colour (--accent); colour-budget: accent on the poster edge only, coral for
+     the one action, teal/amber for stat tiles, neutral everywhere else. Light + dark. -->
+<style>
+  .sr {
+    /* cool-biased neutrals — picked, not defaulted */
+    --bg: #0d0e12; --surface: #14161c; --surface-2: #1b1e26; --line: #262a34;
+    --ink: #eef0f4; --ink-dim: #a2a7b4; --ink-faint: #6b7280;
+    /* fixed, purposeful colours — NOT the per-poster derived accent (restraint != monochrome) */
+    --stat-a: #3ba99c; --stat-b: #d9a441; --action: #ff5a4d;
+    --owned: 1; --radius: 10px;
+    color-scheme: dark;
+    background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.5;
+    padding: clamp(20px, 3vw, 48px);
+    min-height: 100%;
+  }
+  @media (prefers-color-scheme: light) {
+    .sr { --bg:#f6f5f2; --surface:#fff; --surface-2:#efeee9; --line:#e0ded6;
+          --ink:#171820; --ink-dim:#565b66; --ink-faint:#8a8f99; color-scheme: light; }
+  }
+  :root[data-theme="dark"] .sr { --bg:#0d0e12; --surface:#14161c; --surface-2:#1b1e26; --line:#262a34;
+          --ink:#eef0f4; --ink-dim:#a2a7b4; --ink-faint:#6b7280; color-scheme: dark; }
+  :root[data-theme="light"] .sr { --bg:#f6f5f2; --surface:#fff; --surface-2:#efeee9; --line:#e0ded6;
+          --ink:#171820; --ink-dim:#565b66; --ink-faint:#8a8f99; color-scheme: light; }
+
+  .sr * { box-sizing: border-box; }
+  .sr-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
+  .sr-title { font-size: clamp(30px, 4.2vw, 52px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.02; text-wrap: balance; margin: 0; }
+  .sr-title span { color: var(--ink-faint); font-weight: 800; }
+  .sr-sub { margin: 10px 0 0; max-width: 62ch; color: var(--ink-dim); font-size: 15px; }
+  .sr-legend { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 12.5px; color: var(--ink-dim); }
+  .sr-legend i { width: 26px; height: 14px; border-radius: 3px; border: 2px solid #DE7329; background: transparent; }
+  .sr-toggle { flex: none; display: inline-flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line);
+    color: var(--ink-dim); border-radius: 999px; padding: 8px 14px; font-size: 13px; cursor: pointer; }
+  .sr-toggle:hover { color: var(--ink); border-color: var(--ink-faint); }
+  .sr-toggle:focus-visible { outline: 2px solid var(--action); outline-offset: 2px; }
+
+  .sr-stats { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 28px; }
+  .sr-stat { flex: 1 1 150px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px; position: relative; overflow: hidden; }
+  .sr-stat::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--tile, var(--stat-a)); }
+  .sr-stat b { display: block; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .sr-stat span { font-size: 12.5px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .sr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 18px; }
+  .sr-card { position: relative; aspect-ratio: 2/3; border-radius: var(--radius); overflow: hidden;
+    background: var(--surface-2); border: 2px solid var(--accent, var(--line));
+    transition: transform .28s cubic-bezier(.2,.7,.2,1), box-shadow .28s ease; }
+  .sr-card--watch { border-style: dashed; border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+  .sr-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .sr-card:hover { transform: translateY(-6px); box-shadow: 0 14px 34px -12px color-mix(in srgb, var(--accent) 70%, transparent); }
+  .sr-card:focus-within { outline: 2px solid var(--action); outline-offset: 2px; }
+  .sr-foot { position: absolute; inset: auto 0 0 0; padding: 34px 12px 12px; transform: translateY(101%);
+    background: linear-gradient(to top, rgba(6,7,10,.96) 30%, rgba(6,7,10,.72) 70%, transparent);
+    transition: transform .28s cubic-bezier(.2,.7,.2,1); }
+  .sr-card:hover .sr-foot, .sr-card:focus-within .sr-foot { transform: translateY(0); }
+  .sr-foot h3 { margin: 0; font-size: 14.5px; font-weight: 700; color: #fff; letter-spacing: -0.01em; }
+  .sr-foot .m { margin: 3px 0 10px; font-size: 12px; color: #c8ccd6; font-variant-numeric: tabular-nums; }
+  .sr-row { display: flex; align-items: center; gap: 8px; }
+  .sr-play { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--action); color: #fff; border: none; border-radius: 7px; padding: 7px 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; }
+  .sr-play:hover { filter: brightness(1.07); }
+  .sr-rate { flex: none; font-size: 12px; font-weight: 700; color: #fff; background: rgba(255,255,255,.14);
+    border-radius: 6px; padding: 6px 8px; font-variant-numeric: tabular-nums; }
+  .sr-badge { position: absolute; top: 8px; left: 8px; font-size: 10.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+    padding: 3px 7px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 88%, #000); color: #fff; }
+  .sr-badge--watch { background: rgba(20,22,28,.82); color: var(--ink-dim); border: 1px solid rgba(255,255,255,.18); }
+  .sr-foot-note { margin-top: 30px; color: var(--ink-faint); font-size: 12px; }
+  @media (prefers-reduced-motion: reduce) {
+    .sr-card, .sr-foot { transition: none; }
+    .sr-card:hover { transform: none; }
+    .sr-foot { transform: translateY(0); position: static; background: var(--surface); padding: 10px 12px; }
+    .sr-foot h3, .sr-foot .m { color: var(--ink); }
+  }
+</style>
+
+<div class="sr" id="srRoot">
+  <header class="sr-head">
+    <div>
+      <h1 class="sr-title">{{TITLE}}</h1>
+      <p class="sr-sub">{{SUBTITLE}}</p>
+      <span class="sr-legend"><i></i> each frame is the poster’s own dominant colour</span>
+    </div>
+    <button class="sr-toggle" id="srToggle" type="button" aria-label="Toggle light and dark">◐ Theme</button>
+  </header>
+  <div class="sr-stats" id="srStats"></div>
+  <main class="sr-grid" id="srGrid" aria-label="Film collection"></main>
+  <p class="sr-foot-note" id="srNote"></p>
+</div>
+
+<script>
+  window.__PREVIEW__ = {{PREVIEW_DATA}};
+  (function () {
+    var d = window.__PREVIEW__ || { cards: [] };
+    var cards = d.cards || [];
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]; }); };
+
+    // Stats — fixed purposeful colours (teal/amber), NOT the derived poster accents.
+    var owned = cards.filter(function (c) { return c.owned; }).length;
+    var stats = [
+      { n: cards.length, l: 'In library', tile: 'var(--stat-a)' },
+      { n: owned, l: 'Owned', tile: 'var(--stat-a)' },
+      { n: cards.length - owned, l: 'Watchlist', tile: 'var(--stat-b)' }
+    ];
+    document.getElementById('srStats').innerHTML = stats.map(function (s) {
+      return '<div class="sr-stat" style="--tile:' + s.tile + '"><b>' + s.n + '</b><span>' + s.l + '</span></div>';
+    }).join('');
+
+    // Poster wall — accent (the derived colour) lives ONLY on the card edge + its hover glow.
+    document.getElementById('srGrid').innerHTML = cards.map(function (c) {
+      var watch = !c.owned;
+      return '<article class="sr-card' + (watch ? ' sr-card--watch' : '') + '" style="--accent:' + esc(c.accent) + '" tabindex="0">'
+        + '<img src="' + esc(c.img) + '" alt="' + esc(c.title) + ' poster" loading="lazy">'
+        + '<span class="sr-badge' + (watch ? ' sr-badge--watch' : '') + '">' + (watch ? 'Watchlist' : 'Owned') + '</span>'
+        + '<div class="sr-foot"><h3>' + esc(c.title) + '</h3><div class="m">' + esc(c.meta) + '</div>'
+        + '<div class="sr-row"><button class="sr-play" type="button">▶ Play</button>'
+        + (c.rating ? '<span class="sr-rate">★ ' + esc(c.rating) + '</span>' : '') + '</div></div>'
+        + '</article>';
+    }).join('');
+
+    var note = 'Borders derived from ' + cards.length + ' real posters — colour budget: accent on the frame only, coral for the one action, neutral surfaces.';
+    document.getElementById('srNote').textContent = note;
+
+    // Theme toggle — stamps data-theme on <html> so it wins over the OS preference in both directions.
+    document.getElementById('srToggle').addEventListener('click', function () {
+      var root = document.documentElement;
+      var cur = root.getAttribute('data-theme');
+      if (!cur) { cur = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; }
+      root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+    });
+  })();
+</script>
