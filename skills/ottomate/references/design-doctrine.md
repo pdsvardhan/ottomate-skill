@@ -163,6 +163,54 @@ H2 feasibility) arrive with the constraint checker. The remaining 13 are on-dema
 
 ---
 
+## 3½. Committing to a direction (F1)
+
+The other half of rule 22: slop is the absence of a decision, and **a named direction is the decision.**
+The selection table + adjective map are in `data/design-directions.json`; each direction's full recipe
+stays in `docs/research/` and is pulled **only for the one direction chosen**.
+
+42. **Name exactly one direction — or two with one explicitly dominant — before touching a single
+    token.** "Make it modern and clean" is not a direction. Route the brief's adjectives through the
+    map, confirm with a disambiguating reference (a competitor, an era, a real object), then build.
+    Three or more directions on one surface is how output becomes incoherent; a second direction
+    contributes exactly **one** accent move, never equal weight. `[F1 §3.1, §3.9]`
+43. **"Modern", "clean" and "professional" are underspecified — always disambiguate.** Each maps to at
+    least four directions that look nothing alike (modern-corporate → Swiss; modern-tech → Material or
+    Cyber; modern-luxury → Luxury/Editorial; modern-playful → Playful). Guessing from a one-word brief
+    is the most common brief-to-direction failure. `[F1 §3.3]`
+44. **A direction is a bet across type + colour + shape/space + motion *together*.** Changing the
+    palette while type, radius and motion stay generic is a re-skinned default — the exact F2 failure.
+    Use all four axes every time. `[F1 §3.5]`
+45. **Hit at least two of a direction's "authentic vs cosplay" markers.** Each direction lists 2–3
+    specific checkable details separating genuine commitment from a late-applied skin. Fewer than two
+    is a signal to revisit the build, not to ship it. `[F1 §3.6]`
+46. **Match motion *character* to the direction's family before tuning any numbers** — brutalism
+    abrupt, luxury slow and un-springy, playful bouncy, terminal narrated/staggered. The milliseconds
+    and curves are B1's. This is where `animation_vocab` gets a source. `[F1 §3.10]`
+47. **Decide the dark-mode-carrying token on purpose.** Some directions invert badly by default:
+    skeuomorphism's top-lit warm gradient becomes "wet plastic"; brutalism's stark pairing needs a
+    deliberate inversion; Swiss's single accent may need re-tuning for dark contrast. `[F1 §3.4]`
+48. **Glassmorphism, neumorphism, cyber-neon-on-black and dark terminal palettes are high
+    accessibility risk *by construction, not by accident*.** Verify contrast against the **actual
+    rendered background**, not the mockup, and ship a solid fallback gated on
+    `prefers-reduced-transparency` / `forced-colors`. Not banned — high-context-dependency. `[F1 §3.7, §3.14]`
+49. **Every recommended typeface must be free/open with its licence stated.** Helvetica, Univers,
+    Akzidenz-Grotesk, Futura, Frutiger and the original Didot/Bodoni cuts are **all commercial** — never
+    assume the historically "correct" face is free. `[F1 §3.11]`
+50. **Flag trend-bound choices out loud.** Y2K/Frutiger Aero, neo-brutalism and Material-3-Expressive
+    are live 2025–26 trends: good bets for a nostalgia or consumer brief, riskier for something that
+    must still look right in three years. Swiss, minimalism and editorial are the durable defaults —
+    **say which kind of bet is being made.** `[F1 §3.13]`
+51. **"Premium" is not a synonym for minimalism.** It is minimalism *plus* art-directed (never stock)
+    imagery, visible tracking/kerning discipline, and total restraint — one loose element breaks the
+    illusion. Strip those and a "luxury" build is an empty template. `[F1 §3.12]`
+52. **No adjectives at all → Swiss-adjacent minimalism with editorial type discipline.** Boldness is
+    opt-in, **never a silent default** — do not invent a maximalist or brutalist choice nobody asked
+    for. `[F1 §3.15]`
+53. **Prefer the domain's own real artifacts over a movement's stock motifs.** A generic leaf icon
+    signals "eco" for any brand; this domain's actual ledger line, waveform, wax seal or blister pack
+    cannot be handed to a competitor without breaking. Same principle as theme-from-content. `[F1 §3.8]`
+
 ## 4½. The audience profile — what makes a rule bind (owner ruling 2026-07-23)
 
 **A rule is not universally true; it is true for an audience on a device.** Research states rules
