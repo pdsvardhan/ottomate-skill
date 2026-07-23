@@ -13,11 +13,83 @@
       "CHATGPT": "docs/research/ZZ-chatgpt-deep-research-report.md"
     },
     "tiers": {
-      "block_owner": "Owner's own constraints + the isolation gate. Violation = regenerate, never presented. Fail closed.",
-      "block_floor": "The four hard doctrine gates. Violation = regenerate. Deliberately tiny.",
+      "block_owner": "Owner's own constraints + the isolation gate. Violation = regenerate, never presented. Fail closed. NEVER varies by audience profile.",
+      "block_floor": "The hard doctrine gates. Violation = regenerate. Deliberately tiny, and FILTERED BY AUDIENCE PROFILE (see audience_profiles).",
       "advise": "Computed, annotated on the variant, shown. A Rebuild band triggers ONE auto-regeneration, then shows with the score visible."
     },
     "owner_override": "An explicit owner instruction outranks every tier (doctrine rule 22: an explicit request IS a decision). Overridden rules are recorded in the ledger with rationale and exempted from the templated tax."
+  },
+
+  "audience_profiles": {
+    "$comment": "Owner ruling 2026-07-23: a rule is not universally true, it is true for an audience on a device. Research states rules against an implied general-public/all-devices reader; most of this owner's projects are not that. The project's profile is a first-class REVISABLE ledger field and it selects which floor rules bind. block_owner rules NEVER vary by profile.",
+    "field": "ledger.context.audience_profile",
+    "graduation": "A profile may change (personal tool goes public). Every decision records the profile its rationale depended on, so a profile change automatically re-opens exactly those decisions instead of leaving silent debt. This is the whole reason the rationale must name the profile.",
+    "profiles": {
+      "P1": {
+        "name": "solo",
+        "typical": "1 user (the owner), built by them, single large display, mouse + keyboard",
+        "example": "a personal dashboard on a 27-inch monitor",
+        "floor": {
+          "floor-contrast": "advise",
+          "floor-reduced-motion": "advise",
+          "floor-target-size": "skip",
+          "floor-not-colour-alone": "advise",
+          "hover-only-content": "allow"
+        },
+        "responsive_range": "primary display only (4K-first if that is the primary screen)",
+        "screen_reader": "skip"
+      },
+      "P2": {
+        "name": "trusted-group",
+        "typical": "a handful of known users (family/friends), built by the owner, laptop-class displays",
+        "example": "a shared media library used by 7 people on laptops",
+        "floor": {
+          "floor-contrast": "block",
+          "floor-reduced-motion": "block",
+          "floor-target-size": "advise",
+          "floor-not-colour-alone": "block",
+          "hover-only-content": "allow-with-flag"
+        },
+        "flag_note": "some laptops are touchscreens — flag hover-only content, do not block it",
+        "responsive_range": "1280-1920",
+        "screen_reader": "skip unless a member needs it — ASK ONCE at the context gate, then record"
+      },
+      "P3": {
+        "name": "public",
+        "typical": "unknown users, all devices, mobile through monitor",
+        "example": "a public blog or stats site",
+        "floor": {
+          "floor-contrast": "block",
+          "floor-reduced-motion": "block",
+          "floor-target-size": "block",
+          "floor-not-colour-alone": "block",
+          "hover-only-content": "block"
+        },
+        "responsive_range": "mobile-first, full range",
+        "screen_reader": "block"
+      }
+    },
+    "invariant": "The isolation gate (iso-*), the owner's constraint contract, and 'never show one option' apply at EVERY profile — they protect the integrity of the decision, not the audience.",
+    "worked_instance": {
+      "project": "screenroom",
+      "profile": "P2",
+      "decision": "card keeps title, rating and Play in a hover-revealed footer",
+      "verdict": "accepted informed trade-off; under P3 this would be a blocking B2 §3.5 defect",
+      "reopens_if": "profile changes to P3"
+    },
+    "status": "pending"
+  },
+
+  "hover_only_content": {
+    "id": "hover-only-content",
+    "tier": "block_floor",
+    "source": "B2 §3.5, C1 §4.3 Card misuse",
+    "statement": "Content or actions revealed ONLY on :hover are invisible to touch, keyboard and pen users. Hover is polish; the underlying affordance must be persistent.",
+    "check": "hover_only_reveal",
+    "detectors": "an element whose visibility/transform/opacity is driven solely by a :hover selector and that contains a link, button, or the component's primary label",
+    "remedy": "regenerate_variant",
+    "profile_dependent": true,
+    "status": "pending"
   },
 
   "constraint_contract_schema": {

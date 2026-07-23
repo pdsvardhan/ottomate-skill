@@ -163,10 +163,76 @@ H2 feasibility) arrive with the constraint checker. The remaining 13 are on-dema
 
 ---
 
+## 4½. The audience profile — what makes a rule bind (owner ruling 2026-07-23)
+
+**A rule is not universally true; it is true for an audience on a device.** Research states rules
+against an implied general-public, all-devices reader. Most of this owner's projects are not that. So
+the project's **audience profile** is a first-class, **revisable** ledger field, and it mechanically
+selects which rules block, which advise, and which are skipped entirely.
+
+| | **P1 — solo** | **P2 — trusted group** | **P3 — public** |
+|---|---|---|---|
+| Typical | 1 user (the owner), built by them, 27″ monitor | ~7 (family/friends), laptops | anyone, mobile → monitor |
+| Input | mouse + keyboard | trackpad, some touchscreens | touch first-class |
+| Hover-only content | **allowed** | allowed, flag touchscreen laptops | **BLOCKS** (B2 §3.5) |
+| Target size ≥ 24px | skip | advise | **BLOCKS** |
+| Contrast ≥ 4.5:1 | advise (their eyes, their call) | **BLOCKS** — other people, screens, lighting | **BLOCKS** |
+| `prefers-reduced-motion` | advise | **BLOCKS** | **BLOCKS** |
+| Screen-reader semantics | skip | skip unless a member needs it — **ask once** | **BLOCKS** |
+| Responsive range | 4K-first only | 1280–1920 | mobile-first, full range |
+| Colour-alone state | advise | **BLOCKS** | **BLOCKS** |
+
+**Rules that never vary by profile:** the isolation gate (G1), the owner's own constraint contract, and
+"never show one option". Those are about the integrity of the *decision*, not the audience.
+
+**Graduation is the point.** A profile can change (a personal tool goes public). Because every decision
+records the profile its rationale depended on, a profile change **automatically re-opens exactly those
+decisions** instead of leaving silent debt. Recording *why* is what makes this work — see rule 16.
+
+**Worked instance:** Screenroom is **P2**. Its card keeps title, rating and Play in a hover-revealed
+footer. Under P3 that is a blocking B2 §3.5 defect; under P2 it is an **accepted informed trade-off**,
+recorded with its reason, and it does not count against the design in critique. If Screenroom ever goes
+public, that decision re-opens automatically.
+
+## 4¾. Bundled rounds & harvested context (owner ruling 2026-07-23)
+
+38. **A variant is normally a bundle; the pick is a vector, not a panel.** The owner's real reaction is
+    *"I like 3 things in v1, 3 in v2, 4 in v3"* — so a round may carry **N named sub-decisions** across
+    2–4 variants, and each sub-decision is selected **individually**. A mix is the default outcome, not
+    an exception. G1's isolation still applies, restated for bundles: **every named sub-decision must
+    genuinely differ across the set** (so all N really have N options, and none is silently constant),
+    and nothing outside the declared list may move. Strict single-axis rounds remain the right tool for
+    the one or two things still contested after a bundle round. `[G1 §3.9/§4.7 merge-beats-best 70% vs
+    56% [CITED]; the per-item selection model is the owner's, and the evidence supports it]`
+39. **Harvest before you ask.** Anything already true in the repo or the ledger is a **frozen control**,
+    never an interview question: existing tokens, existing `master_components`, locked ledger decisions,
+    the audience profile. Re-asking for something the system can look up is the behaviour the owner
+    named as "vomit". The context gate earns its keep **only** on a genuinely cold start.
+40. **What to vary comes from the component's anatomy, not from invention.** C1 gives every component a
+    named parts list (a Card is container · media · header · title · meta · actions) and a required-state
+    floor; B2 gives the state matrix. The sub-decisions in a bundle are **those parts and those states**.
+    `[C1 §4.2-4.4, B2 §4.1]`
+41. **Spend the budget on generation 1.** Reruns collapse when the first set is genuinely creative, so
+    first generation gets the commitment to a direction, the content-derived colour, and the named
+    material reference — not rounds 2 and 3 grinding toward them. `[owner ruling; consistent with F2 §3.1
+    "slop is the absence of a decision"]`
+
+**Component tiers (C1 §4.1 — replaces the 5-tier ladder previously invented in the Task-2 plan).**
+Classify by **reuse cardinality**, not complexity: **primitive** = one concern, nothing named nested
+inside, repeats many times (Button, Badge, Avatar) · **composite** = assembles ≥2 primitives *and owns
+the state orchestration between them*, repeats several times (Card, Dialog, Tabs, Toast) · **surface** =
+page-level region, usually once per screen (App-shell, Page-header, Empty-state). Test: *repeats many
+times → primitive/composite; once per screen → surface.*
+
+**Render surface follows the tier.** A round renders **the target's tier, with its required states pinned
+open side by side** — a primitive across its states; a composite as 1–3 instances; a surface once at real
+density. Rendering a full page to decide a component question is a rung error: it costs an order of
+magnitude more and, if the axis lives in a collapsed region, hides the very difference being judged.
+
 ## 5. Enforcement tiers (owner ruling 2026-07-23)
 
-Three tiers. The distinction is load-bearing: **the owner's own constraints are absolute; the research
-is advice with a small hard floor.**
+Three tiers, **filtered by the audience profile above**. The distinction is load-bearing: **the owner's
+own constraints are absolute; the research is advice with a small, profile-dependent hard floor.**
 
 | Tier | What's in it | On violation |
 |---|---|---|
