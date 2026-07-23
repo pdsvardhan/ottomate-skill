@@ -1,0 +1,316 @@
+{
+  "$comment": "Machine-readable design rules. NEVER read by a model — executed by the pre-present checker (scripts/design-check/). Prose principles live in references/design-doctrine.md; scoring lives in data/design-rubric.md. Each rule's `status` is the honest build state: 'pending' = specified but no implementation exists yet, so it enforces NOTHING.",
+  "meta": {
+    "version": 1,
+    "baselined": "2026-07-23",
+    "rebaseline_due": "2026-10-23",
+    "rebaseline_reason": "F2 rule 30 (escape treadmill): today's escape becomes tomorrow's tell. The cliche catalogue below rots. Re-check the F2 source and community baseline roughly quarterly.",
+    "sources": {
+      "G1": "docs/research/G1variantgenerationandconvergence.md",
+      "G2": "docs/research/G2designcritiqueheuristicsandevaluation.md",
+      "G3": "docs/research/G3elicitingtasteandcapturingdecisions.md",
+      "F2": "docs/research/F2distinctivenessandantigeneric.md",
+      "CHATGPT": "docs/research/ZZ-chatgpt-deep-research-report.md"
+    },
+    "tiers": {
+      "block_owner": "Owner's own constraints + the isolation gate. Violation = regenerate, never presented. Fail closed.",
+      "block_floor": "The four hard doctrine gates. Violation = regenerate. Deliberately tiny.",
+      "advise": "Computed, annotated on the variant, shown. A Rebuild band triggers ONE auto-regeneration, then shows with the score visible."
+    },
+    "owner_override": "An explicit owner instruction outranks every tier (doctrine rule 22: an explicit request IS a decision). Overridden rules are recorded in the ledger with rationale and exempted from the templated tax."
+  },
+
+  "constraint_contract_schema": {
+    "$comment": "The owner's per-project contract, stored in the ledger and injected into EVERY round. These are tier block_owner.",
+    "must_use": {
+      "type": "string[]",
+      "example": ["mc-shine-border", "mc-border-beam"],
+      "check": "source_contains_mc_id",
+      "semantics": "Every listed master_components id must appear in the variant source, tagged.",
+      "status": "pending"
+    },
+    "animation_vocab": {
+      "type": "string[]",
+      "example": ["fade-up", "border-draw"],
+      "check": "animation_names_subset_of",
+      "semantics": "Parse every @keyframes name, animation-name, and transition-property in the variant. ONLY the listed vocabulary may appear. Anything outside fails.",
+      "status": "pending"
+    },
+    "forbidden": {
+      "type": "string[]",
+      "example": ["glassmorphism", "parallax", "bounce"],
+      "check": "forbidden_technique_absent",
+      "detectors": {
+        "glassmorphism": "backdrop-filter present, or filter:blur() on a translucent surface",
+        "parallax": "scroll listener altering transform, or background-attachment:fixed, or animation-timeline:scroll()",
+        "bounce": "cubic-bezier with an overshoot control point (y<0 or y>1), or easing named bounce/elastic/back",
+        "glow": "box-shadow or filter:drop-shadow with a saturated colour and no offset",
+        "gradient-text": "background-clip:text with a gradient background"
+      },
+      "status": "pending"
+    },
+    "source_policy": {
+      "type": "enum",
+      "values": ["library-first", "library-only", "bespoke-ok"],
+      "check": "source_policy_honoured",
+      "semantics": "library-first (DEFAULT, owner ruling 2026-07-23) = check master_components first, use a catalog entry where it genuinely fits, author bespoke freely when it does not; every variant must declare source as an mc-id or 'bespoke'. library-only = every component traces to an mc-id. bespoke-ok = no constraint, tagging still required.",
+      "status": "pending"
+    },
+    "colour_budget": {
+      "type": "object",
+      "example": { "accent_surfaces": ["poster-edge", "primary-cta"], "max_accent_surfaces": 3 },
+      "check": "accent_surface_count_within_budget",
+      "semantics": "Count distinct rendered surfaces carrying the derived accent. Over budget = fail. Under-use is NOT a pass: a fully monochrome result fails the 'restraint is not monochrome' half of the rule.",
+      "status": "pending"
+    }
+  },
+
+  "rules": [
+    {
+      "id": "iso-axis-diff",
+      "tier": "block_owner",
+      "source": "G1 §4.3 step 4a",
+      "statement": "The named axis parameter provably differs across every pair in the set.",
+      "check": "axis_diff",
+      "params": { "min_structural_diff_ratio": 0.15 },
+      "params_note": "0.15 is a [REASONED] engineering default, not a measured constant (G1 §8). Tune per axis against real 'felt identical' reports.",
+      "remedy": "regenerate_set",
+      "status": "pending"
+    },
+    {
+      "id": "iso-control-diff",
+      "tier": "block_owner",
+      "source": "G1 §4.3 step 4b",
+      "statement": "Every non-axis variable is token-identical across all variants in the set.",
+      "check": "control_diff",
+      "remedy": "regenerate_set",
+      "note": "This is the check that makes a lock TRUE rather than a guess about why the owner picked.",
+      "status": "pending"
+    },
+    {
+      "id": "iso-blind-sort",
+      "tier": "block_owner",
+      "source": "G1 §4.3 step 4c",
+      "statement": "Each variant's level on the named axis is stateable without ambiguity.",
+      "check": "blind_sort",
+      "remedy": "regenerate_set",
+      "note": "If the tool cannot articulate where each variant sits, a human never will and the set will feel identical.",
+      "status": "pending"
+    },
+    {
+      "id": "iso-count",
+      "tier": "block_owner",
+      "source": "G1 §4.4, G3 §3.2",
+      "statement": "Option count fits the rung: 3 default; 2 for binary axis or late confirm; 4-5 only at rung 0-1 on a foundational axis; never 6+; never 1.",
+      "check": "option_count_for_rung",
+      "params": { "by_rung": { "0": [3, 5], "1": [3, 4], "2": [3, 3], "3": [2, 3], "4": [2, 2], "5": [2, 2] } },
+      "remedy": "adjust_count",
+      "status": "pending"
+    },
+    {
+      "id": "iso-never-one",
+      "tier": "block_owner",
+      "source": "G1 §3.8 [CITED Tohidi & Buxton 2006]",
+      "statement": "Never present a single option for approval.",
+      "check": "option_count_min",
+      "params": { "min": 2 },
+      "remedy": "regenerate_set",
+      "status": "pending"
+    },
+    {
+      "id": "seq-parents-locked",
+      "tier": "block_owner",
+      "source": "G1 §4.6",
+      "statement": "Before locking an axis, every parent axis it depends on is already locked.",
+      "check": "axis_dag_parents_locked",
+      "params": {
+        "dag_order": ["direction", "layout", "density", "type", "colour", "component-pattern", "component-styling", "motion", "copy"]
+      },
+      "params_note": "[REASONED]. The RULE (parents before children) is invariant; this specific order is a default a brand-led product may legitimately reorder.",
+      "remedy": "block_lock",
+      "status": "pending"
+    },
+    {
+      "id": "lock-regression-gate",
+      "tier": "block_owner",
+      "source": "G1 §4.9, G3 §3.12",
+      "statement": "After any regeneration, every previously-locked target is identical to its stored snapshot. Any drift is reverted and flagged.",
+      "check": "golden_file_diff",
+      "remedy": "revert_to_snapshot",
+      "note": "Treat locks as golden files under test. Requires a snapshot per locked target in the ledger.",
+      "status": "pending"
+    },
+    {
+      "id": "present-randomise-order",
+      "tier": "block_owner",
+      "source": "G3 §3.6 [CITED primacy]",
+      "statement": "Slot order is randomised on every presentation, not just the first.",
+      "check": "presentation_order_randomised",
+      "remedy": "shuffle",
+      "status": "pending"
+    },
+    {
+      "id": "present-neutral-labels",
+      "tier": "block_owner",
+      "source": "G3 §3.4 [CITED YouGov 37-point swing]",
+      "statement": "Variants are labelled A/B/C or by number. No evaluative adjectives, no 'recommended' marker, no pre-selection.",
+      "check": "labels_neutral",
+      "remedy": "relabel",
+      "note": "Suspends the skill's usual 'put the recommended option first' house style — for TASTE choices only.",
+      "status": "pending"
+    },
+
+    {
+      "id": "floor-contrast",
+      "tier": "block_floor",
+      "source": "CHATGPT (WCAG 2.1 AA) + A5 pending; F2 §3.12 wants APCA",
+      "statement": "Text contrast >= 4.5:1 normal, >= 3:1 large (>=18.66px bold or >=24px). Non-text UI >= 3:1 against adjacent colour.",
+      "check": "contrast_ratio",
+      "params": { "normal": 4.5, "large": 3.0, "non_text": 3.0, "large_px_bold": 18.66, "large_px_regular": 24 },
+      "remedy": "regenerate_variant",
+      "advisory_companion": { "check": "apca_lc", "params": { "body": 75, "large": 45, "non_text": 30 }, "note": "APCA is DRAFT with an unconfirmed embedding licence — computed and shown, never gates. Revisit if it lands in WCAG 3." },
+      "status": "pending"
+    },
+    {
+      "id": "floor-reduced-motion",
+      "tier": "block_floor",
+      "source": "CHATGPT + B1 pending",
+      "statement": "Any variant carrying motion declares @media (prefers-reduced-motion: reduce) and neutralises non-essential animation within it.",
+      "check": "reduced_motion_honoured",
+      "remedy": "regenerate_variant",
+      "status": "pending"
+    },
+    {
+      "id": "floor-target-size",
+      "tier": "block_floor",
+      "source": "CHATGPT (WCAG 2.5.8) + A5 pending",
+      "statement": "Interactive targets are >= 24x24 CSS px.",
+      "check": "min_target_size",
+      "params": { "min_px": 24 },
+      "remedy": "regenerate_variant",
+      "status": "pending"
+    },
+    {
+      "id": "floor-not-colour-alone",
+      "tier": "block_floor",
+      "source": "G2 §4.6 dim 3, CHATGPT",
+      "statement": "No state or meaning is carried by colour alone — every coloured status cue has a second channel (icon, label, shape, weight).",
+      "check": "second_channel_present",
+      "remedy": "regenerate_variant",
+      "note": "Also the method's own 'state reads via form, not only colour' rule.",
+      "status": "pending"
+    },
+
+    {
+      "id": "adv-flash-limit",
+      "tier": "advise",
+      "source": "CHATGPT (WCAG 2.3.1)",
+      "statement": "No more than 3 flashes per second.",
+      "check": "flash_rate",
+      "params": { "max_per_second": 3 },
+      "status": "pending"
+    },
+    {
+      "id": "adv-motion-duration",
+      "tier": "advise",
+      "source": "CHATGPT; B1 pending for the authoritative ladder",
+      "statement": "UI transitions land in 200-500ms; micro-interactions under 200ms; ease-out or ease-in-out, no overshoot unless the direction calls for it.",
+      "check": "animation_duration_range",
+      "params": { "micro_max_ms": 200, "ui_min_ms": 200, "ui_max_ms": 500 },
+      "status": "pending"
+    },
+    {
+      "id": "adv-line-length",
+      "tier": "advise",
+      "source": "G2 §4.6 dim 3, CHATGPT (Baymard)",
+      "statement": "Body line length 50-75 characters, hard outer bound ~80.",
+      "check": "chars_per_line",
+      "params": { "min": 50, "ideal_max": 75, "hard_max": 80 },
+      "status": "pending"
+    },
+    {
+      "id": "adv-body-type",
+      "tier": "advise",
+      "source": "G2 §4.6 dim 3, CHATGPT",
+      "statement": "Body text >= ~14-16px equivalent with 1.4-1.6x line-height.",
+      "check": "body_type_metrics",
+      "params": { "min_px": 14, "preferred_px": 16, "line_height_min": 1.4, "line_height_max": 1.6 },
+      "status": "pending"
+    },
+    {
+      "id": "adv-spacing-scale",
+      "tier": "advise",
+      "source": "G2 §4.6 dim 2",
+      "statement": "Spacing values fall on one declared scale; no more than ~6-8 distinct values on a screen; every value a multiple of the base unit.",
+      "check": "spacing_scale_adherence",
+      "params": { "max_distinct": 8 },
+      "status": "pending"
+    },
+    {
+      "id": "adv-type-scale",
+      "tier": "advise",
+      "source": "G2 §4.6 dim 2",
+      "statement": "No more than ~5-7 distinct font-size steps, all from the declared scale.",
+      "check": "type_scale_adherence",
+      "params": { "max_distinct": 7 },
+      "status": "pending"
+    },
+    {
+      "id": "adv-token-adherence",
+      "tier": "advise",
+      "source": "G2 §4.6 dim 2",
+      "statement": "Every colour value traces to the declared token set — no one-off hex outside it.",
+      "check": "colour_token_adherence",
+      "status": "pending"
+    },
+    {
+      "id": "adv-realistic-content",
+      "tier": "advise",
+      "source": "G2 §4.6 dim 4",
+      "statement": "Re-render at min/max plausible content lengths — no clipping, overflow, orphans or broken wraps.",
+      "check": "content_length_stress",
+      "status": "pending"
+    },
+    {
+      "id": "adv-nonhappy-states",
+      "tier": "advise",
+      "source": "G2 §4.6 dim 4, F2 §7 row 17",
+      "statement": "Empty, loading and error states exist and are styled to the primary state's standard.",
+      "check": "nonhappy_states_present",
+      "status": "pending"
+    }
+  ],
+
+  "templated_tax": {
+    "$comment": "F2 §7 — the objective 'does this look templated?' scorecard. 18 binary rows, each readable off DOM/CSS or a screenshot without opinion. Score 1 = the machine chose the default. ADVISORY tier: computed and shown, never blocks. Owner-requested tells are exempt (doctrine rule 22).",
+    "source": "F2 §7.1",
+    "status": "pending",
+    "rows": [
+      { "n": 1, "dimension": "accent-hue", "signal_if": "accent hue in 240-280deg OR equals #6366F1 / #8B5CF6 / #A855F7", "check": "accent_hue_band", "high_signal": true },
+      { "n": 2, "dimension": "accent-provenance", "signal_if": "accent is not justifiable from content (no derivation, no brand source)", "check": "accent_has_provenance", "high_signal": true, "note": "theme-from-content scores 0 here by construction — the pipeline records the source poster + extracted hex." },
+      { "n": 3, "dimension": "gradient", "signal_if": "purple/indigo -> blue/cyan gradient on hero, CTA or numbers", "check": "cliche_gradient" },
+      { "n": 4, "dimension": "palette-shape", "signal_if": "no dominant hue (evenly weighted) OR pure #fff / #000 ground", "check": "palette_shape" },
+      { "n": 5, "dimension": "headline-font", "signal_if": "headline is Inter / Roboto / Open Sans / Geist / Poppins / Space Grotesk", "check": "headline_font_default", "high_signal": true },
+      { "n": 6, "dimension": "type-pairing", "signal_if": "no display+body pairing — one sans for everything", "check": "type_pairing_absent" },
+      { "n": 7, "dimension": "weight-hierarchy", "signal_if": "gradual weight steps (400/500/600), no strong contrast", "check": "weight_contrast_gradual" },
+      { "n": 8, "dimension": "hero-layout", "signal_if": "centered single column + badge-above-H1 + one CTA", "check": "cliche_hero", "high_signal": true },
+      { "n": 9, "dimension": "feature-grid", "signal_if": "exactly three (or six) equal cards OR default bento", "check": "equal_card_grid", "high_signal": true },
+      { "n": 10, "dimension": "card-material", "signal_if": "rounded-2xl + shadow-lg + 0.1-opacity shadow, untouched", "check": "default_card_material" },
+      { "n": 11, "dimension": "separation", "signal_if": "flat 1px grey border on cards OR coloured 3-4px left strip as decoration", "check": "cliche_separation" },
+      { "n": 12, "dimension": "effect", "signal_if": "glassmorphism OR neon glow OR purple orbs/blobs behind hero", "check": "cliche_effect" },
+      { "n": 13, "dimension": "iconography", "signal_if": "centered thin-line (Lucide/Heroicons) icon above each heading", "check": "cliche_icons" },
+      { "n": 14, "dimension": "imagery", "signal_if": "floating 3D blobs / plastic 3D illustration / generic stock", "check": "cliche_imagery" },
+      { "n": 15, "dimension": "copy", "signal_if": "weightless triad / 'It's Not X, It's Y' / vapid opener / emoji-led bullets", "check": "cliche_copy" },
+      { "n": 16, "dimension": "mode", "signal_if": "dark mode shipped as the reflexive default rather than a chosen direction", "check": "reflexive_dark_default" },
+      { "n": 17, "dimension": "states", "signal_if": "missing focus states / undesigned empty + error states", "check": "nonhappy_states_present", "owned_by": "A5/G2" },
+      { "n": 18, "dimension": "motion", "signal_if": "identical fade-ins on everything / bounce on every hover / snap transitions", "check": "cliche_motion", "owned_by": "B1" }
+    ],
+    "bands": [
+      { "range": [0, 2], "verdict": "distinctive-and-deliberate", "action": "ship pending G2 critique + a11y" },
+      { "range": [3, 5], "verdict": "mostly-bespoke", "action": "fix the flagged rows, re-score" },
+      { "range": [6, 9], "verdict": "reads-templated", "action": "apply escape moves to the top-scoring dimensions, re-score" },
+      { "range": [10, 18], "verdict": "ai-slop", "action": "no aesthetic decision was made — go back and commit a direction" }
+    ],
+    "override_rule": "If any THREE of the five high-signal rows (1, 2, 5, 8, 9) score 1, treat as templated regardless of total. [taste-flagged in F2 §7.2]"
+  }
+}
