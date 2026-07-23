@@ -1,5 +1,8 @@
 # Skill register — what exists, what governs it, what is actually enforced
 
+> **Resuming work?** Read this file, then **`docs/plans/2026-07-23-SESSION-HANDOFF.md`** — together
+> they are the complete entry point. Do not bulk-read `docs/research/`.
+
 **The single index of the Ottomate skill.** Structure · systems · rules · intelligence · improvements.
 Created 2026-07-23 because knowledge had scattered across ~40 files with no index — which is how an
 earlier session came to claim work was complete when it was not, and why status kept being
