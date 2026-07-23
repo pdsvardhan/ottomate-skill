@@ -122,7 +122,7 @@ re-derived by hand instead of read.
 | lock must be earned | BLOCK-owner | G3 §3.12 | PATCH 422 ✅ |
 | unlock needs a reason | BLOCK-owner | G3 §3.13 | PATCH 422 ✅ |
 
-### Specified, enforcing nothing (`status:"pending"`) — **70 rules, every one of them**
+### Specified, enforcing nothing (`status:"pending"`) — **89 rules, every one of them**
 `must_use` · `animation_vocab` · `forbidden` · `source_policy` · `colour_budget` · `floor-contrast` ·
 `floor-reduced-motion` · `floor-target-size` · `floor-not-colour-alone` · `hover-only-content` ·
 all 18 templated-tax rows · all `adv-*` rules · `seq-parents-locked` · `lock-regression-gate` ·
@@ -137,8 +137,9 @@ advised. This **extends** the owner's two-tier ruling (which governs *quality*) 
 (this governs *existence*). ⚠ **Flagged for owner confirmation**; nothing about the existing three
 tiers changed.
 
-**Rules now carry `method`** — `source` (static grep, **21** rules) or `computed` (needs a browser,
-**15** rules). 34 pre-existing rules have no `method` yet; classify them when the checker is built.
+**Rules now carry `method`** — `source` (static, **39** rules) or `computed` (needs a browser,
+**16** rules). 34 pre-existing rules have no `method` yet; classify them when the checker is built.
+The `source` majority is the good news for Phase 3a: most of the corpus is checkable without a browser.
 
 **Two rules are honestly marked as not fully checkable, and must not be claimed as enforced even
 once a runner exists:** `adv-glass-legibility` (the effective background behind glass is the blurred
@@ -156,7 +157,13 @@ harvest-before-ask · pressure-test-before-presenting
 
 | Knowledge | Home | Source |
 |---|---|---|
-| **158** design doctrine rules, cited, `[CITED]` vs `[REASONED]` preserved | `references/design-doctrine.md` | G1, G2, G3, F2, C1, B2, F1, A5, A1, B1, A3, C2, H2, E2, A4, A2, D2 |
+| **229** design doctrine rules, cited, `[CITED]` vs `[REASONED]` preserved | `references/design-doctrine.md` | **all 22 tracks** |
+| Row-height bands · perceptual channel ranking · zero-baseline law · dashboard hierarchy · load patterns | doctrine §3¾ *Information design* | C3 §3.1–3.15 |
+| Nav model by breadth×depth · the measured cost of hidden nav · wizard floor · modality rule · URL state | doctrine §3¾ *Navigation & flow* | B3 §3.1–3.15 |
+| Voice vs tone · action-label law · error-copy shape · the three empty states · banned implementation vocabulary | doctrine §3¾ *UX writing* | D1 §3.1–3.15 |
+| Weight budget · base64 +1/3 · CWV targets · `@layer` order · no IDs / no `!important` | doctrine §3¾ *Performance & CSS architecture* | E1 §3.1–3.15 |
+| Provenance-at-ingest · GREEN/AMBER/RED licence tiers · tokenise-on-ingest · A–F grading · NOTICES ledger | doctrine §3¾ *Asset sourcing* | H1 §3.1–3.15 |
+| **Three CITED myth-busters**: zebra striping unproven · "7±2" is folklore for menus · onboarding tutorials did not help | doctrine 165, 175, 183 | C3 §3.7, B3 §3.2, B3 §3.12 |
 | Radius ladder + concentric nesting · 6-level elevation · dual-layer tinted shadows · glass recipe with a legibility floor | doctrine §3¾ *Shape, depth & material* | A4 §3.1–3.15 |
 | Type class→mood map · 2-family ceiling · scale ratios · leading by role · numerals · dark-mode optical adjustment | doctrine §3¾ *Typography* | A2 §3.1–3.15 |
 | One icon set · 24/2 grid · filled=active · **never hand-draw a brand mark** · trademark ≠ licence · deterministic seeded placeholders | doctrine §3¾ *Iconography* | D2 §3.1–3.14 |
@@ -173,12 +180,13 @@ harvest-before-ask · pressure-test-before-presenting
 | Audience profiles P1/P2/P3 | `data/design-rules.json` | owner ruling |
 | Decision-record schema | `design_decisions` table | G3 §5.2 |
 
-### Research ingestion — 17 of 22 tracks read (owner ruling: sweep ALL)
-**Read:** G1 variant generation · G2 critique · G3 taste elicitation · F2 anti-generic ·
-C1 component anatomy · B2 states/affordance · F1 style movements · A5 a11y · A1 colour ·
-B1 motion · A3 space · C2 tokens/coherence · H2 feasibility · E2 cross-platform ·
-**A4 material · A2 type · D2 icons** *(+ ZZ chatgpt)*
-**Remaining 5:** C3 data display · B3 nav · D1 copy · E1 perf · H1 assets
+### Research ingestion — ✅ **22 of 22 tracks distilled. SWEEP COMPLETE 2026-07-23.**
+G1 · G2 · G3 · F2 · C1 · B2 · F1 · A5 · A1 · B1 · A3 · C2 · H2 · E2 · A4 · A2 · D2 ·
+**C3 · B3 · D1 · E1 · H1** *(+ ZZ chatgpt)*
+
+**229 doctrine rules · 89 machine-readable rules.** What remains in `docs/research/` is the *body* of
+each track — worked examples, comparison tables, the reasoning behind each rule. Every §3 executive
+rule is now in `design-doctrine.md`. Keep pulling bodies on demand for build knowledge; never bulk-read.
 
 **Method that works:** `awk '/^## 3\./{p=1} /^## 4\./{p=0} p' <track>.md` extracts just the executive
 rules — the corpus explicitly writes §3 to be applied without reading the body. ~20 lines per track
@@ -229,6 +237,34 @@ instead of ~1000. Distil and commit after every 2–4 tracks so progress survive
 - A2 §3.12 and D2 §3.8 **both re-derived E2's CSP conclusions independently** (`font-src data:` for
   embedded fonts; inline SVG over icon fonts and `<img>`). Third-party confirmation of batch 2.
 
+**What batch 4 (C3 · B3 · D1 · E1 · H1) changed, not just added:**
+- **H1 is the spec for the `master_components` ingestion and graduation work in Phase 4** — provenance
+  capture, GREEN/AMBER/RED licence tiers, tokenise-on-ingest, A–F grading, structural *and* visual
+  dedupe, and a NOTICES ledger. **6th instance of the pattern.** See superseded.
+- **E1 §3.8 corrects doctrine rule 141** (itself only written in batch 3): `unicode-range` and
+  `font-display` exist to manage lazy download and FOIT/FOUT, and **offline there is neither** — so
+  splitting a face into subsets saves nothing and adds parse blocks. Subset once, embed once.
+- **E1 §3.2 finally puts a number on the render-surface defect** — ≤1 MB snappy, ≤2 MB acceptable,
+  >2 MB a budget event. See defects: the 566 KB figure was *within* budget, so that defect is about
+  the wrong **surface**, not weight.
+- **C3 §3.6 split a row of the audience-profile table.** Hover-only *content* is discoverability (the
+  owner's P1 ruling stands); hover-only *controls* is operability under WCAG 2.1.1 and is unreachable
+  by the **solo owner** the moment they tab. Advised even at P1, because the fix is one selector.
+- **E1 §3.12 pairs with C2 rule 89 into one architecture**: C2 orders the *values*
+  (primitive→semantic→component), E1 orders the *cascade* (`@layer` reset→…→utilities). Neither track
+  mentions the other; together they are the whole story.
+- **Three CITED myth-busters** landed, each killing a rule we might otherwise have written from folk
+  knowledge: zebra striping is **not** a proven accuracy win (244-participant study, no significant
+  difference) · **"7±2" does not govern menu counts** (NN/g explicit) · **onboarding tutorials did not
+  help** (70 users / 4 apps: 91% vs 94% success, and *higher* perceived ease without).
+- **E1 §3.15 constrains how we may read our own measurements**: lab tooling models a network the
+  offline sandbox does not have, so Lighthouse numbers are **relative between variants only**, never
+  absolute field CWV. That is a direct instruction about a claim this program could easily overstate.
+- **E1 §3.7 independently confirmed A2 §3.6** (variable-font break-even at 3 weights) by byte
+  measurement rather than by rule of thumb; **H1 §3.5 independently confirmed D2 §3.7** (trademark is
+  not waived by a CC0 file licence); **H1 §3.8 is the third independent confirmation that Rive is
+  unavailable.**
+
 ### Known research gaps the corpus cannot cover
 1. **The owner's own decision history** — past comments, picks and rejections sitting unused in the DB.
    The highest-signal taste data available.
@@ -246,12 +282,12 @@ theme-from-content · uncapped ledger · `design_decisions` + migration 0010 · 
 ### Pending, in build order
 | Phase | Items |
 |---|---|
-| **Research sweep** | **8** remaining tracks → doctrine/rules/rubric, register updated as it goes |
+| ~~**Research sweep**~~ | ✅ **DONE 2026-07-23 — all 22 tracks distilled** |
 | **1 Generation** | Sub-decision inventory from C1 anatomy · render-by-tier with states pinned · bundle model + per-item picks · over-generate-and-filter |
 | **2 Persistence** | `rejected[]` wiring · reload-on-resume · snapshot differ |
 | **3a Enforcement — source** | Profile `resolveFloor()` · constraint capture · **the source checker** (12 rules, pure Node, no browser) · wire into pre-present. **Start with the 6 `feas-*` rules — plain greps, the cheapest real enforcement available** |
 | **3b Enforcement — computed** | The 5 `computed` rules, hosted in the existing Task-3 Playwright harness: `adv-cross-component-coherence` first, since the per-item pick model depends on it |
-| **4 Wiring** | Fresh-context rounds · scope×entry routing · Stage-3 gate · register gates in HARD list · graduation to `master_components` |
+| **4 Wiring** | Fresh-context rounds · scope×entry routing · Stage-3 gate · register gates in HARD list · **graduation to `master_components` — now specced by H1, see superseded** |
 
 ### Superseded — kept deliberately
 - ⛔ **5-tier granularity ladder** (primitive/element/composite/section/shell), invented in the Task-2
@@ -273,6 +309,19 @@ theme-from-content · uncapped ledger · `design_decisions` + migration 0010 · 
   Task-3 Playwright harness in `scripts/feature-verify/` is the natural one — which is a reuse of
   existing infrastructure rather than the new subsystem the plan assumed.
 - ⛔ **Three enforcement tiers** → **four**. `block_feasibility` added from H2 + E2. See §3.
+- ⛔ **"Graduation to `master_components`" as an undesigned Phase-4 line item** → **H1 is its spec.**
+  6th instance of the pattern. Graduation is not "copy the winning variant into the catalog"; H1
+  defines an ingest contract: provenance captured **at ingest or lost forever** (source, author, SPDX
+  id, licence URL, attribution, retrieval date; no provenance → quarantine) · GREEN/AMBER/RED licence
+  tiers with `-NC`/`-ND`/unknown rejected · framework coupling stripped · **tokenised, because a
+  baked-in `#fff` is a downgrade not an entry** · graded A–F with only A/B shipping · deduped
+  **structurally *and* visually** · and a NOTICES block assembled into the output.
+  **Consequence for the plan:** Phase 4 needs a live-state check first — do the 179 catalog rows have
+  provenance/licence fields at all? Most were *authored* (`library='ottomate'`), so the gap may be
+  narrow, but the 5 wired upstream registries make it real the moment that pass runs. Named
+  exclusions to encode now: **Shadertoy (CC BY-NC-SA 3.0 — non-commercial *and* viral)**, **unDraw
+  (per-image only; its licence forbids repackaging in packs, scraping, and AI-training use)**,
+  **Rive (WASM)**.
 
 ### Known defects
 | Defect | Severity | Note |
@@ -283,7 +332,7 @@ theme-from-content · uncapped ledger · `design_decisions` + migration 0010 · 
 | 34 of 51 rules have no `method` field | Low | The 17 added/updated this session declare `source` or `computed`. Classify the rest when the checker is built — the field decides which runner owns each rule |
 | `theme-extract.mjs` emits the raw extracted pick | Medium | A1 §3.10: normalise L to the accent target and clamp C so contrast is guaranteed *at derivation time*. Today it only boosts V |
 | Gate does not check that axis params are **visible in a shown state** | High | *A* root cause of the A≈B round; B2 would have caught it. **See the namespace-collision defect above for a second, independent mechanism** — both produce "source differs, display identical", and fixing only one leaves the gate defeatable |
-| Render surface ignores component tier | High | 566 KB / 36 posters for a component question |
+| Render surface ignores component tier | High | 566 KB / 36 posters for a component question. **E1 §3.2 now supplies the budget the complaint lacked: ≤1 MB snappy, ≤2 MB acceptable, >2 MB a budget event — so 566 KB was *within* budget.** The defect is the wrong **surface** (a page rendered to decide a component question), not the weight. Fixed by render-by-tier in Phase 1, not by shrinking anything |
 | Every `design-rules.json` rule is `pending` | High | Doctrine enforces nothing today |
 | `.sr-stat::before` 3px left strip in `template.card-wall.html` | Low | F2's most reliable AI tell, in our own template. Deferred by owner |
 | DOM-commenter extension has **no git remote** | Medium | Local-only; "pushed" claims were no-ops |

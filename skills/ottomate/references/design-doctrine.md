@@ -627,6 +627,260 @@ reasoning behind each is in `docs/research/`, pulled on demand.
      visually but must sit in a ≥24×24 CSS-px hit area (ideally 44–48). `[D2 §3.14]` — the icon-shaped
      instance of rule 57.
 
+### Information design & data display (C3)
+
+159. **Row height comes from a three-band ladder:** compact **32px** (dense ops/admin, power users) ·
+     default **40–48px** · relaxed **56px** (touch-first, or a secondary line of text). Carbon and Ant
+     land in the same bands independently. `[C3 §3.1]` — cross-validates A3 rule 85.
+160. **Right-align every numeric column, left-align every text column, and use tabular figures.**
+     Misaligned numbers cannot be compared by magnitude at a glance. `[C3 §3.2]` — the *display* half
+     of rule 136, which owns the font mechanics.
+161. **Sticky header is close to mandatory past one viewport of rows.** Sticky *first column* only
+     when it is the row's human-readable identifier **and** the table scrolls horizontally — otherwise
+     it just eats width. `[C3 §3.3]`
+162. **Sortable columns need a visible chevron, exactly ONE `aria-sort` at a time, and a non-colour
+     signal.** The icon alone is not announced, and live-region behaviour for sort changes is
+     inconsistent across JAWS/NVDA/VoiceOver — add a text cue. `[C3 §3.4]`
+163. **Default-sort by what users actually look for** — most recent, highest, most urgent.
+     Alphabetical-by-default is a cop-out that serves no real task. `[C3 §3.5]`
+164. **Row actions: 1–2 inline, 3+ behind an overflow menu.** And distinguish two different failures:
+     hover-revealed **content** is a *discoverability* problem, but hover-revealed **controls** is an
+     *operability* problem (WCAG 2.1.1) — fix it cheaply by showing on `:focus-within` too, and give
+     every control a ≥24×24 hit area. `[C3 §3.6]` **The P1 profile's "hover-only content: allowed"
+     covers the first case only; a keyboard-reachable control is not an audience question.**
+165. **Zebra striping is a preference, not a proven win.** A controlled 244-participant study found
+     **no statistically significant accuracy difference** and inconsistent speed effects; striping was
+     merely *preferred* (46% vs 33%). **1px hairline dividers at ~8–12% opacity are the safer
+     default**, and striping never substitutes for sticky headers or row hover. `[C3 §3.7 — CITED]`
+166. **Choose chart type from the data *question*, not the data *shape*.** Comparison → bar ·
+     trend → line/area · part-to-whole → stacked bar (pie only ≤4 slices) · correlation → scatter ·
+     distribution → histogram/box · ranking → ordered bar · deviation → diverging bar · single KPI →
+     stat tile + sparkline. `[C3 §3.8]`
+167. **Encode the most important comparison with the highest-accuracy perceptual channel.**
+     Cleveland & McGill, extended by Mackinlay: **position > length > angle/slope > area > volume >
+     colour saturation/luminance > colour hue > texture.** Precise comparison → position or length.
+     Category identity, not magnitude → hue, capped at ~8. `[C3 §3.9 — CITED]`
+168. **Cap series at 5–7, and prefer direct labels to a legend.** A legend costs a
+     memorise-then-cross-reference step. Past ~7 series switch to **small multiples** at a shared
+     scale rather than cramming one chart. `[C3 §3.10]`
+169. **Bar and column charts start at zero. Always.** A non-zero baseline distorts length-encoded
+     comparison — a 13% real increase can read as 460%. Line charts encode by position/slope, so a
+     non-zero baseline is defensible when zero is arbitrary or would hide a critical change — but it
+     must be **visually flagged, never silent**. `[C3 §3.11]`
+170. **Sparklines are word-sized trend indicators, not precise reads — always pair one with the exact
+     number.** Roughly 1–3× line-height, banked so the dominant slope reads near 45°, last value
+     marked with a dot tied to the adjacent figure. `[C3 §3.12]`
+171. **Dashboard: the single most important metric goes top-left, and the primary view needs zero
+     scrolling.** If the set does not fit, split into a no-scroll **overview** plus a scrollable
+     **detail** view rather than letting the overview scroll. **A number alone is not a KPI** — every
+     one needs comparison context (target, trend, prior period). `[C3 §3.13]`
+172. **Pick the load pattern by task:** countable/findable → pagination · homogeneous low-goal feed →
+     infinite scroll (needs `role="feed"` and a way to reach the footer) · ambiguous middle →
+     **load-more**, which keeps a pause point and preserves footer access. `[C3 §3.14]`
+173. **Loading, empty and error must look different from each other AND from "genuinely zero rows."**
+     Loading = a skeleton shaped like the real content, past the ~300–500ms threshold. Empty =
+     *why* plus one concrete next action. Error = what failed plus retry. A table that just goes blank
+     is read as broken. `[C3 §3.15]`
+
+### Navigation & flow (B3)
+
+174. **Match the nav model to breadth × depth, not preference.** Few and shallow → top nav · broad or
+     growing → sidebar · sibling views of one object → tabs · deep hierarchy entered mid-way →
+     breadcrumb (supplementary) · keyboard-first power users → a command palette **layered on top**,
+     never replacing the primary model. `[B3 §3.1]`
+175. **"7±2" does not govern menu item counts — it is folklore.** NN/g is explicit that menu size is
+     "not 7, despite a common myth." The real, convention-derived bands: mobile bottom nav **3–5
+     (6 max)** · iOS tab bars ~5 or fewer · desktop global nav unwieldy past **7–9**, then move to a
+     sidebar. A soft band shaped by content and device, **not a cognitive law**. `[B3 §3.2 — CITED
+     myth-buster]`
+176. **Hidden navigation has a measured cost — spend it deliberately.** Hamburger-only nav was used in
+     **27%** of desktop sessions vs **48–50%** for visible/combo; discoverability fell **>20%**;
+     task-difficulty ratings rose **21%**; completion was **≥39% slower on desktop**, 15% on mobile.
+     **Never hide a desktop sidebar behind one.** `[B3 §3.3 — CITED]`
+177. **Breadcrumbs are supplementary, never primary.** They encode the site's fixed hierarchy, not
+     click history; the current page is the final **unlinked** item; unnecessary on flat 1–2-level
+     sites. `<nav aria-label="Breadcrumb"><ol>` with `aria-current="page"` on the last item only.
+     `[B3 §3.4]`
+178. **A task with a clear beginning and end drops persistent navigation** for a linear back-link +
+     task-list model; reserve persistent top nav for tools used repeatedly with no fixed order.
+     `[B3 §3.6]`
+179. **Default a multi-step flow to one question per screen**; merge only where research supports it,
+     and don't let merging disguise an over-long flow. For independently completable, resumable work
+     use a **task list** — GOV.UK adopted it after finding **>60% of support contacts** were confusion
+     about the process itself. `[B3 §3.7 — CITED]`
+180. **Every wizard needs all five:** visible step progress · an always-available *working* Back ·
+     strict forward order · save-and-resume · steps that carry enough context to stand alone. Use for
+     novice/infrequent/high-stakes tasks; avoid for expert repeated ones or anything needing
+     cross-step comparison. `[B3 §3.8]`
+181. **Apply the modality decision rule in order:** destructive/blocking → **modal** (short, specific);
+     lightweight edit scoped to what's on screen → **inline**; secondary task where the primary view
+     must stay visible → **drawer/sheet**; heavy, deep, or needs its own URL → **new page**.
+     `[B3 §3.9]`
+182. **Progressive disclosure has a hard ceiling of two levels.** A third disclosure level is a
+     documented usability failure. `[B3 §3.11]`
+183. **Don't build onboarding by default — build a UI that doesn't need it.** A controlled test across
+     70 users / 4 apps found near-identical task success **with vs without** a tutorial (91% vs 94%)
+     and *higher* perceived ease for the group that skipped it (5.49 vs 4.92 / 7). Where genuinely
+     warranted, keep it **skippable** and contextual, never a front-loaded tour. `[B3 §3.12 — CITED
+     myth-buster]`
+184. **Search beats browse once users can name what they want.** Design for decay: query success falls
+     **51% → 32% → 18%** across the first three queries, and average query length is **2.0 words**.
+     Keep search visible on every page. `[B3 §3.13 — CITED]`
+185. **Give ≥2 redundant "you are here" cues at all times** (page title/H1, nav highlight, breadcrumb,
+     URL). This is a conformance floor, not just polish: **WCAG 2.4.5 Multiple Ways (AA)**.
+     `[B3 §3.14]`
+186. **Put shareable and restorable state in the URL** — active tab, filters, sort, selection, query,
+     page, wizard step. **`pushState` for a real navigational move; `replaceState` for refining state
+     within the same step**, so Back doesn't need thirty presses to escape a filter session.
+     `[B3 §3.15]`
+
+### UX writing, voice & microcopy (D1)
+
+187. **Separate voice from tone before writing a single string.** Voice is constant — pick **2–4 fixed
+     traits** and stop. Tone flexes with context and the user's emotional state but never breaks
+     voice. Build a **voice chart** (rows: concepts, vocabulary, wordiness, grammar, punctuation,
+     capitalisation; columns: the named traits) so disagreements are settled by the chart, not taste.
+     `[D1 §3.1]`
+188. **Action labels are verb + object, 2–4 words, sentence case, active imperative** — "Delete file",
+     "Send invoice". **Never ship bare `Submit` / `OK` / `Yes` / `Continue` / `Learn more` / `Click
+     here`** when a specific verb-object pair exists. `[D1 §3.2]`
+189. **Every error message is: what happened → why (only if it helps) → how to fix**, in the same
+     wording the user just saw. Never blame the user: **ban "invalid", "illegal", "forbidden", "error
+     occurred", "sorry", "please"**, and humour, from error copy. `[D1 §3.3]`
+190. **Split error copy by cause, not by taste:** an **instruction** for an empty/missing field
+     ("Enter your first name"), a **description** for a violated constraint ("First name must be 35
+     characters or fewer"). `[D1 §3.4]`
+191. **No raw error code, stack trace or internal status string in the primary message** — put it
+     behind a collapsed "Show technical details". `[D1 §3.5]`
+192. **Empty states have a fixed anatomy:** action-oriented headline + one-line body + **one** primary
+     verb+noun action. One CTA only. `[D1 §3.6]`
+193. **"Nothing here yet", "you cleared everything" and "no results for your search" are THREE
+     different empty states** — create vs restore vs adjust-filters. One generic string across all
+     three is a common, avoidable failure. `[D1 §3.7]` — the copy half of rule 173.
+194. **Prefer undo over confirm wherever the action can be undone.** When you do confirm, state the
+     specific consequence rather than "Are you sure?", label buttons with the **verb outcome**
+     ("Delete file" / "Keep file"), and **never default-focus the destructive option**. `[D1 §3.8]`
+195. **For catastrophic, irreversible actions require a non-standard confirmation** — typing the item's
+     name or the word DELETE. A click is too cheap a price for data that cannot come back. `[D1 §3.9]`
+196. **Choose the surface by scope and blocking-ness:** toast = passive, system-caused, non-blocking,
+     ≤3 lines, auto-dismiss · inline = tied to one field/row, persists until resolved · banner =
+     page-wide, not task-specific · dialog = blocks, forces a decision. **Never let a toast be the
+     only record of something the user needs later.** `[D1 §3.10]`
+197. **One concept, one word, everywhere.** Keep a living glossary and kill synonym drift
+     (delete/remove/trash/discard for one action). Speak the *user's* word, never an internal label
+     they were never shown. `[D1 §3.11]`
+198. **No implementation vocabulary in user-facing copy** — no `null`, `404`, `API`, table/column
+     names, boolean flag names (`isActive`), enum constants (`STATUS_PENDING`), or HTTP verbs.
+     `[D1 §3.12]`
+199. **Plain-language defaults: 6th–8th-grade reading level** (10th–12th only for expert tools, never
+     above 12th) · sentences **≤15–20 words**, flag anything over **25** · paragraphs **≤5
+     sentences**. `[D1 §3.13]`
+200. **Truncate on a character budget, not by accident.** Never cut below ~4 meaningful characters;
+     pair an ellipsis with the full string on hover/focus only under ~150 characters, beyond which use
+     an expandable panel. **Never truncate an identifier, price, date or nav label** a user needs in
+     order to *distinguish* items. `[D1 §3.14]`
+201. **Write source strings as if they will be translated.** One full sentence per parameterised string
+     — **never assemble a sentence from fragments around a variable** — real ICU plural categories,
+     and a **+30–40% length budget (up to 2× for German/Finnish)**. A button that just fits the
+     English verb will not fit the translation. `[D1 §3.15]`
+
+### Performance, delivery & CSS architecture (E1)
+
+202. **"Embed vs link" is not a decision here — it is forced.** The classic advice (inline critical
+     CSS, lazy-load the rest, link big images) does not apply offline. **Your only levers are format,
+     quality, subset size and total weight** — optimise those, not request count. `[E1 §3.1]`
+203. **Hold a single-file weight budget: ≤ ~1 MB snappy · ≤ 2 MB acceptable for a rich variant ·
+     > 2 MB is a budget event.** Anchor: Lighthouse flags pages over 5,000 KiB and targets under
+     1,600 KiB. `[E1 §3.2]`
+204. **base64 costs exactly +1/3** (3 binary bytes → 4 ASCII chars). Over HTTP with gzip/Brotli that
+     shrinks to ~2.5–5% on the wire, but from `file://` or in memory it is **paid in full**, and the
+     decoded DOM string plus image-decode cost are **always** paid. `[E1 §3.3]`
+205. **Core Web Vitals, 75th percentile: LCP ≤ 2.5s · INP ≤ 200ms · CLS ≤ 0.1.** Know the *poor*
+     cliffs too — **LCP > 4.0s · INP > 500ms · CLS > 0.25**. INP replaced FID on 12 Mar 2024.
+     `[E1 §3.4, §3.5]`
+206. **Subset every embedded font to exactly the glyphs used and output woff2.** A tight Latin subset
+     is typically **10–30 KB**; WOFF2's Brotli is up to 30% smaller than WOFF. `[E1 §3.6]`
+207. **Variable-vs-static break-even is 3 weights.** Verified on Inter: 12 statics ≈321 KB vs 1
+     variable ≈95 KB, **but Regular+Bold alone ≈53 KB static < 95 KB variable**. base64 inflates both
+     equally, so it does not move the break-even. `[E1 §3.7]` — **independently confirms A2 rule 135.**
+208. **⚠ `unicode-range` and `font-display` lose their usual purpose once inlined.** No network means
+     no per-range lazy download and no FOIT/FOUT to manage. **Do NOT split a face into many
+     `unicode-range` subsets "for savings"** — offline there are none and you add parse blocks. Subset
+     once, embed once. `[E1 §3.8]` — **corrects a naive application of rule 141.**
+209. **Prefer SVG and CSS over raster.** Inline SVG for icons/logos/UI, CSS for gradients/shadows/
+     shapes, rasterise **only photographs**. Standalone `<svg>` and CSS gradients are not even LCP
+     candidates, so they cannot hurt that metric. `[E1 §3.9]`
+210. **For photographs, encode before you embed:** AVIF ≈50% smaller than JPEG, WebP 25–35%. Treat any
+     single base64 raster **>~150–200 KB encoded** as a budget event. **But AVIF *decodes* slower —
+     prefer WebP when decode latency matters more than the last few percent of size.** `[E1 §3.10,
+     §3.11]`
+211. **Architect CSS with `@layer` in a fixed order: `reset → base → tokens → layout → components →
+     utilities`.** A later layer wins **regardless of specificity**, which is the mechanism that keeps
+     specificity flat at scale. `[E1 §3.12]` — pairs with C2's token layering (rule 89): C2 orders the
+     *values*, E1 orders the *cascade*.
+212. **Ban ID selectors and `!important` for styling; use `:where()` for resets.** `:where()` has
+     specificity (0,0,0); `:is()`/`:has()`/`:not()` take their most specific argument. **`!important`
+     *reverses* layer order**, which is doubly confusing on top of collapsing the system. `[E1 §3.13]`
+213. **Type the animatable/guarded custom properties with `@property`** — registering
+     `syntax`/`inherits`/`initial-value` makes a variable interpolable *and* guarded (an invalid value
+     falls back instead of breaking the cascade). Use **container queries** for component
+     responsiveness and **logical properties** for layout. `[E1 §3.14]` — corroborates A4 rule 125 and
+     A3 rule 84.
+214. **⚠ Lab tooling models a network the offline sandbox does not have.** Lighthouse's score is
+     TBT 30% + LCP 25% + CLS 25% + FCP 10% + SI 10%. **Read the numbers as *relative between
+     variants*, never as absolute field CWV.** `[E1 §3.15]`
+
+### Asset sourcing & ingestion (H1)
+
+215. **Download and self-host or inline everything; never hotlink. The registry stores BYTES, not
+     URLs.** The single most common failure in this track is shipping a `<link>`/`<script src>`/
+     `<img src>` to a remote asset. **If it is not embeddable as inline text or a `data:` URI, it does
+     not qualify.** `[H1 §3.1]`
+216. **Capture provenance at ingest or lose it forever:** source URL · author/foundry · SPDX licence
+     ID · licence URL · attribution string · retrieval date. **No provenance → quarantine, do not
+     ship.** Re-deriving a licence weeks later from a stripped SVG is impossible. `[H1 §3.2]`
+217. **Work the licence tiers, not vibes. GREEN** = CC0 / MIT / ISC / BSD / Apache-2.0 / OFL-1.1 —
+     use freely, keep notices. **AMBER** = CC-BY, CC-BY-SA, custom-permissive (unDraw, Lottie Simple,
+     Remix Icon v1.0) — usable *with an obligation*. **RED** = any `-NC`, any `-ND`, and **anything
+     unknown or unverified** — reject. `[H1 §3.3]`
+218. **Default licence-clean icon stack:** Lucide (ISC) · Heroicons (MIT) · Tabler (MIT) · Phosphor
+     (MIT) · Material Symbols (Apache-2.0). All inline as SVG with `currentColor`, all GREEN. Reach
+     past them only for a glyph they lack. `[H1 §3.4]` — the licence-clean shortlist behind rule 145.
+219. **Brand marks: the SVG data is licensed, the trademark is not.** Record the trademark owner and a
+     "trademark, not licensed" flag on every brand-mark entry. `[H1 §3.5]` — independently confirms
+     rule 151.
+220. **Fonts: OFL-1.1 / Apache-2.0 only, subset and inlined as WOFF2.** Keep the OFL text and any
+     **Reserved Font Name** in the entry; **never rename a *modified* OFL font using its reserved
+     name.** `[H1 §3.6]`
+221. **⚠ unDraw's custom licence forbids repackaging "in packs", forbids scraping, and forbids
+     AI-training use.** Pull unDraw **per image into a rendered variant**; do **not** bulk-ingest it
+     as a redistributable pack. For anything the registry itself stores, prefer **CC0** sets (Open
+     Peeps, Open Doodles, Humaaans). `[H1 §3.7]`
+222. **Motion: Lottie inlines, Rive is blocked.** `lottie-web` is MIT plain JS with no eval; the free
+     LottieFiles assets are the Lottie Simple License (commercial OK) but must not be bulk-compiled
+     into a competing service. `[H1 §3.8]` — third independent confirmation of rules 99 and 78.
+223. **⚠ Do not ingest Shadertoy code — its default licence is CC BY-NC-SA 3.0**: non-commercial *and*
+     viral. Generate your own, or source from explicitly permissive CC0/MIT shader collections. The
+     blocker here is **licence, not CSP**. `[H1 §3.9]`
+224. **Sound: CC0 first (Kenney, Freesound filtered to CC0), encoded as a short data-URI and
+     gesture-gated** — autoplay is blocked anyway, so ship muted and play on a user gesture.
+     `[H1 §3.10]`
+225. **Strip framework coupling at ingest:** JSX→HTML, Tailwind→compiled scoped CSS, build-time deps
+     removed. **Prefer CSS-only interactivity** — `<details>`/`<summary>`, the `popover` attribute,
+     `:has()`, the checkbox hack, `:target` — over JS. `[H1 §3.11]`
+226. **Tokenise at ingest. A snippet with baked-in `#fff` is a DOWNGRADE, not a finished entry.**
+     Replace hard-coded hex and spacing with custom properties so every entry is themeable and ships a
+     dark path. `[H1 §3.12]` — the ingestion-time instance of rule 92.
+227. **Grade A–F on a fixed rubric; only A/B ship by default.** Score rendering fidelity, responsive,
+     a11y, dark/light, self-containment/CSP, code cleanliness, distinctiveness. C = repair before use;
+     F = reject. `[H1 §3.13]`
+228. **De-duplicate structurally AND visually before adding** — hash the normalised DOM *and* take a
+     perceptual hash of a rendered screenshot, then collapse near-duplicates. Near-identical variants
+     dilute selection and bloat the registry. `[H1 §3.14]`
+229. **Maintain a NOTICES attribution ledger and assemble it into the output.** Any MIT/ISC/Apache/
+     OFL/CC-BY asset that actually ships carries its notice; auto-generate the block from the entries
+     used. **A variant embedding CC-BY assets without it is non-compliant.** `[H1 §3.15]`
+
 ## 4½. The audience profile — what makes a rule bind (owner ruling 2026-07-23)
 
 **A rule is not universally true; it is true for an audience on a device.** Research states rules
@@ -638,7 +892,8 @@ selects which rules block, which advise, and which are skipped entirely.
 |---|---|---|---|
 | Typical | 1 user (the owner), built by them, **Dell S2725QC 27″ 4K @ 175 %** | ~7 (family/friends), laptops | anyone, mobile → monitor |
 | Input | mouse + keyboard | trackpad, some touchscreens | touch first-class |
-| Hover-only content | **allowed** | allowed, flag touchscreen laptops | **BLOCKS** (B2 §3.5) |
+| Hover-only **content** | **allowed** | allowed, flag touchscreen laptops | **BLOCKS** (B2 §3.5) |
+| Hover-only **controls** | **advise** — add `:focus-within`, it is ~free | **advise** | **BLOCKS** |
 | Target size ≥ 24px | skip | advise | **BLOCKS** |
 | Contrast ≥ 4.5:1 | advise (their eyes, their call) | **BLOCKS** — other people, screens, lighting | **BLOCKS** |
 | `prefers-reduced-motion` | advise | **BLOCKS** | **BLOCKS** |
@@ -646,8 +901,16 @@ selects which rules block, which advise, and which are skipped entirely.
 | Responsive range | **single target ≈2194×1234 logical** (measured, rule 83) — *not* 3840 | 1280–1920 | mobile-first, full range |
 | Colour-alone state | advise | **BLOCKS** | **BLOCKS** |
 
+**Content vs controls (added from C3 §3.6).** The original row conflated two different failures.
+Hover-revealed **content** is a *discoverability* problem, and at P1 a mouse user simply hovers — the
+owner's ruling stands. Hover-revealed **controls** is an *operability* problem (WCAG 2.1.1): a control
+that only appears on `:hover` is unreachable by anyone who arrived at the row by tabbing, **including
+the solo owner**. It is not really an audience question, and the fix is one extra selector
+(`:focus-within`), so it is advised even at P1 rather than skipped.
+
 **Rules that never vary by profile:** the isolation gate (G1), the owner's own constraint contract, and
 "never show one option". Those are about the integrity of the *decision*, not the audience.
+**Nor does the feasibility tier** — see §5.
 
 **Graduation is the point.** A profile can change (a personal tool goes public). Because every decision
 records the profile its rationale depended on, a profile change **automatically re-opens exactly those
@@ -737,6 +1000,10 @@ in the ledger with its rationale, and exempt from the tax it would otherwise inc
 | A4 §3.12 says the WebKit mask keyword is `xor`; E2 §3.9 says `source-over`/`source-in` | **No conflict — different operations.** The prefixed keywords map per-operation: standard `exclude` → `-webkit-…: xor`, `add` → `source-over`, `intersect` → `source-in`. Recorded as a keyword *map*, not a single substitution, in `adv-webkit-prefix-pair`. | Cross-checking the two tracks produced the full mapping neither states alone |
 
 ## 7. What is deliberately NOT here
+
+**All 22 tracks are now distilled** (sweep completed 2026-07-23). What remains in `docs/research/` is
+the *body* of each track — worked examples, comparison tables, the reasoning behind each rule. The §3
+executive rules are all here.
 
 Per-axis **build** knowledge — how to make convincing glass, choose a typeface pairing, tune a spring,
 design a table — belongs to the agent generating a variant **on that axis**, pulled on demand from
