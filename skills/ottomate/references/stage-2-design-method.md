@@ -57,9 +57,17 @@ Persist the worklist + chosen order to the ledger.
   the ownership indicator → "border colour from the poster, state = border behaviour, coral = action
   only" — that single decision produced the whole system.) **Nailing it early makes everything
   downstream cohere; jumping to whole pages before it's locked causes churn.**
-- **B — Component showcase.** For each worklist component, 2–4 **real variants from `master_components`**
-  side by side, **tagged by source** (`mc-border-beam`, `mc-shine-border`, …); owner picks/mixes per
-  component. **Most decisions land here.** Quick-build only to fill a genuine library gap.
+- **B — Component showcase.** For each worklist component, 2–4 **real, interactive variants** side by
+  side, **tagged by source**; owner picks/mixes per component. **Most decisions land here.**
+  - **Library-first, NOT library-only (owner ruling 2026-07-23).** Check `master_components` first
+    (rule 12) and use a catalog entry **where it genuinely fits the direction** — tagged by its id
+    (`mc-border-beam`, `mc-shine-border`, …) so provenance is auditable. But the catalog is **not
+    complete and not right for every theme**: when nothing in it suits the chosen direction, **author a
+    bespoke variant freely** and tag it `bespoke`. Never bend the design to what the library happens to
+    contain — that inverts the whole method (taste drives the pick; the library is a shortcut, not a
+    constraint). A variant set may freely mix catalog and bespoke entries.
+  - Worth seeding back: if a bespoke variant gets picked and is reusable, offer `seed-component` after
+    the round — that is how the catalog grows to fit real taste instead of constraining it.
 - **C — Clusters → whole-page → micro.** Assemble the locked pieces into **full screens with live
   interactions at real density on the target screen**; then whole-*page* style variants; then
   micro-variants for the last stubborn pieces. **Once a sub-part is settled, vary at the level still
@@ -79,7 +87,8 @@ inject → publish-to-same-URL into **one command** (`scripts/preview-build/`):
 - **E decision-ledger** — component → chosen variant + rationale; **store FULL decisions, no char cap**
   (a 300-char tracker limit truncated decisions twice — that limit is on todo titles; the ledger lives
   as JSON on `ui_master_plans.design_ledger`, never as a todo). Survives long sessions; reloads on resume.
-- **F component library** = `master_components` (the existing catalog).
+- **F component library** = `master_components` (the existing catalog) — a **source of shortcuts, not a
+  constraint**; bespoke variants are first-class when the catalog doesn't fit (see Step B).
 
 ## Step 5 — Preview requirements
 

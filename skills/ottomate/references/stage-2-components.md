@@ -3,8 +3,9 @@
 **REWRITTEN 2026-04-29 per audit (D-S2.3.1 through D-S2.3.8).** Old design had cross-project scan + classification during project flow; new design separates one-time seeding from the per-project gap check.
 
 > **Design method (Task 2, 2026-07-23).** The per-component pick below is the *state layer*; the
-> *method* that decides each pick — showing **2–4 real interactive `master_components` variants side by
-> side, tagged by source, picked/mixed by the owner** (fidelity-ladder Step B) — lives in
+> *method* that decides each pick — showing **2–4 real interactive variants side by side, tagged by
+> source, picked/mixed by the owner** (fidelity-ladder Step B; **library-first, not library-only** — the
+> catalog is a shortcut, and a bespoke variant is first-class when nothing in it fits) — lives in
 > `stage-2-design-method.md`. The variants are shown as one evolving **Claude Artifact** at a stable
 > URL (`scripts/preview-build/`), not static SpotlightCards, when the slot is taste-driven. The chosen
 > variant + rationale is written to the `ui_master_plans.design_ledger` (uncapped) AND to
