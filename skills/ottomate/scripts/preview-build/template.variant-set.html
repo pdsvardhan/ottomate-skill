@@ -1,0 +1,169 @@
+<!-- Variant-set comparison shell (Task 2 — the variant harness). BODY-CONTENT-ONLY: no doctype/html/
+     head/body, so it publishes straight through the Artifact tool to a stable URL. build-variant-set.mjs
+     fills TITLE, SUBTITLE, AXIS_NAME, AXIS_PARAM and VARIANT_DATA (named without braces here on purpose
+     — a literal token in this comment would swallow the real substitution).
+
+     Panels are labelled A/B/C in RANDOMISED slot order with no option pre-selected or marked
+     recommended (G3 §3.4/§3.5: a highlighted default anchors the pick; evaluative labels swung
+     agreement 37 points). Content is identical in every panel — only the named axis moves. -->
+<style>
+  .vs {
+    --bg:#0d0e12; --surface:#14161c; --surface-2:#1b1e26; --line:#262a34;
+    --ink:#eef0f4; --ink-dim:#a2a7b4; --ink-faint:#6b7280;
+    --stat-a:#3ba99c; --stat-b:#d9a441; --action:#ff5a4d;
+    color-scheme: dark; background: var(--bg); color: var(--ink);
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.5;
+    padding: clamp(20px, 2.4vw, 44px); min-height: 100%;
+  }
+  @media (prefers-color-scheme: light) {
+    .vs { --bg:#f6f5f2; --surface:#fff; --surface-2:#efeee9; --line:#e0ded6;
+          --ink:#171820; --ink-dim:#565b66; --ink-faint:#8a8f99; color-scheme: light; }
+  }
+  :root[data-theme="dark"] .vs { --bg:#0d0e12; --surface:#14161c; --surface-2:#1b1e26; --line:#262a34;
+          --ink:#eef0f4; --ink-dim:#a2a7b4; --ink-faint:#6b7280; color-scheme: dark; }
+  :root[data-theme="light"] .vs { --bg:#f6f5f2; --surface:#fff; --surface-2:#efeee9; --line:#e0ded6;
+          --ink:#171820; --ink-dim:#565b66; --ink-faint:#8a8f99; color-scheme: light; }
+
+  .vs * { box-sizing: border-box; }
+  .vs-head { display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:10px; }
+  .vs-title { font-size: clamp(26px,3.2vw,42px); font-weight:800; letter-spacing:-.03em; line-height:1.04; margin:0; text-wrap:balance; }
+  .vs-sub { margin:8px 0 0; max-width:70ch; color:var(--ink-dim); font-size:14.5px; }
+  /* Separated by TONE, not a coloured left strip — that strip is F2 §5.5's "single most reliable AI
+     tell" and doctrine rule 27 (space -> tone -> elevation, border last). */
+  .vs-axis { margin:14px 0 26px; padding:14px 18px; background:var(--surface);
+    border-radius:8px; font-size:13.5px; color:var(--ink-dim); max-width:100ch; }
+  .vs-axis b { color:var(--ink); font-weight:700; }
+  .vs-toggle { flex:none; display:inline-flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line);
+    color:var(--ink-dim); border-radius:999px; padding:8px 14px; font-size:13px; cursor:pointer; }
+  .vs-toggle:hover { color:var(--ink); border-color:var(--ink-faint); }
+  .vs-toggle:focus-visible { outline:2px solid var(--action); outline-offset:2px; }
+
+  .vs-panels { display:grid; gap:22px; grid-template-columns:1fr; }
+  @media (min-width:1100px) { .vs-panels { grid-template-columns:repeat(var(--cols,3),minmax(0,1fr)); } }
+
+  .vs-panel { background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; }
+  .vs-panel-head { display:flex; align-items:baseline; gap:10px; padding:14px 16px; border-bottom:1px solid var(--line); }
+  .vs-slot { font-size:19px; font-weight:800; letter-spacing:-.01em; }
+  .vs-level { font-size:12.5px; color:var(--ink-dim); }
+  .vs-panel-body { padding:14px; flex:1; }
+  .vs-meta { padding:10px 16px 14px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-faint);
+    font-variant-numeric:tabular-nums; display:flex; flex-wrap:wrap; gap:4px 14px; }
+  .vs-meta b { color:var(--ink-dim); font-weight:600; }
+
+  /* the component under test — every panel renders the SAME markup, only these tokens move */
+  .vs-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(var(--card-min,150px),1fr)); gap:var(--gap,14px); }
+  .vs-card { position:relative; aspect-ratio:2/3; border-radius:var(--radius,10px); overflow:hidden;
+    background:var(--surface-2); border:2px solid var(--accent,var(--line));
+    transition:transform .28s cubic-bezier(.2,.7,.2,1), box-shadow .28s ease; }
+  .vs-card img { width:100%; height:100%; object-fit:cover; display:block; }
+  .vs-card:hover { transform:translateY(-5px); box-shadow:0 12px 30px -12px color-mix(in srgb,var(--accent) 70%,transparent); }
+  .vs-card:focus-within { outline:2px solid var(--action); outline-offset:2px; }
+  .vs-foot { position:absolute; inset:auto 0 0 0; padding:calc(var(--pad,14px) + 18px) var(--pad,14px) var(--pad,14px);
+    transform:translateY(101%); line-height:var(--lh,1.45);
+    background:linear-gradient(to top,rgba(6,7,10,.96) 30%,rgba(6,7,10,.72) 70%,transparent);
+    transition:transform .28s cubic-bezier(.2,.7,.2,1); }
+  .vs-card:hover .vs-foot, .vs-card:focus-within .vs-foot { transform:translateY(0); }
+  .vs-foot h3 { margin:0; font-size:var(--title-size,14px); font-weight:700; color:#fff; letter-spacing:-.01em; }
+  .vs-foot .m { margin:2px 0 8px; font-size:11.5px; color:#c8ccd6; font-variant-numeric:tabular-nums; }
+  .vs-row { display:flex; align-items:center; gap:7px; }
+  .vs-play { flex:1; display:inline-flex; align-items:center; justify-content:center; gap:5px; background:var(--action); color:#fff;
+    border:none; border-radius:6px; padding:6px 9px; font-size:12px; font-weight:700; cursor:pointer; min-height:24px; }
+  .vs-play:hover { filter:brightness(1.07); }
+  .vs-rate { flex:none; font-size:11.5px; font-weight:700; color:#fff; background:rgba(255,255,255,.14);
+    border-radius:5px; padding:5px 7px; font-variant-numeric:tabular-nums; }
+  .vs-badge { position:absolute; top:7px; left:7px; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
+    padding:3px 6px; border-radius:999px; background:color-mix(in srgb,var(--accent) 88%,#000); color:#fff; }
+  .vs-badge--watch { background:rgba(20,22,28,.82); color:var(--ink-dim); border:1px solid rgba(255,255,255,.18); }
+
+  .vs-note { margin-top:26px; color:var(--ink-faint); font-size:12px; max-width:100ch; }
+  @media (prefers-reduced-motion: reduce) {
+    .vs-card, .vs-foot { transition:none; }
+    .vs-card:hover { transform:none; }
+    .vs-foot { transform:translateY(0); position:static; background:var(--surface-2); padding:8px var(--pad,14px); }
+    .vs-foot h3 { color:var(--ink); } .vs-foot .m { color:var(--ink-dim); }
+    .vs-card { aspect-ratio:auto; }
+  }
+</style>
+
+<div class="vs" id="vsRoot">
+  <header class="vs-head">
+    <div>
+      <h1 class="vs-title">{{TITLE}}</h1>
+      <p class="vs-sub">{{SUBTITLE}}</p>
+    </div>
+    <button class="vs-toggle" id="vsToggle" type="button" aria-label="Toggle light and dark">◐ Theme</button>
+  </header>
+
+  <p class="vs-axis">
+    This round varies one thing only: <b>{{AXIS_NAME}}</b> — <b>{{AXIS_PARAM}}</b>.
+    Everything else (content, colour, type, radius, interaction) is frozen and identical in every panel,
+    so your pick means the axis and nothing else. Options are in random order; none is recommended.
+  </p>
+
+  <div class="vs-panels" id="vsPanels"></div>
+  <p class="vs-note" id="vsNote"></p>
+</div>
+
+<script>
+  window.__VARIANTS__ = {{VARIANT_DATA}};
+  (function () {
+    var d = window.__VARIANTS__ || { panels: [], cards: [] };
+    var cards = d.cards || [], panels = d.panels || [];
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]; }); };
+
+    var host = document.getElementById('vsPanels');
+    host.style.setProperty('--cols', Math.min(panels.length, 4));
+
+    // Same renderer, same content, for every panel. Only the CSS custom properties differ.
+    function renderCards(t) {
+      var metaLines = t.metaLines == null ? 2 : t.metaLines;
+      return cards.map(function (c) {
+        var watch = !c.owned;
+        var meta = '';
+        if (metaLines >= 1) meta += esc(c.meta);
+        if (metaLines >= 3 && c.rating) meta += ' · ★ ' + esc(c.rating);
+        return '<article class="vs-card' + (watch ? ' vs-card--watch' : '') + '" style="--accent:' + esc(c.accent) + '" tabindex="0">'
+          + '<img src="' + esc(c.img) + '" alt="' + esc(c.title) + ' poster" loading="lazy">'
+          + '<span class="vs-badge' + (watch ? ' vs-badge--watch' : '') + '">' + (watch ? 'Watchlist' : 'Owned') + '</span>'
+          + '<div class="vs-foot"><h3>' + esc(c.title) + '</h3>'
+          + (metaLines >= 1 ? '<div class="m">' + meta + '</div>' : '')
+          + (metaLines >= 2 ? '<div class="vs-row"><button class="vs-play" type="button">▶ Play</button>'
+              + (c.rating ? '<span class="vs-rate">★ ' + esc(c.rating) + '</span>' : '') + '</div>' : '')
+          + '</div></article>';
+      }).join('');
+    }
+
+    host.innerHTML = panels.map(function (p) {
+      var t = p.tokens || {};
+      var style = ['--pad:' + (t.pad || 14) + 'px', '--card-min:' + (t.cardMin || 150) + 'px',
+                   '--gap:' + (t.gap || 14) + 'px', '--lh:' + (t.lineHeight || 1.45),
+                   '--radius:' + (t.radius || 10) + 'px', '--title-size:' + (t.titleSize || 14) + 'px'].join(';');
+      var bits = [];
+      for (var k in t) if (Object.prototype.hasOwnProperty.call(t, k)) bits.push('<span><b>' + esc(k) + '</b> ' + esc(t[k]) + '</span>');
+      if (p.constraints_honoured) bits.unshift('<span><b>constraints</b> ' + esc(p.constraints_honoured) + '</span>');
+      if (p.rubric) bits.unshift('<span><b>rubric</b> ' + esc(p.rubric) + '</span>');
+      return '<section class="vs-panel" aria-label="Option ' + esc(p.slot) + '">'
+        + '<div class="vs-panel-head"><span class="vs-slot">' + esc(p.slot) + '</span>'
+        + '<span class="vs-level">' + esc(p.caption || p.label) + '</span></div>'
+        + '<div class="vs-panel-body">'
+        + (p.markup ? p.markup : '<div class="vs-grid" style="' + style + '">' + renderCards(t) + '</div>')
+        + '</div>'
+        + '<div class="vs-meta">' + bits.join('') + '</div>'
+        + '</section>';
+    }).join('');
+
+    document.getElementById('vsNote').textContent =
+      'Same ' + cards.length + ' real titles in every panel, borders derived from each poster’s own dominant colour. '
+      + 'Pick a letter, or mix ("A’s density with B’s frame"). Mixing across different axes is fine; two levels of '
+      + 'the same axis cannot blend — ask for a point between them instead.';
+
+    document.getElementById('vsToggle').addEventListener('click', function () {
+      var root = document.documentElement;
+      var cur = root.getAttribute('data-theme');
+      if (!cur) cur = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.setAttribute('data-theme', cur === 'dark' ? 'light' : 'dark');
+    });
+  })();
+</script>

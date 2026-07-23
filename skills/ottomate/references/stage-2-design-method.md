@@ -18,17 +18,34 @@ love 3D cards" converged to a precise owned design in ~two dozen quick rounds �
 single-shot generation. The failure modes were all **colour discipline** and **varying the wrong
 axis/level** — both cheap to fix with the rules below (retrospective folded into §4/§6/§7).
 
-> ## ⚠ BUILD STATUS — independently verified 2026-07-23: **ITERATE**, not APPROVE
+> ## ⚠ BUILD STATUS — last updated 2026-07-23 (post variant-harness). Still **ITERATE**, not APPROVE.
 > **Live and proven:** the one-command pipeline (fetch → extract → inject → emit, ~0.2s, with a
 > placeholder guard that really fires), machine-derived theme-from-content tokens, self-contained
 > CSP-safe previews with real content + light/dark, the colour-budget honoured in code, and the
 > **uncapped** decision ledger (834-char rationale round-tripped).
 >
-> **NOT yet built — the method's most load-bearing promise:**
-> - **The pipeline emits ONE design, not 2–4 variants.** One template, one output file, no variant
->   harness, no per-variant config, no `axis` label per set. Core-loop rule 2 and decision D2 ("show
->   2–4 genuinely different options") are currently **prose an operator hand-executes** — exactly the
->   manual friction Step 4 exists to remove. This is the top build priority.
+> **NEW — the central gap is closed.** `scripts/preview-build/build-variant-set.mjs` emits **N labelled
+> variants on one named axis from one command**, and `isolation-gate.mjs` (G1 §4.3, executable) **refuses
+> to emit a set it has not proven** — axis-diff, control-diff, blind-sort, count-by-rung, neutral labels,
+> and a structural fingerprint for structural axes. Verified: 20/20 gate tests green (the pass case + every
+> failure mode G1 §6 names); a real 3-variant density round built from **12 real posters** in 0.87s and
+> published to the stable URL; a deliberately "samey" set was **rejected, wrote nothing, exit 2**.
+> Core-loop rule 2 and decision D2 are now mechanical, not prose.
+>
+> **Doctrine ingested.** `references/design-doctrine.md` (durable cited rules, injected every round),
+> `data/design-rules.json` (machine-readable, three enforcement tiers), `data/design-rubric.md`
+> (G2's 4×25 with hard-gate overrides). Raw corpus in `docs/research/`, on demand only.
+>
+> **STILL NOT BUILT — do not claim these:**
+> - **The constraint checker does not exist.** Every rule in `data/design-rules.json` is
+>   `status:"pending"`. `must_use` / `animation_vocab` / `forbidden` / `source_policy` / colour-budget
+>   are specified and **enforce nothing today**. The variant panels have `constraints_honoured` and
+>   `rubric` slots that are still `null`. This is the next build item and the owner's #1 trust problem.
+> - **Rounds do not run in a fresh sub-agent**, and there is no `rejected[]` — the long-session
+>   degradation fix is designed but unbuilt.
+> - **The ledger is still one JSON blob** — not per-target, no `proposed→in-review→locked` state machine,
+>   no snapshot per lock, so **the golden-file regression gate has nothing to diff against**.
+> - **Scope × entry-point routing is prose** — a `component` scope does not yet mechanically select rungs.
 > - **No real design session has been run.** The live ledger is a seeded demonstration: foundation
 >   tokens are all NULL and only 2 of 4 worklist items have decisions. It proves the plumbing, not
 >   the method.
@@ -37,6 +54,8 @@ axis/level** — both cheap to fix with the rules below (retrospective folded in
 > - **The context gate and anti-slop rules are prose-only** — not in SKILL.md's HARD gate list, not in
 >   `anti-gaslight-rules.md`, not in `sanity-check.md`. Nothing mechanically enforces them.
 > - **The asset-fetcher is local-path only** — not the "project APIs, retry/proxy-robust" of §5D-A.
+> - **Known pre-existing tell:** `template.card-wall.html`'s `.sr-stat::before` is a coloured 3px left
+>   strip — F2 §5.5 names that the single most reliable AI tell (doctrine rule 27). Not yet fixed.
 
 ## The core loop (non-negotiables)
 

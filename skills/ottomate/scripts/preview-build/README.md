@@ -3,6 +3,77 @@
 `fetch → extract → inject → emit` in a single step. The Screenroom run's biggest friction was doing
 this in ~5 manual round-trips per mockup; this collapses it. Method: `references/stage-2-design-method.md`.
 
+**Two commands, one pipeline:**
+
+```bash
+node build-variant-set.mjs <variant-set.json>   # N labelled variants + the isolation gate  ← use this for a design round
+node build-preview.mjs     <config.json>        # a single preview (one locked design, no options)
+```
+
+## The variant harness — `build-variant-set.mjs`
+
+This is the command a **design round** runs. It emits **one page containing N labelled variants** that
+differ on exactly one named axis — decision D2 and core-loop rule 2, mechanised.
+
+```bash
+node build-variant-set.mjs density-set.json
+# → variant-set.html           one page, N panels, randomised slot order (publish to the SAME URL)
+# → variant-set.manifest.json  axis, resolved tokens per variant, slot→variant map, full gate result
+```
+
+**It refuses to emit a set it has not proven.** The isolation gate (`isolation-gate.mjs`, G1 §4.3) runs
+*before* anything is written; on failure it prints why, writes **nothing**, and exits **2**. The caller
+regenerates. Fail closed — the same principle as the Task-3 feature verifier.
+
+| Gate check | What it proves | Source |
+|---|---|---|
+| `count` | Option count fits the fidelity rung (rung 2 = 3; rung 4 = 2). Never 1, never 6+ | G1 §4.4 |
+| `labels` | Labels are neutral, distinct, and nothing is marked recommended/preselected | G3 §3.4/§3.5 |
+| `control-diff` | **No variant moves anything outside the declared axis** — the check that makes a lock *true* rather than a guess about why the owner picked | G1 §4.3 step 4b |
+| `axis-diff` | Every **pair** differs on the axis by ≥ the minimum relative step (default 15%) | G1 §4.3 step 4a |
+| `blind-sort` | Each variant's level is nameable. Deliberately **scale-invariant** — it answers "can the level be named?", never "is the gap perceptible?" (that's `axis-diff`'s call) | G1 §4.3 step 4c |
+| `structural` | Structural axes only: the rendered **tag/class/CSS-property fingerprint** actually diverges. Frequency-aware cosine, so prose and embedded posters can't move the number | G1 §4.3 |
+
+Content (posters, copy, ratings) is built **once** and shared by every panel, so "functionally
+identical, stylistically distinct" (G1 §3.7) is a structural guarantee, not a hope.
+
+### Variant-set config
+
+```jsonc
+{
+  "axis": {
+    "name": "density",
+    "parameter": "card padding + meta lines shown + card min-width + line-height",
+    "rung": 2,                    // 0 direction · 1 mechanic · 2 component · 3 cluster · 4 page · 5 micro
+    "params": ["pad", "metaLines", "cardMin", "lineHeight", "titleSize"],
+    "minRelStep": 0.15,           // [REASONED] G1 §8 — an engineering default, tune per axis
+    "kind": "token"               // or "structural" — then each variant supplies a `panelTemplate`
+  },
+  "control": { "radius": 10, "gap": 14, "actionColour": "#ff5a4d" },   // frozen in every panel
+  "variants": [
+    { "label": "spacious", "caption": "roomy — title, meta, rating, play",
+      "axis_values": { "pad": 22, "metaLines": 3, "cardMin": 200, "lineHeight": 1.62, "titleSize": 16 } }
+    // … 2 more
+  ],
+  "shuffleSeed": 20260723,        // omit for a fresh shuffle each round
+  "assetRoot": "…", "cards": [ … ]
+}
+```
+
+A key declared in **both** `control` and `axis.params` fails the gate, as does a variant that sets a key
+outside `axis.params` — that is the contamination which turns "we locked density" into a colour
+preference nobody recorded.
+
+### Tests
+
+```bash
+node isolation-gate.test.mjs    # 20 cases: the pass case + every failure mode G1 §6 names
+```
+
+## Single preview — `build-preview.mjs`
+
+For a locked design with no options left to show.
+
 ```bash
 node build-preview.mjs <config.json>
 # → preview.html   body-content-only, self-contained (publish via the Artifact tool)
