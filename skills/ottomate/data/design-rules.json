@@ -108,14 +108,16 @@
       "example": ["mc-shine-border", "mc-border-beam"],
       "check": "source_contains_mc_id",
       "semantics": "Every listed master_components id must appear in the variant source, tagged.",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › contract must_use test"
     },
     "animation_vocab": {
       "type": "string[]",
       "example": ["fade-up", "border-draw"],
       "check": "animation_names_subset_of",
       "semantics": "Parse every @keyframes name, animation-name, and transition-property in the variant. ONLY the listed vocabulary may appear. Anything outside fails.",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › contract animation_vocab test"
     },
     "forbidden": {
       "type": "string[]",
@@ -128,7 +130,8 @@
         "glow": "box-shadow or filter:drop-shadow with a saturated colour and no offset",
         "gradient-text": "background-clip:text with a gradient background"
       },
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › contract forbidden test"
     },
     "source_policy": {
       "type": "enum",
@@ -547,7 +550,8 @@
       "params": { "patterns": ["\\beval\\s*\\(", "new\\s+Function\\s*\\(", "setTimeout\\s*\\(\\s*[\"']", "setInterval\\s*\\(\\s*[\"']", "javascript:"] },
       "params_note": "Applies to INLINED LIBRARY SOURCE too, not just hand-written code — H2 §3.15: verify the pinned version's actual text, because popular libraries have shipped eval in avoidable paths (Chart.js pre-v3 string templates).",
       "remedy": "regenerate_variant",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › feas-no-eval fires on dynamic code and not on clean source"
     },
     {
       "id": "feas-no-wasm",
@@ -559,7 +563,8 @@
       "params": { "patterns": ["WebAssembly\\s*\\.", "\\.wasm\\b", "wasm-unsafe-eval"], "known_blocked": ["rive-runtime", "@rive-app", "DRACOLoader", "KTX2Loader"] },
       "params_note": "Rive's web runtime is UNAVAILABLE, always — not conditionally. Lottie (lottie-web, MIT) is plain JS with no eval and DOES work inlined; prefer SVG+CSS/WAAPI first.",
       "remedy": "regenerate_variant",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › feas-no-wasm fires on WebAssembly and on Rive by name"
     },
     {
       "id": "feas-no-network",
@@ -574,7 +579,8 @@
       },
       "params_note": "'Single-file' and 'no-network' are TWO SEPARATE CHECKS (H2 §3.10) — a technique can be trivially single-file and still fetch at runtime. Tailwind must be compiled to a static stylesheet OFFLINE; the Play CDN is a runtime network call and fails here. known_placeholder_services (D2 §3.9) is called out separately because it is the SPECIFIC failure a generator produces when art is missing: reach for placehold.co or DiceBear's HTTP API. The correct answer is a deterministic seeded inline SVG (doctrine 153) or an initials avatar at the L=0.179 crossover (doctrine 154) — both offline and both stable across rebuilds, which a remote service is not.",
       "remedy": "regenerate_variant",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › feas-no-network fires on remote refs AND on placeholder services"
     },
     {
       "id": "feas-no-inline-handlers",
@@ -586,7 +592,8 @@
       "params": { "patterns": ["\\son[a-z]+\\s*=\\s*[\"']"] },
       "params_note": "A hash/nonce-based strict script-src does not cover onclick= by default — only 'unsafe-inline' or the narrower 'unsafe-hashes' does. Separately (E2 §3.7) inline style=\"\" attributes are governed by style-src-attr and are dropped under a hash-based policy; that is adv-inline-style-attr, not this rule.",
       "remedy": "regenerate_variant",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › feas-no-inline-handlers fires on on* attributes only in markup"
     },
     {
       "id": "feas-baseline-gate",
@@ -635,7 +642,8 @@
       "params": { "patterns": ["-webkit-font-smoothing", "-moz-osx-font-smoothing", "font-smooth"] },
       "params_note": "Non-standard and macOS-only: a no-op on Windows/Android, but on Mac it forces grayscale AA that renders text lighter, so a design tuned on Windows looks different on Mac. Text is heavier on Windows (DirectWrite) and lighter on macOS (CoreText) by default; design for both. Found in and removed from both of our own preview templates 2026-07-23.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › adv-no-font-smoothing fires on the property but NOT on a comment mentioning it"
     },
     {
       "id": "adv-webkit-prefix-pair",
@@ -647,7 +655,8 @@
       "params": { "pairs": { "backdrop-filter": "-webkit-backdrop-filter", "mask-composite": "-webkit-mask-composite" }, "keyword_map": { "add": "source-over", "intersect": "source-in", "exclude": "xor", "subtract": "source-out" } },
       "params_note": "Safari < 18 needs the backdrop-filter prefix. The mask keywords genuinely DIFFER between prefixed and standard — copying the standard keyword into the prefixed line is a silent no-op. The map is per-operation: E2 §3.9 supplied add/intersect, A4 §3.12 supplied exclude->xor (the one the gradient-border trick actually needs). Neither track states the full map; it came from cross-checking them.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › adv-webkit-prefix-pair fires on a missing prefix and a mis-copied keyword"
     },
     {
       "id": "adv-inline-style-attr",
@@ -659,7 +668,8 @@
       "params": { "max_inline_style_attrs": 0 },
       "params_note": "Governed by style-src-attr, SEPARATELY from style-src; under a strict hash-based policy inline style attributes are dropped and the page silently un-styles. AI-generated markup leans on them heavily, which is exactly why this is worth counting. ADVISE not block, because our observed Artifact sandbox does allow them (see the doctrine's arbitrated-conflicts register) — the risk is portability, not current breakage. Exempt: a style attribute carrying only a CSS custom property used as a per-instance parameter.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › adv-inline-style-attr fires on real declarations but exempts custom-property-only"
     },
     {
       "id": "adv-p3-meaning-independent",
@@ -683,7 +693,8 @@
       "params": { "namespaces": ["svg_id", "css_class", "keyframes_name", "root_custom_property"] },
       "params_note": "TIER RATIONALE — this is block_owner, not advise, because it defeats the isolation gate rather than merely looking bad. url(#id) and <use href=\"#id\"> resolve to the FIRST match in document order, and a later <style> block wins for equal specificity, so variant B silently renders with variant A's gradient/filter/rules. The gate then passes a set whose SOURCE differs while the DISPLAY is identical — which is precisely the failure the gate exists to prevent. Only applies to the harness's markup mode (variant.panelTemplate); token mode is structurally immune because it varies only inline custom properties. See the register's defect entry for the three candidate fixes.",
       "remedy": "regenerate_set",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › block-svg-id-collision catches shared ids, classes, keyframes and :root props"
     },
     {
       "id": "adv-radius-scale",
@@ -837,7 +848,8 @@
       "params": { "flagged": ["Inter"], "suggested_alternatives": ["Public Sans", "Libre Franklin", "IBM Plex Sans", "Source Sans 3", "Hanken Grotesk"] },
       "params_note": "An F2 tell in typographic form: Inter is excellent and EVERYWHERE, so reaching for it reflexively costs distinctiveness. Not a prohibition — an explicit owner choice of Inter is a decision (doctrine 22) and exempt. This fires only when no typeface rationale was recorded.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › adv-not-default-inter flags an unexamined default typeface"
     },
     {
       "id": "adv-single-icon-set",
@@ -908,7 +920,8 @@
       "params": { "min_target_px": 24, "comfortable_touch_px": 44 },
       "params_note": "DISTINCT FROM hover_only_content, which is the profile-filtered discoverability rule. This is OPERABILITY (WCAG 2.1.1): a control that appears only on :hover is unreachable by anyone who tabbed to the row, INCLUDING the solo owner at P1. Detect: a selector containing :hover that sets display/visibility/opacity on a descendant containing a button/a/input, with no sibling :focus-within rule. The fix is one extra selector, which is why this is advised even at P1 rather than skipped.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › adv-hover-control-focus-within fires when a hover reveal has no keyboard path"
     },
     {
       "id": "adv-numeric-column-alignment",
@@ -1026,7 +1039,8 @@
       "params": { "banned_bare": ["Submit", "OK", "Yes", "No", "Continue", "Learn more", "Click here", "Go", "Done"], "word_count": [2, 4] },
       "params_note": "One of the cheapest and highest-signal source checks in the whole set: a literal wordlist over button/link text. 'Yes'/'No' are additionally banned as confirmation-dialog labels by D1 §3.8, which wants the verb outcome ('Delete file' / 'Keep file').",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › adv-action-label-specific fires on bare generic labels"
     },
     {
       "id": "adv-error-copy-shape",
@@ -1038,7 +1052,8 @@
       "params": { "banned_words": ["invalid", "illegal", "forbidden", "error occurred", "sorry", "please"], "banned_in_primary": ["stack trace", "raw status code", "internal status string"], "empty_field_wants": "instruction", "violated_constraint_wants": "description" },
       "params_note": "D1 §3.4's split is the part that is usually missed: an EMPTY field needs an instruction ('Enter your first name'), a VIOLATED CONSTRAINT needs a description ('First name must be 35 characters or fewer'). Codes go behind a collapsed 'Show technical details'.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › adv-error-copy-shape fires on blaming vocabulary in visible copy"
     },
     {
       "id": "adv-no-implementation-vocabulary",
@@ -1050,7 +1065,8 @@
       "params": { "patterns": ["\\bnull\\b", "\\bundefined\\b", "\\bNaN\\b", "\\b[45][0-9]{2}\\b(?=\\s|$)", "\\bAPI\\b", "\\bis[A-Z][a-z]+\\b", "\\b[A-Z]+_[A-Z_]+\\b", "\\b(GET|POST|PUT|PATCH|DELETE)\\b"] },
       "params_note": "Highly checkable and a reliable tell. Also covers D1 §3.11's synonym drift in spirit: one concept, one word. Scope to user-visible text nodes and attribute values (aria-label, placeholder, title, alt), NOT to code or class names — otherwise it fires on everything.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › adv-no-implementation-vocabulary scans visible text, not class names"
     },
     {
       "id": "adv-plain-language",
@@ -1074,7 +1090,8 @@
       "params": { "snappy_kb": 1024, "acceptable_kb": 2048, "budget_event_kb": 2048, "single_raster_kb": 200, "base64_overhead": 0.3333, "lighthouse_flag_kib": 5000, "lighthouse_target_kib": 1600 },
       "params_note": "Offline there is no 'link it instead' escape, so weight is a hard design input rather than a delivery concern. base64 costs exactly +1/3; over HTTP with Brotli that shrinks to ~2.5-5% on the wire, but from file:// it is paid in full and the decode cost is ALWAYS paid. Encode photographs before embedding (AVIF ~50% smaller than JPEG, WebP 25-35%) — but prefer WebP where decode latency matters, because AVIF decodes slower and can cost INP even with zero network.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › adv-weight-budget fires past the snappy target"
     },
     {
       "id": "adv-css-layer-order",
@@ -1086,7 +1103,8 @@
       "params": { "layer_order": ["reset", "base", "tokens", "layout", "components", "utilities"], "forbid_id_selectors": true, "forbid_important": true, "reset_selector": ":where()" },
       "params_note": "A later layer wins REGARDLESS of specificity, which is the mechanism that keeps specificity flat at scale. !important is doubly bad here because it REVERSES layer order. :where() has specificity (0,0,0); :is()/:has()/:not() take their most specific argument. Pairs with C2 rule 89: C2 orders the VALUES (primitive->semantic->component), E1 orders the CASCADE.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › adv-css-layer-order fires on !important, ID selectors and a wrong @layer order"
     },
     {
       "id": "adv-font-subset-once",

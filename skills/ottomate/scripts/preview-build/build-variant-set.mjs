@@ -18,6 +18,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { extractAccent } from './theme-extract.mjs';
 import { runGate, formatGate, RUNG_NAMES } from './isolation-gate.mjs';
+import { runCheck, formatCheck, annotationsByVariant } from '../design-check/design-check.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const MIME = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
@@ -91,6 +92,29 @@ function main() {
     process.exit(2);
   }
 
+  // ── THE CONSTRAINT CHECKER (Phase 3a, source-method rules) ─────────────────────────────────
+  // Runs after the gate, still before anything is emitted. Same fail-closed principle.
+  // Only meaningful in MARKUP mode: in token mode every panel renders the same shared component and
+  // differs only by inline custom properties, so there is no per-variant source to check. Saying so
+  // out loud beats printing a pass that checked nothing.
+  let checkAnnotations = {};
+  if (Object.keys(renderedMarkup).length) {
+    const check = runCheck({
+      variants: renderedMarkup,
+      contract: cfg.contract ?? {},
+      profile: cfg.audienceProfile ?? 'P1',
+      floorOverrides: cfg.floorOverrides ?? {},
+    });
+    console.log(formatCheck(check));
+    checkAnnotations = annotationsByVariant(check, Object.keys(renderedMarkup));
+    if (!check.pass) {
+      console.error('\nNOTHING WRITTEN. A blocked set is never presented (doctrine §5, fail closed).');
+      process.exit(2);
+    }
+  } else {
+    console.log('constraint check: SKIPPED — token mode has no per-variant source (see design-check.mjs header)');
+  }
+
   // ── presentation: randomise slot order, keep the mapping in the manifest ────────────────────
   const order = shuffle(variants.map((v) => v.label), cfg.shuffleSeed);
   const SLOTS = ['A', 'B', 'C', 'D', 'E'];
@@ -102,7 +126,7 @@ function main() {
       caption: v.caption ?? '',
       tokens: resolved[label],
       markup: renderedMarkup[label] ?? null,  // null = render the shared component with these tokens
-      constraints_honoured: v.constraints_honoured ?? null, // filled by the checker (build item 2)
+      constraints_honoured: v.constraints_honoured ?? checkAnnotations[label] ?? null, // filled by the checker
       rubric: v.rubric ?? null,                             // filled by the rubric pass (build item 2)
     };
   });

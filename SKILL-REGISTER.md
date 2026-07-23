@@ -63,6 +63,9 @@ re-derived by hand instead of read.
 | `preview-build/build-preview.mjs` | Single-design preview (no options) | ✅ |
 | `preview-build/theme-extract.mjs` | Theme-from-content (ImageMagick dominant vibrant) | ✅ re-verified independently |
 | `preview-build/template.variant-set.html` · `template.card-wall.html` | Preview shells | ✅ |
+| `design-check/design-check.mjs` | **The constraint checker** — tier semantics + `resolveFloor()` | ✅ |
+| `design-check/checks.mjs` | The source-method detectors (15 rules + 3 contract keys) | ✅ |
+| `design-check/design-check.test.mjs` | Its suite — **a failing case AND a passing case per rule** | ✅ 29/29 |
 | `feature-verify/**` | Task-3 Playwright harness | 🟡 API-level only, no browser spec |
 | `import-master-components.ts` | Catalog seeding | ✅ |
 
@@ -84,9 +87,9 @@ re-derived by hand instead of read.
 | **Lock earned / unlock harder** | `locked` needs `confirmed:true`; reopening needs `unlock_reason` | ✅ | Both 422s verified live |
 | **Uncapped rationale** | Design decisions never truncated | ✅ | 2160-char round-trip |
 | **Named directions** | 20-direction catalogue + adjective disambiguation | ✅ data | JSON validated; **no consumer wired yet** |
-| **Audience profiles P1/P2/P3** | Profile selects which floor rules bind | 📋 | Specced in `design-rules.json`; `resolveFloor()` absent |
-| **Constraint checker** | Mechanically enforce `must_use`/`animation_vocab`/`forbidden`/`source_policy` | ⬜ | **All 51 rules are `status:"pending"`. Nothing is enforced today** |
-| **Feasibility gate** | Refuse a variant that cannot RUN: eval · WASM · network · inline `on*=` · ungated non-Widely feature | 📋 | 6 rules specced from H2+E2, all `method:"source"` (plain greps) — **the cheapest thing in the backlog to actually build**. No runner yet |
+| **Audience profiles P1/P2/P3** | Profile selects which floor rules bind | ✅ | `resolveFloor()` in `design-check.mjs`; test proves P1 and P3 return **different** sets, and that a per-project override beats the preset |
+| **Constraint checker** | Mechanically enforce the rules | 🟡 | **15 of 89 rules + 3 of 5 contract keys now enforced**, each naming a failing-case test. Wired into `build-variant-set.mjs` after the gate, before emit; blocks exit 2 and write nothing. **The other 74 are still `pending` and enforce nothing** — the checker reports them as `skipped`, never as passing |
+| **Feasibility gate** | Refuse a variant that cannot RUN | 🟡 | **4 of 6 enforced** (`no-eval` · `no-wasm` · `no-network` incl. the placeholder-service list · `no-inline-handlers`). `feas-baseline-gate` needs real `@supports` parsing; `feas-degradation-bottom-rung` is `computed`. Proven profile-invariant by test |
 | **Cross-component coherence** | Same semantic role → same computed value across components; shared state vocab → same token delta | 📋 | `adv-cross-component-coherence`, C2 §3.10. **This is the mix-coherence check G1 requires and the per-item pick model (doctrine 38) depends on.** Needs a browser; no runner |
 | **Rubric scoring pass** | Score variants before presenting | 📋 | Rubric written; no runner |
 | **Templated-tax scorer** | F2's 18 binary rows | 📋 | Rows written; no runner |
@@ -121,14 +124,28 @@ re-derived by hand instead of read.
 | no unfilled placeholder ships | — | spec §5D-C | `build-*.mjs` ✅ |
 | lock must be earned | BLOCK-owner | G3 §3.12 | PATCH 422 ✅ |
 | unlock needs a reason | BLOCK-owner | G3 §3.13 | PATCH 422 ✅ |
+| **no `eval` / `new Function` / string-timer / `javascript:`** | BLOCK-feasibility | H2 §3.3 | `design-check.test.mjs` ✅ |
+| **no WebAssembly** (Rive, DRACOLoader, KTX2Loader by name) | BLOCK-feasibility | H2 §3.3 | ✅ |
+| **no network reference** — incl. 12 named placeholder services | BLOCK-feasibility | H2 §3.2, D2 §3.9 | ✅ |
+| **no inline `on*=` handlers** | BLOCK-feasibility | H2 §3.9 | ✅ |
+| **no cross-variant id / class / `@keyframes` / `:root` collision** | BLOCK-owner | D2 §3.11 | ✅ — the static half of the Phase-1 blocker |
+| **`must_use`** — every required `mc-id` present | BLOCK-owner | contract | ✅ |
+| **`animation_vocab`** — nothing outside the declared vocabulary | BLOCK-owner | contract | ✅ |
+| **`forbidden`** — glassmorphism · parallax · bounce · glow · gradient-text | BLOCK-owner | contract | ✅ 5 detectors, each tested |
+| **`resolveFloor(profile)`** — which floor rules bind | mechanism | owner ruling | ✅ P1≠P3 proven; overrides honoured |
+| 10 advisory rules — font-smoothing · action labels · error copy · implementation vocabulary · CSS architecture · inline styles · webkit prefixes · default typeface · hover/focus-within · weight budget | ADVISE | A2/C3/D1/E1/E2 | ✅ annotated, never blocking |
 
-### Specified, enforcing nothing (`status:"pending"`) — **89 rules, every one of them**
-`must_use` · `animation_vocab` · `forbidden` · `source_policy` · `colour_budget` · `floor-contrast` ·
-`floor-reduced-motion` · `floor-target-size` · `floor-not-colour-alone` · `hover-only-content` ·
-all 18 templated-tax rows · all `adv-*` rules · `seq-parents-locked` · `lock-regression-gate` ·
-**new 2026-07-23:** the 6 `feas-*` rules · `adv-token-layer-direction` · `adv-raw-value-drift` ·
-`adv-cross-component-coherence` · `adv-no-font-smoothing` · `adv-webkit-prefix-pair` ·
-`adv-inline-style-attr` · `adv-p3-meaning-independent`
+### Specified, enforcing nothing (`status:"pending"`) — **74 of 89** *(was: all of them)*
+`source_policy` (needs a source-tagging convention that does not exist yet) · `colour_budget`
+(needs rendered surfaces → `computed`) · `floor-contrast` · `floor-reduced-motion` ·
+`floor-target-size` · `floor-not-colour-alone` · `hover-only-content` · all 18 templated-tax rows ·
+`seq-parents-locked` · `lock-regression-gate` · `feas-baseline-gate` (needs real `@supports` parsing) ·
+`feas-degradation-bottom-rung` · all 16 `computed` rules · the remaining `adv-*` rules
+
+**Two rules can never be fully enforced by any method** and must never be listed as enforced:
+`adv-glass-legibility` (the background behind glass is the blurred composite, invisible to
+`getComputedStyle` — needs pixel sampling) and `adv-brand-mark-authentic` (no checker distinguishes an
+authentic mark from a good imitation; it is a prompt-time constraint plus a provenance annotation).
 
 **New: a fourth tier, `block_feasibility`** (6 rules). The other three tiers all answer *"is this good,
 for this audience?"*; H2/E2 surfaced a class of failure that is not a taste question — **the artifact
@@ -277,7 +294,8 @@ instead of ~1000. Distil and commit after every 2–4 tracks so progress survive
 
 ### Proven this program
 Task 1 visual-QA intake (complete, dogfooded) · isolation gate · variant harness · one-command preview ·
-theme-from-content · uncapped ledger · `design_decisions` + migration 0010 · doctrine/rules/rubric/directions
+theme-from-content · uncapped ledger · `design_decisions` + migration 0010 · doctrine/rules/rubric/directions ·
+**the research sweep, all 22 tracks** · **the source constraint checker + `resolveFloor()` (29/29)**
 
 ### Pending, in build order
 | Phase | Items |
@@ -285,7 +303,7 @@ theme-from-content · uncapped ledger · `design_decisions` + migration 0010 · 
 | ~~**Research sweep**~~ | ✅ **DONE 2026-07-23 — all 22 tracks distilled** |
 | **1 Generation** | Sub-decision inventory from C1 anatomy · render-by-tier with states pinned · bundle model + per-item picks · over-generate-and-filter |
 | **2 Persistence** | `rejected[]` wiring · reload-on-resume · snapshot differ |
-| **3a Enforcement — source** | Profile `resolveFloor()` · constraint capture · **the source checker** (12 rules, pure Node, no browser) · wire into pre-present. **Start with the 6 `feas-*` rules — plain greps, the cheapest real enforcement available** |
+| ~~**3a Enforcement — source**~~ | 🟡 **LARGELY DONE 2026-07-23** — `resolveFloor()` ✅ · the source checker ✅ (15 rules + 3 contract keys, 29/29 tests) · wired into `build-variant-set.mjs` ✅. **Remaining:** `feas-baseline-gate` (`@supports` parsing) · `source_policy` (needs a tagging convention) · constraint *capture* (the contract is read from config; nothing writes it to the ledger yet) |
 | **3b Enforcement — computed** | The 5 `computed` rules, hosted in the existing Task-3 Playwright harness: `adv-cross-component-coherence` first, since the per-item pick model depends on it |
 | **4 Wiring** | Fresh-context rounds · scope×entry routing · Stage-3 gate · register gates in HARD list · **graduation to `master_components` — now specced by H1, see superseded** |
 
@@ -333,7 +351,8 @@ theme-from-content · uncapped ledger · `design_decisions` + migration 0010 · 
 | `theme-extract.mjs` emits the raw extracted pick | Medium | A1 §3.10: normalise L to the accent target and clamp C so contrast is guaranteed *at derivation time*. Today it only boosts V |
 | Gate does not check that axis params are **visible in a shown state** | High | *A* root cause of the A≈B round; B2 would have caught it. **See the namespace-collision defect above for a second, independent mechanism** — both produce "source differs, display identical", and fixing only one leaves the gate defeatable |
 | Render surface ignores component tier | High | 566 KB / 36 posters for a component question. **E1 §3.2 now supplies the budget the complaint lacked: ≤1 MB snappy, ≤2 MB acceptable, >2 MB a budget event — so 566 KB was *within* budget.** The defect is the wrong **surface** (a page rendered to decide a component question), not the weight. Fixed by render-by-tier in Phase 1, not by shrinking anything |
-| Every `design-rules.json` rule is `pending` | High | Doctrine enforces nothing today |
+| ~~Every `design-rules.json` rule is `pending`~~ → **74 of 89 still are** | Medium *(was High)* | 15 rules + 3 contract keys now enforced with failing-case tests and wired into the harness. The checker reports unimplemented rules as **`skipped`**, so coverage cannot be mistaken for a pass |
+| The checker only runs in the harness's **markup mode** | Medium | Token mode varies only inline custom properties, so there is no per-variant source to check. The build prints `constraint check: SKIPPED` rather than a pass that checked nothing — but it does mean **every round run so far would have been unchecked** |
 | `.sr-stat::before` 3px left strip in `template.card-wall.html` | Low | F2's most reliable AI tell, in our own template. Deferred by owner |
 | DOM-commenter extension has **no git remote** | Medium | Local-only; "pushed" claims were no-ops |
 | The 3 locked specs live outside version control | Medium | `~/Desktop/Skills CC/Ottomate` is not a git repo |
