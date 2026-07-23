@@ -11,6 +11,34 @@
 in Stage 3 (per feature, before the deploy gate) and in **Stage 4.7** (per locked item).
 Advisory-only for pure-backend/no-UI internal changes (still welcome, never blocking there).
 
+> ## ⚠ BUILD STATUS — independently verified 2026-07-23: **ITERATE**, not APPROVE
+> Read this before trusting any capability claim below.
+>
+> **Live and proven:** the sink (`feature_verification_reports`, migration 0008 + endpoints), the
+> system-state helpers (`assertFileOnDisk` / `assertViaApi` / `pollUntil`), the **NFC-vs-NFD unicode
+> recipe**, `Matrix.verdict()` (correctly fail-closed), and one end-to-end run that really inserted
+> reports through the API.
+>
+> **NOT yet demonstrated — design intent, not capability:**
+> - **No browser-driving spec exists.** The only instantiation drives the app over HTTP (Playwright
+>   `request`), not a real UI: zero clicks, keystrokes, `setInputFiles`, or screenshots. "Drives the
+>   real app like a QA human" (above) is the **goal**, not what has been shown.
+> - **`selectors.ts` (`oid()`) has zero call sites** — the data-oid "one instrument, two consumers"
+>   pairing is unproven. Same for `pollUntil` (the async / rescan-pickup leg).
+> - **Explorer + Judge are prose only.** No rubric file exists; `judge_verdict` has no producer; no
+>   Explorer finding has ever been frozen into a deterministic spec.
+> - **Nightly CI is not wired** (no workflow, no cron entry). `postTestRun()` now exists as the
+>   helper, but nothing calls it on a schedule.
+> - **axe-core / Lighthouse-CI / Lost Pixel / Testcontainers are NOT installed.** Spec §4/§5A names
+>   them in the deterministic core (axe as a hard gate). This build deliberately did not add those
+>   deps and treats them as pluggable layers — a **known deviation from the spec**, recorded here
+>   rather than glossed over.
+> - **Evidence capture is configured, not exercised** — API-only specs create no browser context, so
+>   no trace/video/screenshot is ever produced.
+>
+> **To reach APPROVE:** one real browser-driving spec producing surviving trace + screenshot
+> evidence, at least one deliberately red case with its proof persisted, and a scheduled nightly entry.
+
 ## Why it exists (the gap the code verifier can't close)
 
 The code verifier's tests are **coder-authored, happy-path, derived from ACs the coder/skill

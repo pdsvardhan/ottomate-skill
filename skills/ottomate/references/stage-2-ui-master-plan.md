@@ -12,9 +12,17 @@
 > `stage-2-design-method.md` (the A→B→C fidelity ladder, run before/at this lock). This row is also the
 > **decision-ledger home**: the full, uncapped design ledger persists as JSON in
 > `ui_master_plans.design_ledger` (context · worklist · ladder state · per-component decisions +
-> rationale · colour-budget · locked-vs-open · preview Artifact URL). `GET .../ui-master-plan` reloads
-> it on resume; a YAML mirror is written to the project repo at each lock. NEVER store decisions as
+> rationale · colour-budget · locked-vs-open · preview Artifact URL). NEVER store decisions as
 > `project_todos.title` — that field is capped at 300 chars and truncated decisions twice in the real run.
+>
+> **Status (verified 2026-07-23) — two claims corrected:** the ledger **is** written and does survive
+> (`PUT`/`GET .../ui-master-plan`, proven with an 834-char rationale). But:
+> - **Reload-on-resume is NOT automatic.** The session-start path (`command-routing.md`,
+>   `context-packet`) does not fetch the plan. Until it does, **explicitly `GET
+>   /api/projects/<slug>/ui-master-plan` when resuming design work** — it will not arrive on its own.
+> - **There is NO YAML mirror.** An earlier version of this note claimed one is written at each lock;
+>   none exists and `pack-up-ritual.md` never mentions it. The DB row is the single source of truth.
+>   (Adding a mirror is optional future work — it is not a silent gap, it is unbuilt.)
 > **Theme-from-content** (poster → dominant-colour token) is first-class for asset-rich projects — wire
 > the fetcher + extractor early (`scripts/preview-build/`, §Theme-from-content in `stage-2-components.md`).
 

@@ -18,6 +18,26 @@ love 3D cards" converged to a precise owned design in ~two dozen quick rounds �
 single-shot generation. The failure modes were all **colour discipline** and **varying the wrong
 axis/level** — both cheap to fix with the rules below (retrospective folded into §4/§6/§7).
 
+> ## ⚠ BUILD STATUS — independently verified 2026-07-23: **ITERATE**, not APPROVE
+> **Live and proven:** the one-command pipeline (fetch → extract → inject → emit, ~0.2s, with a
+> placeholder guard that really fires), machine-derived theme-from-content tokens, self-contained
+> CSP-safe previews with real content + light/dark, the colour-budget honoured in code, and the
+> **uncapped** decision ledger (834-char rationale round-tripped).
+>
+> **NOT yet built — the method's most load-bearing promise:**
+> - **The pipeline emits ONE design, not 2–4 variants.** One template, one output file, no variant
+>   harness, no per-variant config, no `axis` label per set. Core-loop rule 2 and decision D2 ("show
+>   2–4 genuinely different options") are currently **prose an operator hand-executes** — exactly the
+>   manual friction Step 4 exists to remove. This is the top build priority.
+> - **No real design session has been run.** The live ledger is a seeded demonstration: foundation
+>   tokens are all NULL and only 2 of 4 worklist items have decisions. It proves the plumbing, not
+>   the method.
+> - **Reload-on-resume and the Stage 3 handoff are unwired** (see `stage-2-ui-master-plan.md`);
+>   Stage 3's own references never read the ledger. There is **no YAML mirror** despite an earlier claim.
+> - **The context gate and anti-slop rules are prose-only** — not in SKILL.md's HARD gate list, not in
+>   `anti-gaslight-rules.md`, not in `sanity-check.md`. Nothing mechanically enforces them.
+> - **The asset-fetcher is local-path only** — not the "project APIs, retry/proxy-robust" of §5D-A.
+
 ## The core loop (non-negotiables)
 
 1. **Show, don't tell** — build a small real thing and let them look; never "here's a description, ok?".
@@ -60,7 +80,7 @@ Persist the worklist + chosen order to the ledger.
 - **B — Component showcase.** For each worklist component, 2–4 **real, interactive variants** side by
   side, **tagged by source**; owner picks/mixes per component. **Most decisions land here.**
   - **Library-first, NOT library-only (owner ruling 2026-07-23).** Check `master_components` first
-    (rule 12) and use a catalog entry **where it genuinely fits the direction** — tagged by its id
+    (SKILL.md operating rule 12) and use a catalog entry **where it genuinely fits the direction** — tagged by its id
     (`mc-border-beam`, `mc-shine-border`, …) so provenance is auditable. But the catalog is **not
     complete and not right for every theme**: when nothing in it suits the chosen direction, **author a
     bespoke variant freely** and tag it `bespoke`. Never bend the design to what the library happens to
@@ -86,7 +106,7 @@ inject → publish-to-same-URL into **one command** (`scripts/preview-build/`):
   (the skill calls the Artifact tool with the same `file_path`/`url` each round).
 - **E decision-ledger** — component → chosen variant + rationale; **store FULL decisions, no char cap**
   (a 300-char tracker limit truncated decisions twice — that limit is on todo titles; the ledger lives
-  as JSON on `ui_master_plans.design_ledger`, never as a todo). Survives long sessions; reloads on resume.
+  as JSON on `ui_master_plans.design_ledger`, never as a todo). Survives long sessions. **Reload is NOT automatic** — the session-start path does not fetch the plan, so explicitly `GET /api/projects/<slug>/ui-master-plan` when resuming design work.
 - **F component library** = `master_components` (the existing catalog) — a **source of shortcuts, not a
   constraint**; bespoke variants are first-class when the catalog doesn't fit (see Step B).
 
