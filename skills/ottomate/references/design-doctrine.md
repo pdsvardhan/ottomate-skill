@@ -211,7 +211,7 @@ stays in `docs/research/` and is pulled **only for the one direction chosen**.
     signals "eco" for any brand; this domain's actual ledger line, waveform, wax seal or blister pack
     cannot be handed to a competitor without breaking. Same principle as theme-from-content. `[F1 §3.8]`
 
-## 3¾. Foundation numbers (A5 · A1 · B1 · A3)
+## 3¾. Foundation numbers (A5 · A1 · B1 · A3 · C2 · H2 · E2)
 
 The checkable half of the doctrine. These are the numbers the constraint checker enforces; the
 reasoning behind each is in `docs/research/`, pulled on demand.
@@ -313,11 +313,18 @@ reasoning behind each is in `docs/research/`, pulled on demand.
     `[A3 §3.5]`
 82. **On large displays add STRUCTURE, not width.** Extra space becomes new panes/rails/columns —
     one stacked pane → 50/50 → 70/30, never one stretched column. `[A3 §3.6]`
-83. **⚠ "4K" does not mean 3840 CSS px.** A 27″ 4K panel is ≈163 PPI; the comfortable band is
-    110–140 PPI, so OSes default such a screen to ≈**150% scaling → a logical viewport around
-    2560×1440** — the same layout budget as native 1440p. Design against realistic *logical* widths,
-    not the panel's marketing resolution. `[A3 §3.7]` **This corrects the method's "4K-first, tune
-    density for 4K" instruction, which assumed the marketing number.**
+83. **⚠ "4K" does not mean 3840 CSS px — and for THIS owner it means 2194.** A 27″ 4K panel is
+    ≈163 PPI against a comfortable band of 110–140, so OSes scale it. `[A3 §3.7]`
+    **MEASURED 2026-07-23, not assumed** — the owner's only attached display is a **Dell S2725QC,
+    27.1″ (60×34 cm), 3840×2160 native, 162 PPI, running at 175 % scaling** (one notch above the
+    150 % Windows recommends; the laptop's internal panel is detached). Effective DPI 168 →
+    **logical viewport 2194×1234 CSS px**, and a maximised browser's *content* box is nearer
+    **2194×1100**. That is only ~14 % wider than 1080p — **not** 1440p, and nowhere near 3840.
+    At 175 % the effective density is ≈93 PPI, *below* the 110–140 band: this owner deliberately
+    runs a **larger** UI than typical, so err generous, never cramped.
+    **This corrects the method's "4K-first, tune density for 4K" instruction, the Screenroom
+    density tuning and the P1 profile — all three inherited the marketing number.**
+    *(Probed via `GetDpiForMonitor` + `EnumDisplayDevices`; re-measure if the setup changes.)*
 84. **Container queries for component adaptation; media queries for page-shell decisions.** Prefer
     `rem` thresholds so zoom is respected. Note `container-type` **creates a stacking context** — an
     overlay inside a container-query card cannot escape it; use the native top layer instead.
@@ -335,6 +342,129 @@ reasoning behind each is in `docs/research/`, pulled on demand.
 88. **Optically correct non-rectilinear shapes** — circles and pointed marks need ~2–4% more than
     their nominal size to read as equal to a square neighbour. `[A3 §3.15, echoing G2's craft dimension]`
 
+### Tokens & coherence (C2) — how a design stays one design
+
+89. **Three layers, one direction: primitive → semantic → component.** A literal value (`#2563eb`,
+    `8px`, `200ms`) lives **only** in the primitive layer. Semantic tokens reference primitives;
+    component tokens reference semantics. Never skip a layer (component → primitive) and never
+    reverse. This one rule is what makes theming a re-point instead of a rewrite. `[C2 §3.1]`
+90. **Name primitives by *value*, semantics by *role*, components by *part*** — `--blue-600` →
+    `--color-action-primary` → `--button-primary-bg`. A primitive named for a role (`--blue-primary`)
+    or a semantic named for a colour (`--color-blue-action`) is a **defect**: it welds a decision to a
+    value and breaks theming. Cap alias depth at **3 hops**, every chain traceable. `[C2 §3.2, §3.3]`
+91. **One ramp per dimension, and one state vocabulary, consumed identically everywhere.** Radii,
+    spacing, type, elevation, duration and colour each come from exactly one scale; no component
+    invents an off-ramp `border-radius: 7px`. Likewise define the state set once — `rest, hover,
+    focus-visible, active, selected, disabled, loading, invalid, read-only` — and its token delta, so
+    "hover" is the *same* semantic move on a button, a menu row and a card. `[C2 §3.4, §3.5]`
+92. **Ship tokens as CSS custom properties on `:root` — that is the only CSP-safe offline delivery,
+    and theme by re-pointing the semantic layer, never by editing components.** DTCG/Style Dictionary
+    are **build-time**; the delivered file carries only resolved `--token: value` declarations. A mode
+    swap is a `:root` / `[data-theme]` / `prefers-color-scheme` re-point — no eval, no network.
+    `[C2 §3.6, §3.7]`
+93. **No component may hold a raw value that duplicates a token.** A literal `8px` sitting next to
+    `--radius-2: 8px` is drift-in-waiting. `[C2 §3.9]`
+94. **Prove coherence — never assume it — with a computed-style audit.** Render each component,
+    `getComputedStyle`, and assert every radius/spacing/colour/shadow/duration is **on-ramp** AND that
+    **the same semantic role resolves to the same value across components**. Tolerances: geometry
+    **±0.5–1 px**; colour **ΔE(CIEDE2000) ≤ 1 pass / ≤ 2 warn / > 2 fail**. Verify against a spec
+    sheet with tolerances, not by eye; pixel-diff catches what token-diff misses (Playwright
+    `threshold` 0.2/pixel, changed-pixel ratio ≤ 0.1–0.2 % page-level). `[C2 §3.10, §3.11]`
+    **This is the mix-coherence check G1 requires and we did not have** — and it is a *runtime*
+    check, not a source-text one.
+95. **Never hard-delete a token** — mark it deprecated, alias it to its replacement, keep it for a
+    stated window. Renames and removals are MAJOR; adding is MINOR; a value tweak in the same role is
+    PATCH. The token *is* the handoff contract: lock every decision as a token **reference**, not a
+    raw value, so mockup, spec and any regenerated variant speak one vocabulary. `[C2 §3.12, §3.13]`
+96. **Honesty flag on DTCG.** The Design Tokens Format Module *2025.10* is stable and vendor-neutral,
+    **but it is a Community Group Final Report, NOT a W3C Recommendation**, and tool support is still
+    catching up. Fine as interchange; do not assume lossless round-trips. `[C2 §3.14]`
+
+### Feasibility — what a variant may even use (H2)
+
+97. **Default to the cheapest technique family that satisfies the effect and escalate only when the
+    lower rung is *provably* insufficient: CSS → SVG → Canvas → WebGL → JS library.** `[H2 §3.1]`
+98. **"Library" always means inlined plain-JS source text, never a CDN reference.** The sandbox is
+    offline by definition — a `<script src="https://…">` fails whether or not a CSP is enforced,
+    because there is no network path. `[H2 §3.2]`
+99. **No-eval also means no-WebAssembly — read that literally.** `'wasm-unsafe-eval'` is a *separate*
+    CSP keyword from `'unsafe-eval'`; without it `WebAssembly.instantiate()/.compile()` refuse in
+    every engine. That kills **Rive's web runtime**, Three.js's `DRACOLoader`/`KTX2Loader`, and every
+    WASM-compiled physics/noise engine — **always**, not conditionally. `[H2 §3.3]`
+100. **Inline SVG is the default for marks, icons, charts and vector shapes** — simultaneously
+     CSP-safe by construction, cheap on `transform`/`opacity`, and the only family that is accessible
+     *by default*. **Canvas and WebGL destroy every DOM accessibility semantic**, so use them only for
+     genuinely decorative/generative content, and **mirror anything information-bearing in real DOM
+     text** (a visually-hidden table or summary) as a default habit, not an edge case.
+     `[H2 §3.4, §3.5, §3.14]`
+101. **A JS dependency needs all five clauses:** native infeasibility · permissive licence · verified
+     eval/WASM-free inlining · proportionate weight · fail-safe wrapping. **GSAP carries a licence
+     caveat** — free, but a proprietary Webflow licence, not OSI-approved. Disclose it rather than
+     silently shipping it. `[H2 §3.6]`
+102. **Every degradation ladder needs a true bottom rung**: zero JS, zero gated CSS feature, always
+     renders correctly. That rung is what ships under `prefers-reduced-motion: reduce`, to any engine
+     failing a feature check, and to anything that throws. `[H2 §3.7]`
+103. **Never use inline event-handler attributes or `javascript:` URIs.** A hash/nonce-based strict
+     `script-src` does not cover `onclick="…"`. Wire everything through `addEventListener` inside the
+     one covered `<script>` block. `[H2 §3.9]`
+104. **"Single-file" and "no-network" are two separate checks, not one.** A technique can be trivially
+     single-file (its code is just text) and still reach the network by default — a CDN script, a
+     Google Fonts `@import`, a runtime `fetch()`. Verify both, independently, every time. `[H2 §3.10]`
+105. **Verify "eval/WASM-free" against the pinned version's actual code** — grep the pasted source for
+     `eval(`, `new Function(`, `.wasm`. Popular libraries have shipped eval in avoidable code paths
+     before (Chart.js pre-v3 string templates). And a CSP-safe technique can still break for reasons
+     unrelated to CSP: **SMIL only animates an SVG inlined in the document**, not one referenced via
+     `<img src>` or `background-image`. `[H2 §3.13, §3.15]`
+
+### Environment reality (E2) — what actually runs in the target
+
+106. **"Baseline Newly Available" is not "safe for everyone."** *Widely Available* = in every major
+     engine ≥ **30 months** → use unguarded. *Newly Available* = current versions only, **older ones
+     still in the wild** → guard. *Limited* = an engine is missing → **always** guard + fallback.
+     `[E2 §3.1]`
+107. **Gate every non-Widely feature with `@supports` and ship the fallback FIRST** — base declaration
+     outside the gate, modern feature inside it. **For colour values the cascade *is* the fallback**:
+     `color:#a33; color:oklch(55% .2 25);` needs no `@supports` at all, because a browser drops what
+     it cannot parse. Reserve `@supports` for properties that change layout or need a companion rule;
+     where CSS can't feature-detect, use `CSS.supports(…)` / `'popover' in HTMLElement.prototype`.
+     `[E2 §3.2, §3.3]`
+108. **`'self'` does not include `data:` — the scheme must be allowlisted.** `img-src 'self'` **blocks**
+     `<img src="data:…">`; base64 `@font-face` needs `font-src data:`. This is the single most common
+     inlined-asset failure. **Test what the sandbox actually sets** rather than assuming. `[E2 §3.5]`
+109. **Nonces are impossible in a static file** — they must be fresh per HTTP response. So a strict
+     policy either allows `'unsafe-inline'` or demands a **SHA-256 hash per block that changes on
+     every edit**. Separately, inline `style="…"` **attributes** are governed by `style-src-attr` and
+     are dropped under a hash-based policy — prefer one hashed `<style>` block plus classes.
+     `[E2 §3.6, §3.7]`
+110. **`<meta name="color-scheme" content="light dark">` in `<head>`, before any stylesheet, kills the
+     dark-mode flash with zero JS** — the browser paints the right canvas on the *first* frame. Pair
+     with `prefers-color-scheme` / `light-dark()`. **Caveat for our own templates:** a
+     *body-content-only* file has no `<head>` (the Artifact wrapper owns it), so there the CSS
+     `color-scheme` property is the correct and sufficient substitute. And **never promise a persisted
+     per-user theme toggle in a static offline file** — without pre-paint storage JS you get a flash;
+     follow the OS, or use a `:has()`/`:checked` toggle that does not survive reload. `[E2 §3.10, §3.11]`
+111. **Two `-webkit-` prefixes still matter in the glass era:** `backdrop-filter` needs
+     `-webkit-backdrop-filter` for Safari < 18, and `mask`/`mask-composite` needs `-webkit-mask-*`
+     **with *different* keywords** (`source-over`/`source-in`, not `add`/`intersect`). Prefixed line
+     first, then the standard. `[E2 §3.9]`
+112. **Never "fix" font weight with `-webkit-font-smoothing`.** It is **non-standard and macOS-only**,
+     does nothing on Windows/Android, and forces grayscale AA that makes text lighter *on Mac only* —
+     so a design tuned with it looks different cross-OS. Text is heavier on Windows (DirectWrite) and
+     lighter on macOS (CoreText) **by default**; design for both instead of papering over it.
+     `[E2 §3.13]` — *this owner tunes on Windows, where the property is a no-op, so its only effect is
+     to make every Mac viewer see a lighter design. Removed from both preview templates 2026-07-23.*
+113. **Wide-gamut P3 is opt-in and must degrade to sRGB via the cascade.** Gate ambitious cases with
+     `@supports (color: color(display-p3 1 1 1))` or `@media (color-gamut: p3)`, and **never rely on
+     the extra saturation for meaning** — it is gamut-mapped away on an sRGB screen. `[E2 §3.12]`
+114. **Prefer vectors for anything that must stay crisp at any DPR; raster only as an inlined `data:`
+     @2x** — which *doubles* in bytes. Reach for inline SVG first, `image-set()` only when raster is
+     unavoidable. `[E2 §3.14]`
+115. **Reserve the newest toys — `anchor-positioning`, `scroll-timeline`, `text-wrap: pretty`,
+     `field-sizing`, `corner-shape` — for progressive enhancement only, never for layout or legibility
+     that must hold.** Several are Limited-availability as of July 2026 (no Firefox for scroll-driven
+     animation or `text-wrap: pretty`; `corner-shape` is Chromium-only). **Content must be complete and
+     usable when they no-op.** `[E2 §3.15]`
+
 ## 4½. The audience profile — what makes a rule bind (owner ruling 2026-07-23)
 
 **A rule is not universally true; it is true for an audience on a device.** Research states rules
@@ -344,14 +474,14 @@ selects which rules block, which advise, and which are skipped entirely.
 
 | | **P1 — solo** | **P2 — trusted group** | **P3 — public** |
 |---|---|---|---|
-| Typical | 1 user (the owner), built by them, 27″ monitor | ~7 (family/friends), laptops | anyone, mobile → monitor |
+| Typical | 1 user (the owner), built by them, **Dell S2725QC 27″ 4K @ 175 %** | ~7 (family/friends), laptops | anyone, mobile → monitor |
 | Input | mouse + keyboard | trackpad, some touchscreens | touch first-class |
 | Hover-only content | **allowed** | allowed, flag touchscreen laptops | **BLOCKS** (B2 §3.5) |
 | Target size ≥ 24px | skip | advise | **BLOCKS** |
 | Contrast ≥ 4.5:1 | advise (their eyes, their call) | **BLOCKS** — other people, screens, lighting | **BLOCKS** |
 | `prefers-reduced-motion` | advise | **BLOCKS** | **BLOCKS** |
 | Screen-reader semantics | skip | skip unless a member needs it — **ask once** | **BLOCKS** |
-| Responsive range | 4K-first only | 1280–1920 | mobile-first, full range |
+| Responsive range | **single target ≈2194×1234 logical** (measured, rule 83) — *not* 3840 | 1280–1920 | mobile-first, full range |
 | Colour-alone state | advise | **BLOCKS** | **BLOCKS** |
 
 **Rules that never vary by profile:** the isolation gate (G1), the owner's own constraint contract, and
@@ -408,9 +538,20 @@ own constraints are absolute; the research is advice with a small, profile-depen
 
 | Tier | What's in it | On violation |
 |---|---|---|
+| **BLOCK — feasibility** *(added 2026-07-23 from H2 + E2 — see note)* | The variant cannot run in the target sandbox at all: `eval`/`new Function` · WebAssembly · any network reference · inline `on*=` handlers · an ungated non-Widely feature carrying layout or legibility | **Regenerate. Never presented.** Fail closed. |
 | **BLOCK — owner constraints** | `must_use` · `animation_vocab` · `forbidden` · `source_policy` · `colour_budget`, and doctrine rules 2/3/4/8 (the isolation gate + never-show-one) | **Regenerate. Never presented.** Fail closed, same principle as the Task-3 verifier. |
 | **BLOCK — hard doctrine floor** | Text contrast < 4.5:1 (large 3:1) · `prefers-reduced-motion` not honoured · interactive target < 24px · meaning carried by colour alone | **Regenerate.** Deliberately tiny — these are the four an owner should never have to spend a round catching. |
 | **ADVISE — everything else** | All remaining doctrine, the G2 rubric score + band, the F2 templated tax | **Computed, annotated on the variant, shown.** A *Rebuild* band triggers **one** automatic regeneration; if it still bands Rebuild it is shown with the score visible. |
+
+**Why a fourth tier (H2/E2, 2026-07-23).** The three tiers above all answer *"is this design good, for
+this audience?"* H2 and E2 introduced a class of failure that is not a taste or audience question at
+all: **the artifact does not render.** A WASM runtime, a CDN `<script src>`, an `onclick=` attribute or
+an ungated Limited-availability property produces a blank or broken panel no matter who is looking at
+it, so it can be neither profile-filtered nor advised — it must fail closed, always. This **extends**
+the owner's two-tier ruling rather than revising it: that ruling governs *quality*; this governs
+*existence*. Its rules are also the **cheapest in the whole set to implement** — every one is a source
+grep — so they are the natural first candidates to move off `status:"pending"`. *Flagged for owner
+confirmation; nothing about the existing three tiers changes.*
 
 **Contrast standard:** hard gate = **WCAG 2.1 AA (4.5:1 / 3:1)** — stable, computable, no licence
 question. F2 §3.12's **APCA `Lc` ≥ 75/45/30** is computed as an *advisory* score alongside; it is a

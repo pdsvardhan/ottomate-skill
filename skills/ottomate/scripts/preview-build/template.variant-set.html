@@ -13,7 +13,9 @@
     --stat-a:#3ba99c; --stat-b:#d9a441; --action:#ff5a4d;
     color-scheme: dark; background: var(--bg); color: var(--ink);
     font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased; line-height: 1.5;
+    /* no -webkit-font-smoothing: non-standard + macOS-only, so it is a no-op on the owner's Windows
+       machine and only makes Mac viewers see a lighter design than the one tuned here [E2 §3.13] */
+    line-height: 1.5;
     padding: clamp(20px, 2.4vw, 44px); min-height: 100%;
   }
   @media (prefers-color-scheme: light) {
