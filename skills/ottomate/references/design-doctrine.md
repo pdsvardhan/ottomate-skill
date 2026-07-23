@@ -230,9 +230,12 @@ reasoning behind each is in `docs/research/`, pulled on demand.
     And a focused element must not be fully obscured by sticky chrome (2.4.11). `[A5 §3.5, §3.6]`
 57. **Targets ≥24×24 CSS px** (AAA wants 44×44); inline links in prose are exempt. Every drag
     interaction needs a single-pointer alternative (2.5.7). `[A5 §3.7, §3.8]`
-58. **Honour three preference queries, not one:** `prefers-reduced-motion`, `prefers-contrast`, and
-    `forced-colors` — under forced-colors, keep `outline`s and map to system colours; `box-shadow`,
-    `background-image` and `text-shadow` are forced to `none`. `[A5 §3.10]`
+58. **Honour four preference queries, not one:** `prefers-reduced-motion`, `prefers-contrast`,
+    `forced-colors`, and — added from A4 §3.7 — **`prefers-reduced-transparency`** wherever
+    `backdrop-filter` or a translucent surface is used. Under forced-colors, keep `outline`s and map
+    to system colours; `box-shadow`, `background-image` and `text-shadow` are forced to `none`.
+    `[A5 §3.10 + A4 §3.7]` *(A5 listed three; A4 supplied the fourth. Note the forced-colors clause is
+    also the reason rule 127's `box-shadow` ring must never be the focus indicator — see §6.)*
 59. **Reflow at 320px with no 2-D scrolling, and survive the text-spacing overrides** (line-height
     1.5, paragraph 2×, letter 0.12em, word 0.16em). Never fix the height of a text container.
     `[A5 §3.11]` — binds at P3; advisory at P1/P2.
@@ -465,6 +468,165 @@ reasoning behind each is in `docs/research/`, pulled on demand.
      animation or `text-wrap: pretty`; `corner-shape` is Chromium-only). **Content must be complete and
      usable when they no-op.** `[E2 §3.15]`
 
+### Shape, depth & material (A4)
+
+116. **Radius is a scale, not a free parameter.** Ladder by role: **0** sharp (data/tech/full-bleed) ·
+     **2–4px** inputs, chips · **6–8px** buttons, small cards · **10–16px** cards, modals, sheets ·
+     **20–28px** hero panels · **9999px** pills, avatars, toggles. **Two radii (a "tight" and a
+     "loose") is a system; three unrelated ones on a screen is a smell.** `[A4 §3.1]`
+117. **Nest radii concentrically: `inner = max(0px, calc(outer − gap))`.** An inner element inside a
+     rounded container that reuses the outer radius makes the corners run un-parallel and the gap
+     visibly "pinch". `[A4 §3.2]`
+118. **Sharp beats round when the message is precision** — dense data tables, code/technical surfaces,
+     editorial/luxury voice, full-bleed edges (rounding an edge-touching element leaves an ugly
+     sliver), and anything under ~16px (a 12px radius on a 16px chip eats the chip). Radius is brand
+     tone, chosen deliberately. `[A4 §3.3]`
+119. **Elevation is a fixed 6-level ladder, and every shadow on the page obeys ONE light source** —
+     from above, so **vertical offset ≈ 2× horizontal, and horizontal is usually 0** for UI. As an
+     element rises, **offset ↑, blur ↑, per-layer opacity ↓** together. `[A4 §3.4]`
+120. **Dual-layer, tinted shadows — never a single pure-black blur.** Real elevation = a tight
+     **contact** shadow (small y, small blur, slight negative spread) **plus** a soft **ambient**
+     shadow (larger y, blur 1.5–3× the offset). Tint toward the surface hue at low lightness, not
+     `#000` — black shadows look muddy and dead. Per-layer alpha **0.06–0.14** in light mode.
+     `[A4 §3.5]`
+121. **In dark mode shadows barely read; substitute surface-tint + hairline + optional glow.** Lighten
+     the surface as it rises, add a `inset 0 1px 0 hsl(0 0% 100% / .06)` top highlight and/or a
+     hairline to *draw the shape*, and use a coloured glow only for focus/emphasis. If you keep cast
+     shadows, push lightness→0, opacity **0.4–0.7**, blur ~2×. `[A4 §3.6]` — **independently
+     corroborates A1 rule 65** ("express elevation on dark as +lightness, not shadow").
+122. **Glass = semi-transparent fill + `backdrop-filter: blur(8–20px) saturate(120–180%)` + a 1px top
+     highlight + a border** — the fill *must* be partly transparent or there is nothing to frost, and
+     `saturate` restores what the blur washes out. **The hard constraint is legibility, not the
+     effect:** body text over glass still needs **4.5:1** (large/UI 3:1); if the backdrop is
+     photographic or animated, blur harder or drop an opaque scrim behind the text. `@supports`-gate
+     with an **opaque fallback**, ship `-webkit-backdrop-filter`, and honour
+     **`prefers-reduced-transparency`**. `[A4 §3.7, §3.8]`
+123. **Interpolate gradients in `oklch`/`oklab`** — `linear-gradient(in oklch, …)`. A plain sRGB
+     gradient between two saturated hues dips through a grey dead-zone. `[A4 §3.9]`
+124. **Kill 8-bit gradient banding with an inline-SVG `feTurbulence` grain overlay at 2–5% opacity**
+     (`fractalNoise`, `baseFrequency` 0.6–0.9, `numOctaves` 2–4,
+     `color-interpolation-filters="sRGB"`). **Put the SVG inline in the DOM** — a `data:` URI
+     background needs `img-src data:` and can be blocked. `[A4 §3.10]` *(corroborates E2 rule 108)*
+125. **Animated borders, beams and glow are *material*: build them with `@property` +
+     `conic-gradient`, and always ship a static fallback.** Plain custom properties cannot
+     interpolate; a registered `<angle>` can. `@supports`-gate, provide a non-rotating gradient ring,
+     honour `prefers-reduced-motion`. **The duration and easing are B1's (rule 70); A4 owns only the
+     ring's construction.** `[A4 §3.11]`
+126. **Gradient borders with rounded corners use the two-layer `mask-composite: exclude` trick — not
+     `border-image`, which ignores radius.** Paint the gradient on `border-box`, mask out the
+     `padding-box`. **Safari needs `-webkit-mask-composite: xor`** — a *different keyword* for the
+     same operation. `[A4 §3.12]`
+127. **Non-layout rings and inset highlights make edges crisp:** `box-shadow: 0 0 0 1px <c>` draws a
+     1px ring **without shifting layout** (unlike `border`), and `inset 0 1px 0 hsl(0 0% 100% /
+     .08–.25)` is the top-lit edge that makes buttons and dark surfaces look real. `[A4 §3.13]`
+     **⚠ Not for focus rings** — see the arbitrated conflict in §6. A5 rule 56 wins there.
+128. **Derive tints, shadow colours and glow alphas with `color-mix()`, not hand-picked hex** —
+     `color-mix(in oklab, var(--surface) 92%, black)`. Keeps a whole material family in sync from one
+     token, and is the mechanism behind A1 rule 67's relative state deltas. `[A4 §3.14]`
+129. **The material bottom rung is a solid fill with adequate contrast.** Blur, mesh, beams, grain and
+     oklch are enhancements on top of it, never load-bearing. `[A4 §3.15]` — the A4-specific
+     instance of rules 102 and 107.
+
+### Typography (A2)
+
+130. **Pick the type *class* from the brief's mood, then the face.** Humanist/old-style serif →
+     tradition, warmth, long-form trust · transitional serif → authority, editorial neutrality ·
+     Didone/modern serif → luxury, fashion (fragile small) · humanist sans → friendly, legible ·
+     grotesque sans → honest, sturdy, editorial · neo-grotesque → neutral, corporate (**can read
+     generic**) · geometric sans → modern, architectural (weak in long text) · mono → technical,
+     engineered. `[A2 §3.1]`
+131. **Two families is the ceiling; earn the second.** Get hierarchy from **weight, size, colour and
+     role** first. Three needs a written reason. A **superfamily** (IBM Plex, Source, Noto) beats an
+     ad-hoc pair on harmony every time. `[A2 §3.2]`
+132. **Pair by contrast, share a mood.** Two subtly-different neutral sans read as a *mistake*:
+     "subtle differences look like accidents, clear differences look like design." Pair *across*
+     classes, or exploit one family's weight range. `[A2 §3.3]`
+133. **Anchor sizes to a modular scale, then round to the grid.** Ratio **1.125–1.2** dense UI ·
+     **1.25** general web · **1.333–1.5** editorial. Compute in `rem`, then *snap* — a ratio yielding
+     `43.9px` next to an 8px grid is scale debt. `[A2 §3.4]`
+134. **Leading is set by role, not globally:** body **1.4–1.6** (1.5 default) · display
+     **1.05–1.25** · small print **1.5–1.7**. Leading rises with measure and falls with size.
+     `[A2 §3.5]` — the missing half of rule 81, which gave the measure but not the leading.
+135. **Reach for a variable font at ≥3 weights, or when you need width / optical-size / grade.** A
+     subset VF ≈ the weight of 2–4 static cuts but yields *every* step and unlocks a dark-mode
+     **`GRAD`** change with no reflow. For 1–2 weights, subset statics are usually smaller.
+     `[A2 §3.6]`
+136. **Set numerals on purpose.** `tabular-nums` for anything columnar **or that updates in place** —
+     tables, prices, timers, dashboards — or the layout jitters. `slashed-zero` for code, IDs and
+     serials · `oldstyle-nums` for editorial running text · `lining-nums` for UI chrome and all-caps.
+     The proportional-lining default is *wrong* for a data table. `[A2 §3.7]`
+137. **Light-on-dark blooms — lighten and open it.** On dark, reduce weight **~10–15 %** (drop a step,
+     or lower a `GRAD` axis so nothing reflows) and open tracking **+0.01–0.02em**. This is the
+     *optical* half of the dark-mode adjustment; the *chromatic* half is A1 rule 66. `[A2 §3.8]`
+138. **Left-aligned, ragged-right by default.** `justify` only with `hyphens: auto` **and** a `lang`
+     attribute, or you get rivers. **Never hyphenate or justify a heading.** `[A2 §3.9]`
+139. **`text-wrap: balance` on headings, `pretty` on body — progressive enhancement only.** `balance`
+     caps at 6 lines (Chromium) / 10 (Firefox); `pretty` has no Firefox as of July 2026. Both degrade
+     silently, so **gate nothing on them**. `[A2 §3.10]` *(corroborates E2 rule 115)*
+140. **Multi-script: prefer a superfamily; otherwise repair the vertical-metric jump.** Latin + CJK /
+     Arabic / Devanagari from different families have different `hhea`/`OS-2` metrics and the baseline
+     jumps. Fix with `@font-face` `size-adjust` + `ascent-override`/`descent-override`, or a
+     per-`:lang()` line-height. `[A2 §3.11]`
+141. **Self-host by embedding: subset → WOFF2 → base64 `@font-face`.** Survives a strict, no-network,
+     no-eval sandbox **iff `font-src` allows `data:`**. base64 adds **~33 %** — subset first.
+     `[A2 §3.12]` *(the font-specific instance of E2 rule 108)*
+142. **Don't default to Inter.** It is excellent and *everywhere*; reaching for it reflexively costs
+     distinctiveness. OFL alternatives with more character: **Public Sans, Libre Franklin, IBM Plex
+     Sans, Source Sans 3, Hanken Grotesk.** `[A2 §3.13]` — an F2 tell in typographic form.
+143. **Always ship a metric-matched fallback stack ending in a generic**, with `@font-face` metric
+     overrides so the pre-paint or font-error frame does not shift layout. `[A2 §3.14]`
+144. **Respect optical size** — keep `font-optical-sizing: auto` if the face has an `opsz` axis.
+     Freezing one `opsz` across 12→48px throws the axis away. `[A2 §3.15]`
+
+### Iconography, imagery & marks (D2)
+
+145. **One icon set. Full stop.** Mixing sets is the most common iconography defect — different grids,
+     stroke weights, radii and terminals read as noise even when nobody can name why. A borrowed
+     glyph must be redrawn to the host set's grid, stroke width, corner radius and cap/join style.
+     `[D2 §3.1]`
+146. **24×24 grid, 2px stroke is the safe baseline** (1.5px for the lighter look), with ~2dp padding
+     → a **20×20 live area**. Never scale a 2px-stroke icon to 48px without thinning the stroke.
+     `[D2 §3.2]`
+147. **Use optical size or discrete masters — not `transform: scale()`.** One master scaled 20→48px
+     keeps a constant stroke that looks heavy small and spindly large. `[D2 §3.3]`
+148. **Filled = active/selected; outline = inactive/default.** Near-universal across tab bars, nav and
+     toggles. Never use fill decoratively where it could be read as state. `[D2 §3.4]`
+149. **An icon that carries meaning needs a text label and ≥3:1 contrast.** Only **home, print and the
+     magnifying glass** are near-universal; everything else is ambiguous unlabelled. A meaningful icon
+     is a non-text UI component under WCAG 1.4.11. `[D2 §3.5]`
+150. **NEVER hand-draw or approximate a brand logo.** A hand-drawn mark is both *wrong* (proportions,
+     legal form) and a *worse* trademark problem than using the real one. Source the real vector from
+     a licence-clean set (Simple Icons, ~3,300 brand SVGs) or the brand's own press kit, and inline
+     it. `[D2 §3.6]`
+151. **Trademark ≠ licence.** Simple Icons' SVG *data* is CC0-1.0, but that **does not waive the brand
+     owners' trademark rights**. CC0 lets you copy the file; it does not let you imply endorsement,
+     alter the mark, or ignore clear-space / min-size / approved-colour guidelines. `[D2 §3.7]`
+152. **Render icons as inline SVG** with `fill="currentColor"` — CSP-safe, offline, themeable,
+     accessible, multicolour-capable. **Icon fonts are a11y-hostile and monochrome-only; `<img src>`
+     needs a network fetch and is forbidden here.** For many repeats an inline `<symbol>`+`<use>`
+     sprite is also CSP-safe. `[D2 §3.8]` *(instance of H2 rule 100)*
+153. **For missing art, generate a DETERMINISTIC placeholder from a seed — inline SVG, never a network
+     service.** Hash the item's stable id → hue → gradient or identicon; same seed ⇒ same image
+     forever. **`placehold.co`, `via.placeholder.com`, Gravatar and the DiceBear HTTP API are all
+     network requests** that a strict CSP blocks and offline breaks. `[D2 §3.9]`
+154. **Initials avatars: hash the name for hue, then pick text colour at the relative-luminance
+     crossover L = 0.179** — black above, white below. That mathematically floors contrast at
+     **≈4.58:1** against *any* solid background. A provable win over guessing. `[D2 §3.10]`
+155. **Optimise SVGs with SVGO, but keep `viewBox` and namespace every id per file.** `removeViewBox`
+     breaks responsive scaling — disable it. **And id collisions corrupt multiple inlined SVGs that
+     share gradient/filter ids: `url(#id)` resolves to the FIRST match in the document, so the second
+     SVG silently renders with the first's paint.** `[D2 §3.11]` — **this is the mechanism behind a
+     real defect in our own variant harness; see the register.**
+156. **Ship a small modern favicon set, not fifteen legacy PNGs:** `favicon.ico` @32 · an SVG favicon ·
+     `apple-touch-icon.png` @180 · PWA 192 + 512 · a 512 **maskable** icon with a ~80 % safe zone
+     (content inside the central Ø409 circle). `[D2 §3.12]`
+157. **Aspect ratios are a fixed vocabulary — 1:1 / 4:3 / 3:2 / 16:9 / 21:9 — and you crop to a focal
+     point, never distort.** `aspect-ratio` + `object-fit: cover` + `object-position`. **Never
+     `object-fit: fill`**: distorted faces and products are an instant credibility hit. `[D2 §3.13]`
+158. **An interactive icon meets the target floor via padding, not glyph size.** A 20px icon is fine
+     visually but must sit in a ≥24×24 CSS-px hit area (ideally 44–48). `[D2 §3.14]` — the icon-shaped
+     instance of rule 57.
+
 ## 4½. The audience profile — what makes a rule bind (owner ruling 2026-07-23)
 
 **A rule is not universally true; it is true for an audience on a device.** Research states rules
@@ -571,6 +733,8 @@ in the ledger with its rationale, and exempt from the tax it would otherwise inc
 | "More options cause overload" (folk rule) vs the meta-analysis | Overload is **d = 0.02 — essentially zero overall** across 63 conditions / 50 experiments / n=5,036. It appears only under moderators: hard-to-compare multi-attribute options, no prior preference, time pressure, must-justify-later. **Our audience matches several**, so cap at 3 for *that* reason — not because "more is bad". | `[CITED — G3 §3.3, Scheibehenne et al. 2010]` |
 | Decision fatigue as a hard budget | **Soft, contested.** Ego depletion largely failed a 23-lab preregistered replication; the judges/parole finding is disputed as a scheduling artifact. Use 5–8 as a recap prompt, never a gate. | `[G3 §3.8/§8]` |
 | F2 calls glassmorphism slop; the method says an owner asking for "glassy" wins | **No conflict** — rule 22's corollary. An explicit request is a decision; exempt from the tax, recorded as deliberate. | F2 §3.1 |
+| **A4 §3.13 recommends `box-shadow: 0 0 0 1px` as "ideal for … focus rings"; A5 §3.5 requires `outline` + `outline-offset` and warns `box-shadow` alone is deleted by `forced-colors`** | **A5 wins, narrowly.** A4's non-layout ring is correct and preferred for **dividers, hairlines and decorative edges** — the layout-shift argument is real. But the **focus indicator specifically must be `outline`-based**, because a Windows High Contrast / forced-colors user loses a `box-shadow` ring entirely and is left with no visible focus at all. Use both if you like the look: `outline` carries the conformance, `box-shadow` carries the aesthetic. | A5 is the conformance authority (rule 54); A4 is a craft track and does not address forced-colors |
+| A4 §3.12 says the WebKit mask keyword is `xor`; E2 §3.9 says `source-over`/`source-in` | **No conflict — different operations.** The prefixed keywords map per-operation: standard `exclude` → `-webkit-…: xor`, `add` → `source-over`, `intersect` → `source-in`. Recorded as a keyword *map*, not a single substitution, in `adv-webkit-prefix-pair`. | Cross-checking the two tracks produced the full mapping neither states alone |
 
 ## 7. What is deliberately NOT here
 
