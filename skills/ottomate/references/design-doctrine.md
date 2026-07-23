@@ -211,6 +211,130 @@ stays in `docs/research/` and is pulled **only for the one direction chosen**.
     signals "eco" for any brand; this domain's actual ledger line, waveform, wax seal or blister pack
     cannot be handed to a competitor without breaking. Same principle as theme-from-content. `[F1 §3.8]`
 
+## 3¾. Foundation numbers (A5 · A1 · B1 · A3)
+
+The checkable half of the doctrine. These are the numbers the constraint checker enforces; the
+reasoning behind each is in `docs/research/`, pulled on demand.
+
+### Accessibility — the conformance authority (A5)
+
+54. **Conform to WCAG 2.2 AA. APCA and WCAG 3 are DRAFTS — never cite them as the compliance bar.**
+    If someone says "we're APCA-compliant," correct it: no such conformance exists today. `[A5 §3.1]`
+    *This independently confirms the arbitration made earlier — WCAG 4.5:1 gates, APCA advises.*
+55. **Contrast: 4.5:1 text · 3:1 large · 3:1 non-text.** "Large" = **≥24px regular or ≥18.66px bold**
+    (1pt = 1.333px). Non-text covers every part needed to identify or operate a control — input
+    borders, focus rings, toggle tracks, icon-only buttons — against *adjacent* colour. Disabled
+    components are exempt. `[A5 §3.2, §3.3]`
+56. **Focus ring: ≥2px, ≥3:1 against BOTH the component and the surface behind it, via `outline` +
+    `outline-offset` — not `box-shadow` alone, which `forced-colors` deletes.** Use `:focus-visible`.
+    And a focused element must not be fully obscured by sticky chrome (2.4.11). `[A5 §3.5, §3.6]`
+57. **Targets ≥24×24 CSS px** (AAA wants 44×44); inline links in prose are exempt. Every drag
+    interaction needs a single-pointer alternative (2.5.7). `[A5 §3.7, §3.8]`
+58. **Honour three preference queries, not one:** `prefers-reduced-motion`, `prefers-contrast`, and
+    `forced-colors` — under forced-colors, keep `outline`s and map to system colours; `box-shadow`,
+    `background-image` and `text-shadow` are forced to `none`. `[A5 §3.10]`
+59. **Reflow at 320px with no 2-D scrolling, and survive the text-spacing overrides** (line-height
+    1.5, paragraph 2×, letter 0.12em, word 0.16em). Never fix the height of a text container.
+    `[A5 §3.11]` — binds at P3; advisory at P1/P2.
+60. **Nothing flashes more than 3×/second** over an area larger than ~341×256px. `[A5 §3.12]`
+
+### Colour (A1)
+
+61. **Reason in OKLCH, ship sRGB hex as the floor.** Equal lightness steps *look* equal and changing
+    hue doesn't shift perceived lightness — unlike HSL. Precompute hex so the file renders
+    everywhere; layer `oklch()`/`color-mix()` behind `@supports`. `[A1 §3.1]`
+62. **The accent budget is ≈10% of pixels — 60/30/10.** ~60% dominant neutral, ~30% secondary
+    surface/text, ~10% accent, earned by a *ranked* list of surfaces. This is the numeric form of our
+    colour-budget rule, and it cures both failures at once: accent everywhere reads cheap, accent
+    nowhere reads dead. `[A1 §3.3]`
+63. **One accent hue family; semantic colour is a SEPARATE system.** Never derive danger-red or
+    success-green from the accent. If a derived accent lands on a semantic hue, nudge one apart.
+    `[A1 §3.2]` — the Screenroom template already does this (derived accent on the frame, fixed coral
+    for the one action, teal/amber for stat tiles).
+64. **Neutrals are hue-tinted, never pure grey — but leashed:** OKLCH chroma **0.004–0.02**. Below
+    that reads as flat computer-grey; above ~0.03 the greys visibly turn blue/beige. `[A1 §3.4]`
+65. **Never pure black in dark mode** — base surface at OKLCH **L ≈ 0.18** (`#121212`). Pure black
+    kills elevation, maximises halation and raises eye strain. **Express elevation on dark as
+    +lightness (≈ +0.03 L per step), not shadow.** `[A1 §3.6, §3.7]`
+66. **On dark, cut accent chroma 10–30% and avoid pure-white text** (L ≈ 0.90, `#E6E6E6`). High-chroma
+    and pure-white marks bloom for astigmatic and low-vision users. `[A1 §3.8]`
+67. **State deltas are direction-aware lightness moves, not a second hardcoded hex.** Hover ≈ ΔL
+    ±0.04–0.06, press ≈ ±0.08–0.10, so one rule darkens in light and lightens in dark. A hardcoded
+    "darken 8%" silently breaks in dark mode. `[A1 §3.9]`
+68. **Derive from content by ROLE, not by "dominant".** The most common pixel is usually a dull
+    background; the accent you want is the **vibrant** swatch. Then **normalise L to the theme's
+    accent target and clamp C so contrast is guaranteed AT DERIVATION TIME** — never paint a surface
+    with the raw pick. `[A1 §3.10, §3.11]`
+    *Our `theme-extract.mjs` already picks vibrant-not-dominant and skips near-black/near-grey — this
+    validates the approach. The L-normalise + C-clamp step is the upgrade it still needs.*
+69. **Categorical/data colour comes from a verified CVD-safe set** — Okabe–Ito (8) or Paul Tol —
+    capped at **≤8 categories**, always paired with shape/label/pattern. `[A1 §3.12]`
+
+### Motion (B1) — this is where `animation_vocab` gets its numbers
+
+70. **Duration ladder, by role:** micro feedback (hover/press/toggle) **100–150ms** · small enter/exit
+    (tooltip, chip) **150–200ms** · standard component (dropdown, card, tab) **250–300ms** · large
+    surface (drawer, sheet, dialog) **350–500ms** · full page/hero **500–600ms**. Over **600ms** needs
+    a justification. **Duration scales with distance and size** (+50–100ms per size step) — a 200ms
+    tooltip and a 200ms full-screen sheet is a bug. `[B1 §3.1, §3.2]`
+71. **Enter decelerates, exit accelerates, move-within-view is symmetric** — and exits run **20–30%
+    shorter** than entrances, because the user has already decided. `[B1 §3.3]`
+72. **Never `linear` for positional motion.** Linear is for continuous motion only (spinners,
+    marquees, real progress) and opacity cross-fades. `[B1 §3.4]`
+73. **Springs for interruptible/gesture motion; curves for choreographed motion.** A spring has no
+    fixed duration, so it can't be reliably staggered or coordinated. `[B1 §3.5]`
+74. **Animate only `transform` and `opacity`.** Width/height/top/left/margin trigger layout;
+    box-shadow/filter/background/border-radius trigger paint. Both drop frames. Budget ≈**10ms per
+    frame** at 60Hz. Use `will-change` surgically and remove it. `[B1 §3.6, §3.7, §3.8]`
+75. **Stagger 20–60ms per item, cap the whole sequence at 300–500ms.** Past ~8–10 items animate only
+    what's in the viewport. `[B1 §3.12]`
+76. **The vestibular trigger list is specific:** large-area movement, parallax, zoom/scale over big
+    distances, spin/rotation, and motion that fights the scroll direction. **Safe:** opacity, colour,
+    blur, and movement under ~10% of viewport. Design the reduced path around *this*, not around "no
+    animation". `[B1 §3.11]` — and never blanket `animation: none !important`, which strips state
+    signalling and loading affordances. `[B1 §3.10]`
+77. **Motion never sits un-mitigated behind reading text.** Visible movement behind text at rest is a
+    defect; auto-motion lasting >5s alongside content needs a pause control (WCAG 2.2.2). `[B1 §3.9]`
+78. **In a strict-CSP offline file: SVG+CSS first, then WAAPI. Lottie (MIT) works inlined — plain JS,
+    no eval. Rive needs WebAssembly and is UNAVAILABLE** unless `script-src 'wasm-unsafe-eval'` is
+    present. Scroll-driven `animation-timeline` is Chromium-only as of mid-2026 — `@supports`-gate it
+    and never make content *visibility* depend on it. `[B1 §3.14, §3.15]`
+
+### Space & layout (A3)
+
+79. **Base unit 8px, half-step 4, hairline 2/1. Scale: 0/2/4/8/12/16/24/32/48/64/96/128.** Every
+    spacing value traces to a token — no hand-written 13px. **Break the grid for exactly three
+    reasons:** optical correction, 1px hairlines, or forced alignment to an external fixed-size asset.
+    Anything else is scale debt. `[A3 §3.1, §3.2, §3.3]`
+80. **Modular tokens for component-internal spacing; `clamp()` fluid values for macro layout only.** A
+    component should feel identical everywhere it appears. `[A3 §3.4]`
+81. **Cap text measure at 45–75ch (65 default) regardless of viewport — including on a 3840px panel.**
+    Never widen a paragraph because the monitor is bigger; route extra width to a second pane.
+    `[A3 §3.5]`
+82. **On large displays add STRUCTURE, not width.** Extra space becomes new panes/rails/columns —
+    one stacked pane → 50/50 → 70/30, never one stretched column. `[A3 §3.6]`
+83. **⚠ "4K" does not mean 3840 CSS px.** A 27″ 4K panel is ≈163 PPI; the comfortable band is
+    110–140 PPI, so OSes default such a screen to ≈**150% scaling → a logical viewport around
+    2560×1440** — the same layout budget as native 1440p. Design against realistic *logical* widths,
+    not the panel's marketing resolution. `[A3 §3.7]` **This corrects the method's "4K-first, tune
+    density for 4K" instruction, which assumed the marketing number.**
+84. **Container queries for component adaptation; media queries for page-shell decisions.** Prefer
+    `rem` thresholds so zoom is respected. Note `container-type` **creates a stacking context** — an
+    overlay inside a container-query card cannot escape it; use the native top layer instead.
+    `[A3 §3.8, §3.9]`
+85. **Data-dense surfaces get their own 4px density scale**, decoupled from the 8pt layout grid, once
+    a grid shows >15–20 rows. Verified row heights: comfortable 48–64 · standard 40 · compact 32 ·
+    extra-compact 24. Anything under ~32px needs a target-size review. `[A3 §3.11, §3.12]`
+86. **Z-index is a tiered token ladder with gaps (≥100 apart), never a raw integer — and never 9999.**
+    For anything that must always win, prefer the browser's **top layer** (`<dialog>`, `[popover]`),
+    which stacks above the whole document regardless of z-index. `[A3 §3.13]`
+87. **Whitespace is the FIRST hierarchy tool, not the last.** Before reaching for size, weight or
+    colour, try more space (unrelated) or less space (related). Start with more whitespace than feels
+    necessary and remove it. A section heading carries **1.5–2× more space above than below** — that
+    asymmetry alone says "this heading belongs to what follows", at zero colour cost. `[A3 §3.14]`
+88. **Optically correct non-rectilinear shapes** — circles and pointed marks need ~2–4% more than
+    their nominal size to read as equal to a square neighbour. `[A3 §3.15, echoing G2's craft dimension]`
+
 ## 4½. The audience profile — what makes a rule bind (owner ruling 2026-07-23)
 
 **A rule is not universally true; it is true for an audience on a device.** Research states rules

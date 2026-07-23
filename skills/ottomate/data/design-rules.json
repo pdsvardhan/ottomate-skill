@@ -283,21 +283,168 @@
       "status": "pending"
     },
     {
+      "id": "floor-focus-ring",
+      "tier": "block_floor",
+      "source": "A5 §3.5 (WCAG 2.4.7 / 2.4.13)",
+      "statement": "Visible focus indicator: >=2px thick, >=3:1 against BOTH the component and the surface behind it, drawn with outline + outline-offset (NOT box-shadow alone), via :focus-visible.",
+      "check": "focus_ring_spec",
+      "params": { "min_px": 2, "min_contrast": 3.0, "require_outline": true, "require_focus_visible": true },
+      "why_not_box_shadow": "forced-colors: active deletes box-shadow entirely, so a box-shadow-only ring vanishes for Windows High Contrast users.",
+      "remedy": "regenerate_variant",
+      "profile_dependent": true,
+      "status": "pending"
+    },
+    {
       "id": "adv-motion-duration",
       "tier": "advise",
-      "source": "CHATGPT; B1 pending for the authoritative ladder",
-      "statement": "UI transitions land in 200-500ms; micro-interactions under 200ms; ease-out or ease-in-out, no overshoot unless the direction calls for it.",
-      "check": "animation_duration_range",
-      "params": { "micro_max_ms": 200, "ui_min_ms": 200, "ui_max_ms": 500 },
+      "source": "B1 §3.1-3.3 (the authoritative ladder; supersedes the ChatGPT 200-500ms approximation)",
+      "statement": "Duration by ROLE, not one range. Exits run 20-30% shorter than entrances. Duration scales with distance/size (+50-100ms per size step).",
+      "check": "animation_duration_by_role",
+      "params": {
+        "micro_feedback": [100, 150],
+        "small_enter_exit": [150, 200],
+        "standard_component": [250, 300],
+        "large_surface": [350, 500],
+        "full_page": [500, 600],
+        "needs_justification_over_ms": 600,
+        "exit_shorter_pct": [20, 30],
+        "size_step_ms": [50, 100]
+      },
+      "status": "pending"
+    },
+    {
+      "id": "adv-easing-direction",
+      "tier": "advise",
+      "source": "B1 §3.3, §3.4",
+      "statement": "Enter decelerates (ease-out), exit accelerates (ease-in), move-within-view is symmetric. NEVER linear for positional motion — linear is only for continuous motion (spinners, marquees, real progress) and opacity cross-fades.",
+      "check": "easing_direction",
+      "params": { "forbid_linear_on": ["transform", "translate", "scale", "rotate", "top", "left"] },
+      "status": "pending"
+    },
+    {
+      "id": "adv-compositor-only",
+      "tier": "advise",
+      "source": "B1 §3.6, §3.7",
+      "statement": "Animate only transform and opacity. width/height/top/left/margin/padding trigger layout; box-shadow/filter/background/color/border-radius trigger paint. Frame budget ~10ms at 60Hz.",
+      "check": "animated_properties",
+      "params": { "allowed": ["transform", "opacity"], "layout_triggering": ["width", "height", "top", "left", "margin", "padding"], "paint_triggering": ["box-shadow", "filter", "background", "color", "border-radius"] },
+      "status": "pending"
+    },
+    {
+      "id": "adv-stagger-cap",
+      "tier": "advise",
+      "source": "B1 §3.12",
+      "statement": "Stagger 20-60ms per item; cap the total sequence at 300-500ms. Past ~8-10 items animate only what is in the viewport.",
+      "check": "stagger_budget",
+      "params": { "per_item_ms": [20, 60], "total_max_ms": 500, "viewport_only_after_items": 10 },
+      "status": "pending"
+    },
+    {
+      "id": "adv-motion-behind-text",
+      "tier": "advise",
+      "source": "B1 §3.9 (WCAG 2.2.2)",
+      "statement": "Motion must never sit un-mitigated behind reading text. Visible movement behind text at rest is a defect. Auto-motion lasting >5s alongside content needs a pause control.",
+      "check": "motion_behind_text",
+      "status": "pending"
+    },
+    {
+      "id": "adv-accent-budget",
+      "tier": "advise",
+      "source": "A1 §3.3 (60/30/10)",
+      "statement": "Saturated accent covers ~10% of pixels: ~60% dominant neutral, ~30% secondary surface/text, ~10% accent earned by a RANKED list of surfaces. Accent everywhere reads cheap; accent nowhere reads dead.",
+      "check": "accent_pixel_share",
+      "params": { "accent_pct": 10, "tolerance_pct": 5, "dominant_pct": 60, "secondary_pct": 30 },
+      "note": "The numeric form of the owner's colour-budget rule. Both must pass — this counts pixels, colour_budget counts surfaces.",
+      "status": "pending"
+    },
+    {
+      "id": "adv-semantic-separate",
+      "tier": "advise",
+      "source": "A1 §3.2",
+      "statement": "One accent hue family; the four semantic colours (success/warn/danger/info) are a SEPARATE axis. Never derive danger-red or success-green from the accent. If a derived accent lands on a semantic hue, nudge one apart.",
+      "check": "accent_semantic_separation",
+      "status": "pending"
+    },
+    {
+      "id": "adv-dark-surface-floor",
+      "tier": "advise",
+      "source": "A1 §3.6, §3.7, §3.8",
+      "statement": "Never pure black in dark mode — base surface at OKLCH L ~= 0.18 (#121212). Elevation on dark is +lightness (~+0.03 L per step), not shadow. Cut accent chroma 10-30% on dark; avoid pure-white text (L ~= 0.90 / #E6E6E6).",
+      "check": "dark_surface_spec",
+      "params": { "min_surface_L": 0.16, "target_surface_L": 0.18, "elevation_step_L": 0.03, "max_text_L": 0.92, "dark_chroma_cut_pct": [10, 30] },
+      "status": "pending"
+    },
+    {
+      "id": "adv-neutral-tint",
+      "tier": "advise",
+      "source": "A1 §3.4",
+      "statement": "Neutrals are hue-tinted, never pure grey, but leashed: OKLCH chroma 0.004-0.02. Below reads as flat computer-grey; above ~0.03 the greys visibly turn blue/beige.",
+      "check": "neutral_chroma_range",
+      "params": { "min_chroma": 0.004, "max_chroma": 0.02, "hard_max_chroma": 0.03 },
+      "status": "pending"
+    },
+    {
+      "id": "adv-state-delta-relative",
+      "tier": "advise",
+      "source": "A1 §3.9",
+      "statement": "State deltas are direction-aware lightness moves, not a second hardcoded hex. Hover ~= dL +/-0.04-0.06, press ~= +/-0.08-0.10, so one rule darkens in light and lightens in dark.",
+      "check": "state_delta_relative",
+      "params": { "hover_dL": [0.04, 0.06], "press_dL": [0.08, 0.10] },
+      "status": "pending"
+    },
+    {
+      "id": "adv-derivation-contrast-guarantee",
+      "tier": "advise",
+      "source": "A1 §3.10, §3.11",
+      "statement": "Derive content colour by ROLE (vibrant swatch, not most-common pixel), then normalise L to the theme's accent target and clamp C so contrast is guaranteed AT DERIVATION TIME. Never paint a surface with the raw extracted pick.",
+      "check": "derived_colour_normalised",
+      "implementation_note": "theme-extract.mjs already picks vibrant-not-dominant and skips near-black/near-grey. The L-normalise + C-clamp step is the outstanding upgrade.",
       "status": "pending"
     },
     {
       "id": "adv-line-length",
       "tier": "advise",
-      "source": "G2 §4.6 dim 3, CHATGPT (Baymard)",
-      "statement": "Body line length 50-75 characters, hard outer bound ~80.",
+      "source": "A3 §3.5 (Baymard, Butterick), G2 §4.6 dim 3",
+      "statement": "Body measure 45-75ch, 65 default, hard outer bound 80 (40 for CJK) — REGARDLESS of viewport, including on a 3840px panel. Route extra width to a second pane, never a longer line.",
       "check": "chars_per_line",
-      "params": { "min": 50, "ideal_max": 75, "hard_max": 80 },
+      "params": { "min": 45, "default": 65, "ideal_max": 75, "hard_max": 80, "cjk_max": 40 },
+      "status": "pending"
+    },
+    {
+      "id": "adv-large-display-structure",
+      "tier": "advise",
+      "source": "A3 §3.6, §3.7",
+      "statement": "On large displays add STRUCTURE, not width: one stacked pane -> 50/50 -> 70/30, never one stretched column. And a 27-inch 4K panel is NOT 3840 CSS px — OSes default it to ~150% scaling, giving a logical viewport around 2560x1440.",
+      "check": "large_display_layout",
+      "params": { "logical_viewport_27in_4k": [2560, 1440], "splits": ["100", "50/50", "70/30"] },
+      "corrects": "The method's 'primary-screen-tuned, 4K-first' instruction assumed the marketing resolution.",
+      "status": "pending"
+    },
+    {
+      "id": "adv-density-scale",
+      "tier": "advise",
+      "source": "A3 §3.11, §3.12 (Carbon-verified)",
+      "statement": "Data-dense surfaces get their own 4px density scale, decoupled from the 8pt layout grid, once a grid shows >15-20 rows. Row heights: comfortable 48-64, standard 40, compact 32, extra-compact 24. Under ~32px needs a target-size review.",
+      "check": "density_row_heights",
+      "params": { "comfortable": [48, 64], "standard": 40, "compact": 32, "extra_compact": 24, "step_px": 4, "target_review_below": 32 },
+      "status": "pending"
+    },
+    {
+      "id": "adv-zindex-ladder",
+      "tier": "advise",
+      "source": "A3 §3.13",
+      "statement": "Z-index is a tiered token ladder with gaps >=100, never a raw integer and never 9999. For anything that must always win, prefer the browser top layer (<dialog>, [popover]).",
+      "check": "zindex_tokens",
+      "params": { "min_gap": 100, "forbid_values": [9999, 99999] },
+      "status": "pending"
+    },
+    {
+      "id": "adv-whitespace-first",
+      "tier": "advise",
+      "source": "A3 §3.14",
+      "statement": "Whitespace is the FIRST hierarchy tool. A section heading carries 1.5-2x more space above than below — that asymmetry says 'this heading belongs to what follows' at zero colour cost.",
+      "check": "heading_space_asymmetry",
+      "params": { "above_below_ratio": [1.5, 2.0] },
       "status": "pending"
     },
     {

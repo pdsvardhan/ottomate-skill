@@ -141,12 +141,24 @@ harvest-before-ask · pressure-test-before-presenting
 | Audience profiles P1/P2/P3 | `data/design-rules.json` | owner ruling |
 | Decision-record schema | `design_decisions` table | G3 §5.2 |
 
-### Research ingestion — 6 of 22 tracks read
-**Read:** G1 variant generation · G2 critique · G3 taste elicitation · F2 anti-generic · C1 component
-anatomy · B2 states/affordance · F1 style movements *(7 incl. F1)*
-**Owner ruling 2026-07-23: sweep ALL 16 remaining.** Pending: A1 colour · A2 type · A3 space ·
-A4 material · A5 a11y · B1 motion · B3 nav · C2 tokens/coherence · C3 data · D1 copy · D2 icons ·
-E1 perf · E2 cross-platform · H1 assets · H2 feasibility *(+ ZZ chatgpt, read)*
+### Research ingestion — 11 of 22 tracks read (owner ruling: sweep ALL)
+**Read:** G1 variant generation · G2 critique · G3 taste elicitation · F2 anti-generic ·
+C1 component anatomy · B2 states/affordance · F1 style movements · **A5 a11y · A1 colour ·
+B1 motion · A3 space** *(+ ZZ chatgpt)*
+**Remaining 11:** A2 type · A4 material · B3 nav · C2 tokens/coherence · C3 data display ·
+D1 copy · D2 icons · E1 perf · E2 cross-platform · H1 assets · H2 feasibility
+
+**Method that works:** `awk '/^## 3\./{p=1} /^## 4\./{p=0} p' <track>.md` extracts just the executive
+rules — the corpus explicitly writes §3 to be applied without reading the body. ~20 lines per track
+instead of ~1000. Distil and commit after every 2–4 tracks so progress survives a context boundary.
+
+**What the last batch changed (not just added):**
+- A5 **independently confirmed** the earlier arbitration: WCAG 2.2 AA gates, **APCA is a draft and
+  must never be cited as the compliance bar**.
+- A1 **validated `theme-extract.mjs`** — "derive by role (vibrant), not by dominant" is exactly what
+  it does. Outstanding upgrade: normalise L and clamp C at derivation time.
+- B1 gave `animation_vocab` real numbers for the first time (the role-based duration ladder).
+- A3 **corrected a foundational method assumption** — see defects.
 
 ### Known research gaps the corpus cannot cover
 1. **The owner's own decision history** — past comments, picks and rejections sitting unused in the DB.
@@ -184,6 +196,8 @@ theme-from-content · uncapped ledger · `design_decisions` + migration 0010 · 
 ### Known defects
 | Defect | Severity | Note |
 |---|---|---|
+| **"4K-first" assumed 3840 CSS px** — a 27″ 4K panel defaults to ~150% OS scaling, so the real logical viewport is ≈**2560×1440** | Medium | A3 §3.7. The method's primary-screen instruction, the Screenroom tuning, and the P1 profile all inherited the marketing number. **Needs owner confirmation of their actual scaling setting** |
+| `theme-extract.mjs` emits the raw extracted pick | Medium | A1 §3.10: normalise L to the accent target and clamp C so contrast is guaranteed *at derivation time*. Today it only boosts V |
 | Gate does not check that axis params are **visible in a shown state** | High | Root cause of the A≈B round; B2 would have caught it |
 | Render surface ignores component tier | High | 566 KB / 36 posters for a component question |
 | Every `design-rules.json` rule is `pending` | High | Doctrine enforces nothing today |
