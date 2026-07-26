@@ -158,7 +158,10 @@ gate → checker → isolated render in the real sandbox → a mixed pick round-
 `design_decisions` ledger. **So "no real end-to-end round has ever run" is no longer true — one has.**
 **What is still specification:** 63 of 89 rules remain `pending` (reported as *skipped*, never passing);
 the 16 `computed` rules have no runner; the 6→3 filter is model judgment, not a mechanical scorer;
-there is no computed rendered-appearance divergence check; `rejected[]`-aware regeneration,
-reload-on-resume and the snapshot differ (Phase 2) are unbuilt; the live ledger outside that one round
-is still a seeded demonstration. Task 2 is **`ITERATE`**, not `APPROVE`, against the locked spec's §12 —
-but materially closer.
+there is no computed rendered-appearance divergence check; the live ledger outside that one round is
+still a seeded demonstration. **Phase 2 persistence is now DONE** — `rejected[]`/frozen wiring,
+reload-on-resume, and the snapshot regression gate, all in `ledger-context.mjs` and demonstrated live.
+**Remaining: Phase 3b** (16 computed rules + the mechanical rubric scorer + the computed appearance
+check) and **Phase 4** (fresh-context rounds as the default, scope×entry routing, Stage-3 gate,
+`master_components` graduation per H1). Task 2 is **`ITERATE`**, not `APPROVE`, against the locked
+spec's §12 — but materially closer.
