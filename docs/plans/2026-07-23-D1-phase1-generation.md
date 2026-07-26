@@ -9,6 +9,39 @@ the producer, and runs it once for real. **No real generation round has ever run
 
 ---
 
+## ✅ Outcome (2026-07-23) — built AND demonstrated end-to-end
+
+**Part A** (commit `7f909d2`): enforced rules 15→26 of 89 (7 bookkeeping flips + 4 new source detectors);
+`block-svg-id-collision` downgraded block→advise.
+
+**Part B** (commits `481c82e`, `6d83df8`): all four elements built + a **real round run by a fresh
+sub-agent** on a throwaway media-card:
+- The fresh agent committed to an *editorial* direction, over-generated 6, filtered to 3 by rubric
+  judgment (honestly flagged as judgment), honouring the constraint contract (no glass/gradient-text,
+  no network, no script, accent ≤3 surfaces).
+- Harness ran: gate + checker. **Verified rendering isolated in the real Artifact sandbox**
+  (`…/e8bfa469-…`) — three visibly-distinct cards (pill vs no-badge vs corner-ribbon; footer vs below
+  vs overlaid title; CTA vs frame vs badge accent), each in its own shadow root.
+- **Live pick→ledger round-trip**: a mixed pick (radius from soft-footer, title from sharp-broadsheet,
+  accent from soft-footer, badge from overlaid-poster) → 4 `design_decisions` rows POSTed to a
+  throwaway `zzz-phase1-demo` project, read back with `mixed_from` + `rejected[]` intact, project
+  deleted (cascade). Backup-first, one-door, clean teardown.
+
+**The real round earned its keep — it caught THREE real things unit tests could not:**
+1. The gate FALSE-REJECTED the set: `axis.kind:"structural"` demanded markup divergence, but the
+   markup fingerprint is blind to CSS-value differences, so three genuinely-different cards read as
+   "98% identical." Fix: kind-selection guidance in the method (`stylistic` for value-difference
+   bundles; axis-diff is the divergence proof). The correction was **proven by rendering**, not asserted.
+2. `adv-css-layer-order` false-positived on a hex colour (`#ffcf8a`) in a gradient. Fixed + regression test.
+3. The `block-svg-id-collision` downgrade (A2) was **validated** — the agent naturally reused `.is-hover`
+   etc. across panels, which now advises instead of blocking a legitimate isolated set.
+
+**Honest limits carried forward (not claimed):** the 6→3 filter is model judgment (no scorer); the
+generation-variance seeding is `[REASONED]` (the gate is the backstop); there is no computed
+rendered-appearance divergence check yet (the proper backstop for stylistic bundles).
+
+---
+
 ## Part A — Quick wins (do FIRST; A2 unblocks Part B)
 
 **A1. Bookkeeping flip (7 rules).** `iso-axis-diff · iso-control-diff · iso-blind-sort · iso-count ·

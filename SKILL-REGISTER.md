@@ -94,7 +94,10 @@ re-derived by hand instead of read.
 | **Cross-component coherence** | Same semantic role → same computed value across components; shared state vocab → same token delta | 📋 | `adv-cross-component-coherence`, C2 §3.10. **This is the mix-coherence check G1 requires and the per-item pick model (doctrine 38) depends on.** Needs a browser; no runner |
 | **Rubric scoring pass** | Score variants before presenting | 📋 | Rubric written; no runner |
 | **Templated-tax scorer** | F2's 18 binary rows | 📋 | Rows written; no runner |
-| **Fresh-context rounds** | Each round in a clean sub-agent fed only ledger+constraints+rejected | ⬜ | Designed, unbuilt |
+| **Generation (the producer)** | Anatomy → over-generate 6 → filter 3 → states-pinned harness config | 🟡 | `component-anatomy.json` + `stage-2-generation.md` + `picks-to-ledger.mjs`. One **real round demonstrated** end-to-end. Filter is model judgment (no scorer); no computed appearance check yet |
+| **Sub-decision inventory** | Component → named parts + required states + the axes to vary | ✅ | `data/component-anatomy.json`, 3 archetypes, `generation.test.mjs` 8/8 |
+| **Bundle → per-item picks → ledger** | A mixed pick → one `design_decisions` row per sub-decision | ✅ | `picks-to-ledger.mjs`; live round-trip on a throwaway project verified `mixed_from` + `rejected[]` |
+| **Fresh-context rounds** | Each round in a clean sub-agent fed only ledger+constraints+rejected | 🟡 | The Phase-1 round WAS run in a fresh `Agent` sub-agent (proves the pattern); not yet wired as the default with `rejected[]` reload |
 | **Golden-file regression gate** | Diff locked targets after every rebuild | 🟡 | `snapshot` column now exists; **no differ** |
 | **Reload-on-resume** | Session start re-reads the ledger | ⬜ | Must be fetched explicitly |
 | **Stage-3 handoff** | Stage 3 builds from the locked design spec | ⬜ | Stage-3 references never read the ledger |
@@ -296,13 +299,15 @@ instead of ~1000. Distil and commit after every 2–4 tracks so progress survive
 ### Proven this program
 Task 1 visual-QA intake (complete, dogfooded) · isolation gate · variant harness · one-command preview ·
 theme-from-content · uncapped ledger · `design_decisions` + migration 0010 · doctrine/rules/rubric/directions ·
-**the research sweep, all 22 tracks** · **the source constraint checker + `resolveFloor()` (29/29)**
+**the research sweep, all 22 tracks** · **the source constraint checker + `resolveFloor()` (33/33)** ·
+**declarative-shadow-DOM panel isolation (verified in-sandbox)** · **Phase-1 generation — one real
+round run end-to-end** (fresh sub-agent → gate → checker → isolated render → live ledger round-trip)
 
 ### Pending, in build order
 | Phase | Items |
 |---|---|
 | ~~**Research sweep**~~ | ✅ **DONE 2026-07-23 — all 22 tracks distilled** |
-| **1 Generation** | Sub-decision inventory from C1 anatomy · render-by-tier with states pinned · bundle model + per-item picks · over-generate-and-filter |
+| ~~**1 Generation**~~ | 🟡 **LARGELY DONE 2026-07-23** — `component-anatomy.json` (sub-decision inventory) ✅ · render-by-tier in the anatomy ✅ · `picks-to-ledger.mjs` bundle→per-item picks ✅ (live round-trip verified) · `stage-2-generation.md` method (over-generate 6 → filter 3) ✅. **A real round ran** (fresh sub-agent → gate → checker → isolated render → live ledger). **Remaining:** a mechanical rubric *scorer* (filter is model judgment); a *computed rendered-appearance* divergence check (backstop for stylistic bundles); the states-pinned render is convention, not a gate |
 | **2 Persistence** | `rejected[]` wiring · reload-on-resume · snapshot differ |
 | ~~**3a Enforcement — source**~~ | 🟡 **LARGELY DONE 2026-07-23** — `resolveFloor()` ✅ · the source checker ✅ (15 rules + 3 contract keys, 29/29 tests) · wired into `build-variant-set.mjs` ✅. **Remaining:** `feas-baseline-gate` (`@supports` parsing) · `source_policy` (needs a tagging convention) · constraint *capture* (the contract is read from config; nothing writes it to the ledger yet) |
 | **3b Enforcement — computed** | The 5 `computed` rules, hosted in the existing Task-3 Playwright harness: `adv-cross-component-coherence` first, since the per-item pick model depends on it |

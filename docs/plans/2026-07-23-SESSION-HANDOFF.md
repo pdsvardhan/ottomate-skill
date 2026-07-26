@@ -150,11 +150,15 @@ The **generation** half is real and tested: the isolation gate (20/20), the vari
 one-command preview pipeline, machine-derived theme tokens, and `design_decisions` with lock-earned /
 unlock-harder as HTTP 422s. **New this session:** the research sweep is **complete** (22/22 tracks →
 229 cited doctrine rules, 89 machine-readable rules), the monitor question is **measured and closed**,
-and **enforcement stopped being prose** — 15 rules plus 3 contract keys now execute, each naming a
-failing-case test, wired into the harness ahead of emit, with `resolveFloor()` making the audience
-profile executable rather than a table in a document. **What is still specification:** 74 of 89 rules
-remain `pending` (the checker reports them as *skipped*, never as passing), the 16 `computed` rules
-have no runner, rounds do not run in a fresh sub-agent, there is no `rejected[]` wiring or snapshot
-differ, **Phase 1 is blocked on the harness namespace defect**, and **no real end-to-end design session
-has ever been run** — the live ledger is still a seeded demonstration. Task 2 is **`ITERATE`**, not
-`APPROVE`, against the locked spec's §12.
+and **enforcement stopped being prose** — **26 of 89** rules plus 3 contract keys now execute, each
+naming a test, wired into the harness ahead of emit, with `resolveFloor()` making the audience profile
+executable. **The harness now isolates markup variants (declarative shadow DOM), and Phase-1 generation
+is built and DEMONSTRATED**: a fresh sub-agent produced 3 genuinely-different media-card variants →
+gate → checker → isolated render in the real sandbox → a mixed pick round-tripped live into the
+`design_decisions` ledger. **So "no real end-to-end round has ever run" is no longer true — one has.**
+**What is still specification:** 63 of 89 rules remain `pending` (reported as *skipped*, never passing);
+the 16 `computed` rules have no runner; the 6→3 filter is model judgment, not a mechanical scorer;
+there is no computed rendered-appearance divergence check; `rejected[]`-aware regeneration,
+reload-on-resume and the snapshot differ (Phase 2) are unbuilt; the live ledger outside that one round
+is still a seeded demonstration. Task 2 is **`ITERATE`**, not `APPROVE`, against the locked spec's §12 —
+but materially closer.
