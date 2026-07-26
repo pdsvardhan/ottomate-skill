@@ -43,7 +43,17 @@ cramped.** Doctrine rule 83, the P1 profile row and the register all carry the m
 
 ## 3. Do this next, in this order
 
-### 3a. Unblock Phase 1 — the variant harness has no namespace isolation
+### 3a. ✅ DONE 2026-07-23 — the variant harness now isolates markup-mode panels
+
+**Resolved.** Markup variants emit as static declarative shadow roots (`renderPanelStatic` +
+`{{PANELS_HTML}}`); verified rendering isolated on real output in the real Artifact sandbox
+(`…/57e854cb-…`), `harness-dsd.test.mjs` 6/6. The render check also caught + fixed two pre-existing
+bugs: `min-height:100%` blanked every artifact (→ `100vh` in both templates), and a
+`path.isAbsolute(undefined)` crash. **Phase 1 generation is unblocked.** Details:
+`docs/plans/2026-07-23-C1-harness-dsd-isolation.md`. Next Phase-1 item: sub-decision inventory from C1
+anatomy + render-by-tier. *(Original blocker writeup kept below for context.)*
+
+### ~~3a. Unblock Phase 1~~ — original writeup (superseded, kept for context)
 
 **This is the top item and it blocks generation.** `template.variant-set.html:140` does
 `host.innerHTML = panels.map(…)`, so all N variants land in **one document** with no iframe and no
