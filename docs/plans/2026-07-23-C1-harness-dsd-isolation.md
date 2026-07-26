@@ -3,6 +3,29 @@
 **Category:** C · Generation foundation · **Size:** M · **Where:** plugin (`ottomate`, branch `main`)
 **Unblocks:** Phase 1 generation — markup-mode variants leak styles/ids into each other today
 **Decision:** owner chose **DSD, static-emitted** (2026-07-23), from the trade table in this session
+**Status: ✅ IMPLEMENTED + verified end-to-end 2026-07-23.** See the closing note.
+
+---
+
+## ✅ Outcome (2026-07-23)
+
+Implemented as specified: `renderPanelStatic()` wraps each markup variant in its own
+`<template shadowrootmode="open">`, emitted into a new `{{PANELS_HTML}}` slot; the template's client
+render is gated to token mode (`if (!host.querySelector('.vs-panel'))`) and its leaky markup branch
+removed. `harness-dsd.test.mjs` 6/6; isolation-gate 20/20 and design-check 29/29 unchanged.
+
+**Verified on real harness output in the real Artifact sandbox** (`…/57e854cb-…`): panel A renders
+green/flat/sharp, panel B pink/raised/rounded with a shadow — two fully isolated styles, neither
+leaking, both surviving the publish pipeline.
+
+**The verification earned its keep — it caught TWO pre-existing bugs the unit tests could not:**
+1. `min-height:100%` on the template root collapses the Artifact frame to a **blank** render (the frame
+   sizes to content `scrollHeight` → circular dep). Fixed to `100vh` in *both* templates. This is the
+   textbook "documented ≠ demonstrated": every test was green while the artifact showed nothing.
+2. `path.isAbsolute(cfg.template)` threw when `template` was omitted. Fixed.
+
+**Follow-up now unlocked (separate owner decision):** with panels shadow-isolated, a cross-variant
+id/class collision is harmless, so `block-svg-id-collision` can downgrade block→advise.
 
 ---
 

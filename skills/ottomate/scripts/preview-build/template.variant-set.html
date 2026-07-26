@@ -16,7 +16,10 @@
     /* no -webkit-font-smoothing: non-standard + macOS-only, so it is a no-op on the owner's Windows
        machine and only makes Mac viewers see a lighter design than the one tuned here [E2 §3.13] */
     line-height: 1.5;
-    padding: clamp(20px, 2.4vw, 44px); min-height: 100%;
+    /* 100vh, NOT 100%: the Claude Artifact frame sizes its iframe to the content's scrollHeight, so a
+       percentage min-height resolves against an indefinite-height body and collapses the frame to zero
+       — the whole preview renders BLANK. Verified in-sandbox 2026-07-23. vh breaks the circular dep. */
+    padding: clamp(20px, 2.4vw, 44px); min-height: 100vh;
   }
   @media (prefers-color-scheme: light) {
     .vs { --bg:#f6f5f2; --surface:#fff; --surface-2:#efeee9; --line:#e0ded6;
@@ -49,9 +52,14 @@
   .vs-slot { font-size:19px; font-weight:800; letter-spacing:-.01em; }
   .vs-level { font-size:12.5px; color:var(--ink-dim); }
   .vs-panel-body { padding:14px; flex:1; }
+  .vs-shadow-host { display:block; }
   .vs-meta { padding:10px 16px 14px; border-top:1px solid var(--line); font-size:11.5px; color:var(--ink-faint);
     font-variant-numeric:tabular-nums; display:flex; flex-wrap:wrap; gap:4px 14px; }
   .vs-meta b { color:var(--ink-dim); font-weight:600; }
+  .vs-meta .vs-warn { color:#c98a00; }
+  @media (prefers-color-scheme: dark) { .vs-meta .vs-warn { color:#e0b155; } }
+  :root[data-theme="dark"] .vs-meta .vs-warn { color:#e0b155; }
+  :root[data-theme="light"] .vs-meta .vs-warn { color:#c98a00; }
 
   /* the component under test — every panel renders the SAME markup, only these tokens move */
   .vs-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(var(--card-min,150px),1fr)); gap:var(--gap,14px); }
@@ -103,7 +111,9 @@
     so your pick means the axis and nothing else. Options are in random order; none is recommended.
   </p>
 
-  <div class="vs-panels" id="vsPanels"></div>
+  <!-- MARKUP mode fills this statically with one declarative shadow root per panel (build-variant-set.mjs).
+       TOKEN mode leaves it empty and the script below renders the shared component per panel. -->
+  <div class="vs-panels" id="vsPanels">{{PANELS_HTML}}</div>
   <p class="vs-note" id="vsNote"></p>
 </div>
 
@@ -137,24 +147,30 @@
       }).join('');
     }
 
-    host.innerHTML = panels.map(function (p) {
-      var t = p.tokens || {};
-      var style = ['--pad:' + (t.pad || 14) + 'px', '--card-min:' + (t.cardMin || 150) + 'px',
-                   '--gap:' + (t.gap || 14) + 'px', '--lh:' + (t.lineHeight || 1.45),
-                   '--radius:' + (t.radius || 10) + 'px', '--title-size:' + (t.titleSize || 14) + 'px'].join(';');
-      var bits = [];
-      for (var k in t) if (Object.prototype.hasOwnProperty.call(t, k)) bits.push('<span><b>' + esc(k) + '</b> ' + esc(t[k]) + '</span>');
-      if (p.constraints_honoured) bits.unshift('<span><b>constraints</b> ' + esc(p.constraints_honoured) + '</span>');
-      if (p.rubric) bits.unshift('<span><b>rubric</b> ' + esc(p.rubric) + '</span>');
-      return '<section class="vs-panel" aria-label="Option ' + esc(p.slot) + '">'
-        + '<div class="vs-panel-head"><span class="vs-slot">' + esc(p.slot) + '</span>'
-        + '<span class="vs-level">' + esc(p.caption || p.label) + '</span></div>'
-        + '<div class="vs-panel-body">'
-        + (p.markup ? p.markup : '<div class="vs-grid" style="' + style + '">' + renderCards(t) + '</div>')
-        + '</div>'
-        + '<div class="vs-meta">' + bits.join('') + '</div>'
-        + '</section>';
-    }).join('');
+    // TOKEN MODE ONLY. If markup-mode panels were emitted statically (as declarative shadow roots by
+    // build-variant-set.mjs), .vs-panel already exists and we must NOT re-render — innerHTML cannot
+    // parse <template shadowrootmode>, so re-rendering here would silently drop the isolation and
+    // reintroduce the cross-panel style leak this whole change fixes.
+    if (!host.querySelector('.vs-panel')) {
+      host.innerHTML = panels.map(function (p) {
+        var t = p.tokens || {};
+        var style = ['--pad:' + (t.pad || 14) + 'px', '--card-min:' + (t.cardMin || 150) + 'px',
+                     '--gap:' + (t.gap || 14) + 'px', '--lh:' + (t.lineHeight || 1.45),
+                     '--radius:' + (t.radius || 10) + 'px', '--title-size:' + (t.titleSize || 14) + 'px'].join(';');
+        var bits = [];
+        for (var k in t) if (Object.prototype.hasOwnProperty.call(t, k)) bits.push('<span><b>' + esc(k) + '</b> ' + esc(t[k]) + '</span>');
+        if (p.constraints_honoured) bits.unshift('<span><b>constraints</b> ' + esc(p.constraints_honoured) + '</span>');
+        if (p.rubric) bits.unshift('<span><b>rubric</b> ' + esc(p.rubric) + '</span>');
+        return '<section class="vs-panel" aria-label="Option ' + esc(p.slot) + '">'
+          + '<div class="vs-panel-head"><span class="vs-slot">' + esc(p.slot) + '</span>'
+          + '<span class="vs-level">' + esc(p.caption || p.label) + '</span></div>'
+          + '<div class="vs-panel-body">'
+          + '<div class="vs-grid" style="' + style + '">' + renderCards(t) + '</div>'
+          + '</div>'
+          + '<div class="vs-meta">' + bits.join('') + '</div>'
+          + '</section>';
+      }).join('');
+    }
 
     document.getElementById('vsNote').textContent =
       'Same ' + cards.length + ' real titles in every panel, borders derived from each poster’s own dominant colour. '

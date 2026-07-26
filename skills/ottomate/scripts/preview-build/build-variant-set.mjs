@@ -15,7 +15,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { extractAccent } from './theme-extract.mjs';
 import { runGate, formatGate, RUNG_NAMES } from './isolation-gate.mjs';
 import { runCheck, formatCheck, annotationsByVariant } from '../design-check/design-check.mjs';
@@ -31,6 +31,34 @@ function toDataUri(imgPath, width) {
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+}
+
+// Static panel render for MARKUP mode — each variant's markup goes into its OWN declarative shadow
+// root, so ids / classes / @keyframes / :root custom properties CANNOT leak across panels. Verified
+// isolating in the real Artifact sandbox 2026-07-23 (probe artifact 1d77da20). `innerHTML` does NOT
+// parse `<template shadowrootmode>` (a deliberate security decision), so these MUST be emitted
+// statically at build time and never injected client-side — that is the whole reason this render is
+// in Node and not in the template's script. Panel chrome (head + meta) stays OUTSIDE the shadow root:
+// it uses the page's own .vs-* styles. KNOWN BOUND: <template> content is inert, so a <script> inside
+// a variant will not execute — fine for the style/layout axes this harness compares; a genuinely
+// JS-driven variant is out of scope. See docs/plans/2026-07-23-C1-harness-dsd-isolation.md.
+export function renderPanelStatic(p) {
+  const t = p.tokens || {};
+  const bits = [];
+  if (p.rubric) bits.push(`<span><b>rubric</b> ${escapeHtml(p.rubric)}</span>`);
+  if (p.constraints_honoured) bits.push(`<span><b>constraints</b> ${escapeHtml(p.constraints_honoured)}</span>`);
+  for (const k of Object.keys(t)) bits.push(`<span><b>${escapeHtml(k)}</b> ${escapeHtml(t[k])}</span>`);
+  const flagsScript = /<script[\s>]/i.test(p.markup || '')
+    ? '<span class="vs-warn"><b>note</b> &lt;script&gt; in this variant will not run (declarative shadow DOM is inert)</span>'
+    : '';
+  return `<section class="vs-panel" aria-label="Option ${escapeHtml(p.slot)}">`
+    + `<div class="vs-panel-head"><span class="vs-slot">${escapeHtml(p.slot)}</span>`
+    + `<span class="vs-level">${escapeHtml(p.caption || p.label)}</span></div>`
+    + '<div class="vs-panel-body"><div class="vs-shadow-host">'
+    + `<template shadowrootmode="open"><style>:host{display:block}</style>${p.markup || ''}</template>`
+    + '</div></div>'
+    + `<div class="vs-meta">${flagsScript}${bits.join('')}</div>`
+    + '</section>';
 }
 
 // Deterministic shuffle when a seed is given, so a rerun reproduces the same layout for the same round
@@ -131,22 +159,33 @@ function main() {
     };
   });
 
+  // ── MARKUP mode → pre-render each panel as an isolated declarative shadow root, statically. ──────
+  // Token mode is structurally immune (it varies only inline custom properties on one shared
+  // component), so it stays on the client-side renderer below and PANELS_HTML is empty.
+  const markupMode = Object.keys(renderedMarkup).length > 0;
+  const panelsHtml = markupMode ? panels.map(renderPanelStatic).join('') : '';
+
   const data = {
     title: cfg.title ?? 'Variant set',
     subtitle: cfg.subtitle ?? '',
     axis: { name: axis.name, parameter: axis.parameter, rung: axis.rung, rungName: RUNG_NAMES[axis.rung] },
     colorBudget: cfg.colorBudget ?? null,
-    panels,
+    // In markup mode the markup is already in PANELS_HTML; strip it from the JSON so it does not ship
+    // twice (weight budget — adv-weight-budget). Token mode keeps its panels intact for the client render.
+    panels: markupMode ? panels.map((p) => ({ ...p, markup: null })) : panels,
     cards,
   };
 
-  const templatePath = path.isAbsolute(cfg.template) ? cfg.template
-    : path.join(HERE, cfg.template ?? 'template.variant-set.html');
+  // `template` is optional (defaults to the shell in this dir). Resolve the NAME first — calling
+  // path.isAbsolute(undefined) throws, which crashed any config that omitted `template`.
+  const tplName = cfg.template ?? 'template.variant-set.html';
+  const templatePath = path.isAbsolute(tplName) ? tplName : path.join(HERE, tplName);
   let html = readFileSync(templatePath, 'utf8')
     .replaceAll('{{TITLE}}', escapeHtml(data.title))
     .replaceAll('{{SUBTITLE}}', escapeHtml(data.subtitle))
     .replaceAll('{{AXIS_NAME}}', escapeHtml(axis.name ?? ''))
     .replaceAll('{{AXIS_PARAM}}', escapeHtml(axis.parameter ?? ''))
+    .replaceAll('{{PANELS_HTML}}', () => panelsHtml)
     .replaceAll('{{VARIANT_DATA}}', () => JSON.stringify(data).replace(/</g, '\\u003c'));
 
   const leftover = html.match(/\{\{[A-Z0-9_]+\}\}/g);
@@ -174,4 +213,5 @@ function main() {
   console.log('\nPublish with the Artifact tool using the SAME file_path every round (stable URL).');
 }
 
-main();
+// Run as a CLI only. Importing the module (e.g. from the test) must NOT execute main().
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();

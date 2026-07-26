@@ -19,7 +19,9 @@
        machine and only makes Mac viewers see a lighter design than the one tuned here [E2 §3.13] */
     line-height: 1.5;
     padding: clamp(20px, 3vw, 48px);
-    min-height: 100%;
+    /* 100vh, NOT 100%: a percentage min-height collapses the Artifact frame to a blank render (the frame
+       sizes to content scrollHeight → circular dep). Verified in-sandbox 2026-07-23. */
+    min-height: 100vh;
   }
   @media (prefers-color-scheme: light) {
     .sr { --bg:#f6f5f2; --surface:#fff; --surface-2:#efeee9; --line:#e0ded6;
