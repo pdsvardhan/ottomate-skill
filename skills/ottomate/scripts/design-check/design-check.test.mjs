@@ -96,23 +96,26 @@ test('feasibility blocks regardless of profile — a blank panel is blank for ev
 
 // ── the Phase-1 blocker's static half ───────────────────────────────────────
 
-test('block-svg-id-collision catches shared ids, classes, keyframes and :root props', () => {
+// Downgraded block_owner -> advise 2026-07-23: DSD shadow-isolation makes a cross-variant collision
+// harmless, so it now ANNOTATES rather than blocks (else it would reject legitimate isolated sets).
+test('block-svg-id-collision still DETECTS shared ids/classes/keyframes/:root, now as advisory', () => {
   const a = `<svg><linearGradient id="grain"/></svg>`;
   const b = `<svg><linearGradient id="grain"/></svg>`;
   let r = runCheck({ variants: { A: a, B: b }, rules: RULES });
-  assert.ok(r.blocked.some((f) => f.rule === 'block-svg-id-collision'), 'shared SVG id');
+  assert.ok(r.advisories.some((f) => f.rule === 'block-svg-id-collision'), 'shared SVG id');
+  assert.equal(r.pass, true, 'collision is advisory now — it must NOT block a DSD-isolated set');
 
   r = runCheck({ variants: { A: `<style>@keyframes pulse{}</style>`, B: `<style>@keyframes pulse{}</style>` }, rules: RULES });
-  assert.ok(r.blocked.some((f) => f.rule === 'block-svg-id-collision'), 'shared @keyframes name');
+  assert.ok(r.advisories.some((f) => f.rule === 'block-svg-id-collision'), 'shared @keyframes name');
 
   r = runCheck({ variants: { A: `<style>.card{color:red}</style>`, B: `<style>.card{color:blue}</style>` }, rules: RULES });
-  assert.ok(r.blocked.some((f) => f.rule === 'block-svg-id-collision'), 'shared class the later panel would override');
+  assert.ok(r.advisories.some((f) => f.rule === 'block-svg-id-collision'), 'shared class');
 
   r = runCheck({ variants: { A: `<style>:root{--accent:#f00}</style>`, B: `<style>:root{--accent:#00f}</style>` }, rules: RULES });
-  assert.ok(r.blocked.some((f) => f.rule === 'block-svg-id-collision'), 'shared :root custom property goes document-wide');
+  assert.ok(r.advisories.some((f) => f.rule === 'block-svg-id-collision'), 'shared :root custom property');
 });
 
-test('block-svg-id-collision passes when variants are namespaced', () => {
+test('block-svg-id-collision is silent when variants are namespaced', () => {
   const r = runCheck({
     variants: {
       A: `<svg><linearGradient id="v1-grain"/></svg><style>.v1-card{color:red}</style>`,
@@ -120,7 +123,32 @@ test('block-svg-id-collision passes when variants are namespaced', () => {
     },
     rules: RULES,
   });
-  assert.ok(!r.blocked.some((f) => f.rule === 'block-svg-id-collision'));
+  assert.ok(![...r.blocked, ...r.advisories].some((f) => f.rule === 'block-svg-id-collision'));
+});
+
+// ── A3 batch source detectors ─────────────────────────────────────────────────
+
+test('adv-token-layer-direction flags a name mixing colour + role, and a too-deep chain', () => {
+  assert.ok(fires('adv-token-layer-direction', `<style>:root{--color-blue-action:#00f}.b{color:var(--color-blue-action)}</style>`), 'colour+role in one name');
+  assert.ok(fires('adv-token-layer-direction', `<style>:root{--a:var(--b);--b:var(--c);--c:var(--d);--d:var(--e);--e:#000}</style>`), '4-hop chain exceeds the 3-hop cap');
+  assert.ok(!fires('adv-token-layer-direction', `<style>:root{--blue-600:#2563eb;--color-action:var(--blue-600)}.b{color:var(--color-action)}</style>`));
+});
+
+test('adv-raw-value-drift flags a literal that duplicates a token value', () => {
+  assert.ok(fires('adv-raw-value-drift', `<style>:root{--radius-2:8px}.c{border-radius:8px}</style>`));
+  assert.ok(!fires('adv-raw-value-drift', `<style>:root{--radius-2:8px}.c{border-radius:var(--radius-2)}</style>`));
+  assert.ok(!fires('adv-raw-value-drift', `<style>:root{--radius-2:8px}.c{margin:0;padding:1px}</style>`), '0 and 1px are exempt');
+});
+
+test('adv-single-icon-set flags mixed icon grids/strokes', () => {
+  assert.ok(fires('adv-single-icon-set', `<svg viewBox="0 0 24 24" stroke-width="2"></svg><svg viewBox="0 0 20 20" stroke-width="2"></svg>`), 'mixed grid');
+  assert.ok(fires('adv-single-icon-set', `<svg viewBox="0 0 24 24" stroke-width="2"></svg><svg viewBox="0 0 24 24" stroke-width="1.5"></svg>`), 'mixed stroke');
+  assert.ok(!fires('adv-single-icon-set', `<svg viewBox="0 0 24 24" stroke-width="2"></svg><svg viewBox="0 0 24 24" stroke-width="2"></svg>`));
+});
+
+test('adv-no-image-distortion flags object-fit: fill', () => {
+  assert.ok(fires('adv-no-image-distortion', `<style>img{object-fit:fill}</style>`));
+  assert.ok(!fires('adv-no-image-distortion', `<style>img{object-fit:cover;object-position:center}</style>`));
 });
 
 // ── the owner's constraint contract ─────────────────────────────────────────
@@ -264,12 +292,14 @@ test('every implemented detector id exists in design-rules.json (no drift)', asy
   }
 });
 
-test('every rule marked enforced has a detector (the register cannot lie)', () => {
+test('every enforced rule names a test AND either has a detector or is gate-enforced', () => {
   for (const rule of RULES.rules) {
-    if (rule.status === 'enforced') {
-      assert.ok(DETECTOR_IDS.has(rule.id), `rule "${rule.id}" claims enforced but has no detector`);
-      assert.ok(rule.enforced_by, `rule "${rule.id}" claims enforced without naming a test`);
-    }
+    if (rule.status !== 'enforced') continue;
+    assert.ok(rule.enforced_by, `rule "${rule.id}" claims enforced without naming a test`);
+    // A rule is legitimately enforced either by a design-check detector, or by the isolation gate
+    // (a separate file, its own suite) — in which case enforced_by names isolation-gate.test.mjs.
+    const gateEnforced = /isolation-gate\.test|harness-dsd\.test/.test(rule.enforced_by);
+    assert.ok(DETECTOR_IDS.has(rule.id) || gateEnforced, `rule "${rule.id}" claims enforced but has no detector and is not gate-enforced`);
   }
 });
 const DETECTOR_IDS = new Set(Object.keys((await import('./checks.mjs')).DETECTORS));

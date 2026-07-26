@@ -360,6 +360,118 @@ function advWeightBudget(src, rule) {
   return ok(`${kb} KB, within the ${rule.params.snappy_kb} KB snappy budget`);
 }
 
+// ── A3 batch: more source detectors (Phase-1 quick win) ─────────────────────────────────────────
+
+function collectStyleCss(src) {
+  return [...stripComments(src).matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]).join('\n');
+}
+
+// Every --name: value declaration, and the var(--other) it references.
+function tokenGraph(css) {
+  const value = new Map();  // --name -> raw value
+  const edges = new Map();  // --name -> [--referenced]
+  for (const m of css.matchAll(/(--[\w-]+)\s*:\s*([^;}]+)/g)) {
+    const name = m[1]; const val = m[2].trim();
+    value.set(name, val);
+    const refs = [...val.matchAll(/var\(\s*(--[\w-]+)/g)].map((r) => r[1]);
+    edges.set(name, refs);
+  }
+  return { value, edges };
+}
+
+const ROLE_WORDS = /\b(primary|secondary|tertiary|action|danger|success|warning|info|error|surface|muted|subtle|emphasis|brand|accent|positive|negative|critical|link|focus|hover|disabled|selected)\b/i;
+const COLOUR_WORDS = /\b(blue|red|green|yellow|orange|purple|pink|teal|cyan|magenta|gr[ae]y|black|white|slate|zinc|neutral|indigo|violet|amber|lime|emerald|rose|sky|stone|fuchsia)\b/i;
+
+function advTokenLayerDirection(src, rule) {
+  const css = collectStyleCss(src);
+  if (!css.trim()) return ok('no stylesheet');
+  const { edges } = tokenGraph(css);
+  if (edges.size === 0) return ok('no custom properties declared');
+  const problems = [];
+  const maxHops = rule.params?.max_alias_hops ?? 3;
+  // depth + cycle via DFS with a visiting stack
+  const depthOf = (start) => {
+    const seen = new Set();
+    let max = 0;
+    const walk = (n, d, stack) => {
+      if (stack.has(n)) { problems.push(`alias cycle through ${n}`); return; }
+      if (d > max) max = d;
+      const next = edges.get(n) || [];
+      const s2 = new Set(stack); s2.add(n);
+      for (const r of next) { if (!seen.has(n + '>' + r)) { seen.add(n + '>' + r); walk(r, d + 1, s2); } }
+    };
+    walk(start, 0, new Set());
+    return max;
+  };
+  for (const name of edges.keys()) {
+    const d = depthOf(name);
+    if (d > maxHops) problems.push(`${name} alias chain is ${d} hops (max ${maxHops})`);
+    // a name carrying BOTH a colour word and a role word welds a decision to a value (C2 §3.2)
+    if (COLOUR_WORDS.test(name) && ROLE_WORDS.test(name)) problems.push(`${name} mixes a colour word and a role word — a primitive named for its role or a semantic named for its colour breaks theming`);
+  }
+  return problems.length ? no([...new Set(problems)].slice(0, 5).join('; ')) : ok('token layers flow cleanly, alias depth within budget');
+}
+
+const LENGTH_RE = /^-?\d*\.?\d+(px|rem|em|%)$/;
+const DUR_RE = /^-?\d*\.?\d+m?s$/;
+const HEX_RE = /^#[0-9a-fA-F]{3,8}$/;
+const DRIFT_EXEMPT = new Set(['0', '0px', '1px', '100%', 'auto', 'none', '0s', '0ms']);
+
+function advRawValueDrift(src) {
+  const css = collectStyleCss(src);
+  if (!css.trim()) return ok('no stylesheet');
+  const { value } = tokenGraph(css);
+  // map token VALUE -> token name (only literal values, not var() refs)
+  const byValue = new Map();
+  for (const [name, val] of value) {
+    const v = val.trim();
+    if (!v.startsWith('var(') && (LENGTH_RE.test(v) || DUR_RE.test(v) || HEX_RE.test(v))) byValue.set(v.toLowerCase(), name);
+  }
+  if (byValue.size === 0) return ok('no literal-valued tokens to drift from');
+  const hits2 = [];
+  // scan non-token declarations for a literal equal to a token's value
+  for (const m of css.matchAll(/(?:^|[;{])\s*([a-z-]+)\s*:\s*([^;}]+)/gi)) {
+    const prop = m[1].trim(); const val = m[2].trim();
+    if (prop.startsWith('--')) continue;          // a token declaration itself
+    for (const tok of val.split(/\s+/)) {
+      const t = tok.trim().toLowerCase();
+      if (DRIFT_EXEMPT.has(t)) continue;
+      if (byValue.has(t)) hits2.push(`${prop}: ${tok} duplicates ${byValue.get(t)} — route it through the token`);
+    }
+  }
+  return hits2.length ? no([...new Set(hits2)].slice(0, 5).join('; ')) : ok('no raw values duplicate a token');
+}
+
+function advSingleIconSet(src) {
+  const clean = stripComments(src);
+  const svgs = [...clean.matchAll(/<svg\b[^>]*>/gi)].map((m) => m[0]);
+  const iconlike = [];
+  for (const tag of svgs) {
+    const vb = /viewBox\s*=\s*"([^"]+)"/i.exec(tag);
+    if (!vb) continue;
+    const nums = vb[1].trim().split(/[\s,]+/).map(Number);
+    if (nums.length !== 4) continue;
+    const w = nums[2], h = nums[3];
+    if (w > 64 || h > 64 || Math.abs(w - h) > 2) continue;  // not an icon-grid svg
+    const sw = /stroke-width\s*=\s*"?([\d.]+)/i.exec(tag);
+    iconlike.push({ grid: `${w}x${h}`, stroke: sw ? sw[1] : null });
+  }
+  if (iconlike.length < 2) return ok(iconlike.length ? '1 icon svg — nothing to compare' : 'no icon svgs');
+  const grids = new Set(iconlike.map((i) => i.grid));
+  const strokes = new Set(iconlike.map((i) => i.stroke).filter(Boolean));
+  const problems = [];
+  if (grids.size > 1) problems.push(`mixed icon grids: ${[...grids].join(', ')}`);
+  if (strokes.size > 1) problems.push(`mixed stroke widths: ${[...strokes].join(', ')}`);
+  return problems.length ? no(`${problems.join('; ')} — one icon set, one grid, one stroke (D2 §3.1)`) : ok(`${iconlike.length} icons, consistent grid/stroke`);
+}
+
+function advNoImageDistortion(src, rule) {
+  const found = hits(collectStyleCss(src) + ' ' + stripComments(src), rule.params?.patterns ?? ['object-fit\\s*:\\s*fill']);
+  return found.length
+    ? no(`object-fit: fill distorts images — use cover with a focal object-position (D2 §3.13)`)
+    : ok('no object-fit: fill');
+}
+
 // ── registry ────────────────────────────────────────────────────────────────────────────────────
 // Keyed by the rule id in data/design-rules.json. A rule with no entry here is SKIPPED and reported
 // as skipped — never as a pass. That distinction is the whole point of the register's Enforced? field.
@@ -380,6 +492,11 @@ export const DETECTORS = {
   'adv-not-default-inter': { scope: 'variant', fn: advNotInter },
   'adv-hover-control-focus-within': { scope: 'variant', fn: advHoverControlFocusWithin },
   'adv-weight-budget': { scope: 'variant', fn: advWeightBudget },
+  // A3 batch (Phase-1 quick win)
+  'adv-token-layer-direction': { scope: 'variant', fn: advTokenLayerDirection },
+  'adv-raw-value-drift': { scope: 'variant', fn: advRawValueDrift },
+  'adv-single-icon-set': { scope: 'variant', fn: advSingleIconSet },
+  'adv-no-image-distortion': { scope: 'variant', fn: advNoImageDistortion },
 };
 
 // The owner's contract lives in constraint_contract_schema, not rules[]. Synthetic ids, tier

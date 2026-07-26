@@ -9,7 +9,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { renderPanelStatic } from './build-variant-set.mjs';
+import { renderPanelStatic, shuffle } from './build-variant-set.mjs';
 
 // Two panels that deliberately COLLIDE — same class, same SVG gradient id, same @keyframes name.
 // In the leaky (shared-document) world these overwrite each other; wrapped in separate shadow roots
@@ -65,6 +65,19 @@ test('markup with $ (regex-special) survives — it is not a replacement pattern
   const dollar = { ...panelA, markup: '<div class="box">$1 &amp; $$ price</div>' };
   const html = renderPanelStatic(dollar);
   assert.ok(html.includes('$1 &amp; $$ price'), 'literal $ preserved');
+});
+
+// present-randomise-order (G3 §3.6): slot order is randomised every round, reproducibly per seed.
+test('shuffle randomises slot order, reproducible per seed, lossless', () => {
+  const base = ['A', 'B', 'C', 'D', 'E'];
+  assert.deepEqual(shuffle(base, 42), shuffle(base, 42), 'same seed → same order (a rerun reproduces the round)');
+  assert.deepEqual([...shuffle(base, 42)].sort(), base, 'no element is lost or duplicated');
+  let permuted = false;
+  for (let s = 1; s < 30; s++) if (JSON.stringify(shuffle(base, s)) !== JSON.stringify(base)) { permuted = true; break; }
+  assert.ok(permuted, 'shuffle actually reorders (not identity)');
+  const orders = new Set();
+  for (let s = 1; s < 12; s++) orders.add(JSON.stringify(shuffle(base, s)));
+  assert.ok(orders.size > 1, 'different seeds give different orders');
 });
 
 test('no head/meta values are left unescaped', () => {

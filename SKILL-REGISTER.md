@@ -64,7 +64,7 @@ re-derived by hand instead of read.
 | `preview-build/theme-extract.mjs` | Theme-from-content (ImageMagick dominant vibrant) | ✅ re-verified independently |
 | `preview-build/template.variant-set.html` · `template.card-wall.html` | Preview shells | ✅ |
 | `design-check/design-check.mjs` | **The constraint checker** — tier semantics + `resolveFloor()` | ✅ |
-| `design-check/checks.mjs` | The source-method detectors (15 rules + 3 contract keys) | ✅ |
+| `design-check/checks.mjs` | The source-method detectors (19 rules + 3 contract keys) | ✅ |
 | `design-check/design-check.test.mjs` | Its suite — **a failing case AND a passing case per rule** | ✅ 29/29 |
 | `feature-verify/**` | Task-3 Playwright harness | 🟡 API-level only, no browser spec |
 | `import-master-components.ts` | Catalog seeding | ✅ |
@@ -89,7 +89,7 @@ re-derived by hand instead of read.
 | **Uncapped rationale** | Design decisions never truncated | ✅ | 2160-char round-trip |
 | **Named directions** | 20-direction catalogue + adjective disambiguation | ✅ data | JSON validated; **no consumer wired yet** |
 | **Audience profiles P1/P2/P3** | Profile selects which floor rules bind | ✅ | `resolveFloor()` in `design-check.mjs`; test proves P1 and P3 return **different** sets, and that a per-project override beats the preset |
-| **Constraint checker** | Mechanically enforce the rules | 🟡 | **15 of 89 rules + 3 of 5 contract keys now enforced**, each naming a failing-case test. Wired into `build-variant-set.mjs` after the gate, before emit; blocks exit 2 and write nothing. **The other 74 are still `pending` and enforce nothing** — the checker reports them as `skipped`, never as passing |
+| **Constraint checker** | Mechanically enforce the rules | 🟡 | **26 of 89 rules + 3 of 5 contract keys now enforced**, each naming a test. Of the 26: 19 via the design-check detector, 7 via the isolation gate / harness (the `iso-*`/`present-*` bookkeeping flip). Wired into `build-variant-set.mjs` after the gate, before emit; blocks exit 2 and write nothing. **The other 63 are still `pending`** — the checker reports them as `skipped`, never passing |
 | **Feasibility gate** | Refuse a variant that cannot RUN | 🟡 | **4 of 6 enforced** (`no-eval` · `no-wasm` · `no-network` incl. the placeholder-service list · `no-inline-handlers`). `feas-baseline-gate` needs real `@supports` parsing; `feas-degradation-bottom-rung` is `computed`. Proven profile-invariant by test |
 | **Cross-component coherence** | Same semantic role → same computed value across components; shared state vocab → same token delta | 📋 | `adv-cross-component-coherence`, C2 §3.10. **This is the mix-coherence check G1 requires and the per-item pick model (doctrine 38) depends on.** Needs a browser; no runner |
 | **Rubric scoring pass** | Score variants before presenting | 📋 | Rubric written; no runner |
@@ -136,7 +136,7 @@ re-derived by hand instead of read.
 | **`resolveFloor(profile)`** — which floor rules bind | mechanism | owner ruling | ✅ P1≠P3 proven; overrides honoured |
 | 10 advisory rules — font-smoothing · action labels · error copy · implementation vocabulary · CSS architecture · inline styles · webkit prefixes · default typeface · hover/focus-within · weight budget | ADVISE | A2/C3/D1/E1/E2 | ✅ annotated, never blocking |
 
-### Specified, enforcing nothing (`status:"pending"`) — **74 of 89** *(was: all of them)*
+### Specified, enforcing nothing (`status:"pending"`) — **63 of 89** *(was 74; Part-A quick wins flipped 11 more)*
 `source_policy` (needs a source-tagging convention that does not exist yet) · `colour_budget`
 (needs rendered surfaces → `computed`) · `floor-contrast` · `floor-reduced-motion` ·
 `floor-target-size` · `floor-not-colour-alone` · `hover-only-content` · all 18 templated-tax rows ·
@@ -328,6 +328,10 @@ theme-from-content · uncapped ledger · `design_decisions` + migration 0010 · 
   Task-3 Playwright harness in `scripts/feature-verify/` is the natural one — which is a reuse of
   existing infrastructure rather than the new subsystem the plan assumed.
 - ⛔ **Three enforcement tiers** → **four**. `block_feasibility` added from H2 + E2. See §3.
+- ⛔ **`block-svg-id-collision` as `block_owner`** → **`advise`** (2026-07-23). It was the stopgap for the
+  missing per-panel isolation; now that markup panels render in isolated declarative shadow roots
+  (`4813ffa`), a cross-variant collision is harmless, and keeping it a hard block would reject
+  legitimate isolated sets. Detector still runs and annotates. Owner-disclosed.
 - ⛔ **"Graduation to `master_components`" as an undesigned Phase-4 line item** → **H1 is its spec.**
   6th instance of the pattern. Graduation is not "copy the winning variant into the catalog"; H1
   defines an ingest contract: provenance captured **at ingest or lost forever** (source, author, SPDX
@@ -354,7 +358,7 @@ theme-from-content · uncapped ledger · `design_decisions` + migration 0010 · 
 | `theme-extract.mjs` emits the raw extracted pick | Medium | A1 §3.10: normalise L to the accent target and clamp C so contrast is guaranteed *at derivation time*. Today it only boosts V |
 | Gate does not check that axis params are **visible in a shown state** | High | *A* root cause of the A≈B round; B2 would have caught it. **See the namespace-collision defect above for a second, independent mechanism** — both produce "source differs, display identical", and fixing only one leaves the gate defeatable |
 | Render surface ignores component tier | High | 566 KB / 36 posters for a component question. **E1 §3.2 now supplies the budget the complaint lacked: ≤1 MB snappy, ≤2 MB acceptable, >2 MB a budget event — so 566 KB was *within* budget.** The defect is the wrong **surface** (a page rendered to decide a component question), not the weight. Fixed by render-by-tier in Phase 1, not by shrinking anything |
-| ~~Every `design-rules.json` rule is `pending`~~ → **74 of 89 still are** | Medium *(was High)* | 15 rules + 3 contract keys now enforced with failing-case tests and wired into the harness. The checker reports unimplemented rules as **`skipped`**, so coverage cannot be mistaken for a pass |
+| ~~Every `design-rules.json` rule is `pending`~~ → **63 of 89 still are** | Medium *(was High)* | 26 rules + 3 contract keys now enforced with tests and wired in. The checker reports unimplemented rules as **`skipped`**, so coverage cannot be mistaken for a pass |
 | The checker only runs in the harness's **markup mode** | Medium | Token mode varies only inline custom properties, so there is no per-variant source to check. The build prints `constraint check: SKIPPED` rather than a pass that checked nothing — but it does mean **every round run so far would have been unchecked** |
 | `.sr-stat::before` 3px left strip in `template.card-wall.html` | Low | F2's most reliable AI tell, in our own template. Deferred by owner |
 | DOM-commenter extension has **no git remote** | Medium | Local-only; "pushed" claims were no-ops |

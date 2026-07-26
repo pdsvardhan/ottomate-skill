@@ -63,7 +63,7 @@ export function renderPanelStatic(p) {
 
 // Deterministic shuffle when a seed is given, so a rerun reproduces the same layout for the same round
 // but a NEW round reshuffles (G3 §3.6: randomise slot order on every presentation, not just the first).
-function shuffle(arr, seed) {
+export function shuffle(arr, seed) {
   const a = [...arr];
   let s = seed == null ? Math.floor(Math.random() * 2 ** 31) : seed;
   const rnd = () => { s = (s * 1103515245 + 12345) & 0x7fffffff; return s / 0x7fffffff; };

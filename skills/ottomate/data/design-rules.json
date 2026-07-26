@@ -159,7 +159,8 @@
       "params": { "min_structural_diff_ratio": 0.15 },
       "params_note": "0.15 is a [REASONED] engineering default, not a measured constant (G1 §8). Tune per axis against real 'felt identical' reports.",
       "remedy": "regenerate_set",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › \"felt identical\" set is REJECTED › axis-diff catches it"
     },
     {
       "id": "iso-control-diff",
@@ -169,7 +170,8 @@
       "check": "control_diff",
       "remedy": "regenerate_set",
       "note": "This is the check that makes a lock TRUE rather than a guess about why the owner picked.",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › contaminated set is REJECTED › control-diff catches the second axis"
     },
     {
       "id": "iso-blind-sort",
@@ -179,7 +181,8 @@
       "check": "blind_sort",
       "remedy": "regenerate_set",
       "note": "If the tool cannot articulate where each variant sits, a human never will and the set will feel identical.",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › good set passes the gate › blind-sort ok"
     },
     {
       "id": "iso-count",
@@ -189,7 +192,8 @@
       "check": "option_count_for_rung",
       "params": { "by_rung": { "0": [3, 5], "1": [3, 4], "2": [3, 3], "3": [2, 3], "4": [2, 2], "5": [2, 2] } },
       "remedy": "adjust_count",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › 6 options is REJECTED even at rung 0 / 3 options at rung 4 (page) is REJECTED"
     },
     {
       "id": "iso-never-one",
@@ -199,7 +203,8 @@
       "check": "option_count_min",
       "params": { "min": 2 },
       "remedy": "regenerate_set",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › a single option is REJECTED"
     },
     {
       "id": "seq-parents-locked",
@@ -231,7 +236,8 @@
       "statement": "Slot order is randomised on every presentation, not just the first.",
       "check": "presentation_order_randomised",
       "remedy": "shuffle",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/preview-build/harness-dsd.test.mjs › shuffle randomises slot order, reproducible per seed, lossless"
     },
     {
       "id": "present-neutral-labels",
@@ -241,7 +247,8 @@
       "check": "labels_neutral",
       "remedy": "relabel",
       "note": "Suspends the skill's usual 'put the recommended option first' house style — for TASTE choices only.",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › evaluative labels are REJECTED"
     },
 
     {
@@ -510,7 +517,8 @@
       "params": { "max_alias_hops": 3 },
       "params_note": "Detectable statically: parse every `--x: var(--y)` edge into a graph. Defects = a component token referencing a primitive directly, a cycle, a chain > 3, a primitive whose name carries a role word (primary/action/danger/surface), or a semantic whose name carries a colour word (blue/red/grey).",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › adv-token-layer-direction flags a name mixing colour + role, and a too-deep chain"
     },
     {
       "id": "adv-raw-value-drift",
@@ -521,7 +529,8 @@
       "method": "source",
       "params_note": "A literal `border-radius: 8px` sitting next to `--radius-2: 8px` is drift-in-waiting. Flag every literal length/colour/duration whose value equals a declared token's value. Exempt: 0, 1px hairlines, 100%/auto, and values inside the token declarations themselves.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › adv-raw-value-drift flags a literal that duplicates a token value"
     },
     {
       "id": "adv-cross-component-coherence",
@@ -685,16 +694,16 @@
     },
     {
       "id": "block-svg-id-collision",
-      "tier": "block_owner",
+      "tier": "advise",
       "source": "D2 §3.11",
       "statement": "When N variants share one document, no two may declare the same SVG id, CSS class, @keyframes name, or :root custom property.",
       "check": "cross_variant_namespace_collision",
       "method": "source",
       "params": { "namespaces": ["svg_id", "css_class", "keyframes_name", "root_custom_property"] },
-      "params_note": "TIER RATIONALE — this is block_owner, not advise, because it defeats the isolation gate rather than merely looking bad. url(#id) and <use href=\"#id\"> resolve to the FIRST match in document order, and a later <style> block wins for equal specificity, so variant B silently renders with variant A's gradient/filter/rules. The gate then passes a set whose SOURCE differs while the DISPLAY is identical — which is precisely the failure the gate exists to prevent. Only applies to the harness's markup mode (variant.panelTemplate); token mode is structurally immune because it varies only inline custom properties. See the register's defect entry for the three candidate fixes.",
-      "remedy": "regenerate_set",
+      "params_note": "DOWNGRADED block_owner -> advise 2026-07-23: markup panels now render in isolated declarative shadow roots (commit 4813ffa), so a cross-variant id/class/keyframes/:root collision is HARMLESS — url(#id) resolves within the panel\u2019s own shadow root. Kept as an advisory because namespacing is still good hygiene; blocking would reject legitimate isolated sets. Historical rationale: url(#id) and <use href=\"#id\"> resolve to the FIRST match in document order, and a later <style> block wins for equal specificity, so variant B silently renders with variant A's gradient/filter/rules. The gate then passes a set whose SOURCE differs while the DISPLAY is identical — which is precisely the failure the gate exists to prevent. Only applies to the harness's markup mode (variant.panelTemplate); token mode is structurally immune because it varies only inline custom properties. See the register's defect entry for the three candidate fixes.",
+      "remedy": "annotate",
       "status": "enforced",
-      "enforced_by": "scripts/design-check/design-check.test.mjs › block-svg-id-collision catches shared ids, classes, keyframes and :root props"
+      "enforced_by": "scripts/design-check/design-check.test.mjs › block-svg-id-collision still DETECTS shared ids/classes/keyframes/:root, now as advisory"
     },
     {
       "id": "adv-radius-scale",
@@ -861,7 +870,8 @@
       "params": { "baseline_grid": 24, "baseline_stroke_px": [1.5, 2], "live_area": 20 },
       "params_note": "Detect by clustering inline SVG icons on viewBox dimensions and stroke-width. Mixed grids or stroke weights read as visual noise even when nobody can name why — D2 calls this the most common iconography defect.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › adv-single-icon-set flags mixed icon grids/strokes"
     },
     {
       "id": "adv-icon-delivery-inline-svg",
@@ -893,11 +903,12 @@
       "source": "D2 §3.13",
       "statement": "Images use a fixed aspect-ratio vocabulary and object-fit: cover with a focal object-position; object-fit: fill never appears.",
       "check": "image_aspect_and_fit",
-      "method": "computed",
+      "method": "source",
       "params": { "vocabulary": ["1/1", "4/3", "3/2", "16/9", "21/9"], "forbidden_fit": ["fill"] },
       "params_note": "Distorted faces and products are an instant credibility hit. Also flag a raw width+height pair that implies a ratio outside the vocabulary.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/design-check.test.mjs › adv-no-image-distortion flags object-fit: fill"
     },
     {
       "id": "adv-brand-mark-authentic",
