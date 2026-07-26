@@ -1,0 +1,83 @@
+# Stage 2 — Variant generation (the producer)
+
+**Loaded when a design round needs variants made.** The harness *displays* variants; this is the method
+that *produces* them. Run it in a **fresh sub-agent** fed only the inputs below — not inline in a long
+session (a long session produces repetitive designs; the ledger is the memory, the chat is disposable).
+
+> **Honesty flags baked in.** The 6→3 filter is **model-applied rubric judgment**, not a mechanical
+> score — no scoring runner exists yet. The "get 6 genuinely-different variants" step is a `[REASONED]`
+> technique, with the **isolation gate as the backstop** that rejects a samey set. Say which is which.
+
+---
+
+## Inputs (the fresh agent gets ONLY these)
+
+1. **Target + anatomy** — the `data-oid`, and the archetype's entry in `data/component-anatomy.json`
+   (tier, parts, required states, the sub-decision list). This is *what to vary* — never invent axes.
+2. **The constraint contract** — `must_use` · `animation_vocab` · `forbidden` · `source_policy` ·
+   `colour_budget`. These BLOCK (doctrine §5). `source_policy` defaults **library-first**.
+3. **The audience profile** — P1/P2/P3. Selects which floor rules bind (`data/design-rules.json`
+   `audience_profiles`).
+4. **The committed direction** — one entry from `data/design-directions.json` (see step 1).
+5. **`design-doctrine.md`** — the 229 cited rules. Load it.
+6. **`rejected[]`** — every value already turned down for this target (empty on gen-1). **Never re-offer
+   a rejected value.**
+
+## The steps
+
+### 0. Commit to a named direction (rung 0)
+If no direction is set, pick one from `design-directions.json` using the brief's adjectives
+(`adjective_map`). No adjectives → Swiss-adjacent minimalism (doctrine 52 — boldness is opt-in, never a
+silent default). Record it; it frames every bundle. Flag a `trend_bound` direction as a bet (doctrine 50).
+
+### 1. Enumerate the sub-decisions
+Take the archetype's `sub_decisions` from the anatomy. These are the round's axes — the parts and
+states, nothing invented (doctrine 40). A round is normally a **bundle** of ~8–12 of them across 2–4
+variants; the pick is per-item (doctrine 38).
+
+### 2. Over-generate 6, SEEDED FOR DIVERGENCE  `[REASONED]`
+Author **6** complete bundles. To get genuinely different ones from one model — the open LLM-behaviour
+gap the register flags — give each candidate a **distinct seed**:
+- assign 2–3 candidates a **different named direction** (or a different material reference), and
+- on the 3–4 most contested sub-decisions, force **different values per candidate**, and
+- state explicitly, per candidate, *"these must differ from the others on: <the named axes>."*
+
+Spend the budget here (doctrine 41): the committed direction, content-derived colour, a named material
+reference — gen-1, not rounds 2–3 grinding toward them. **The isolation gate is the backstop:** if the
+6 still came out samey, it rejects the set and you regenerate. Do not rely on the seed alone.
+
+### 3. Filter 6 → 3 by rubric judgment  *(model-applied — no runner yet)*
+Score each of the 6 against `data/design-rubric.md` (Hierarchy/Consistency/Legibility/Craft, 4×25),
+including the **vision-proxy 5-second test** (name the primary action cold). Keep the **3 strongest**.
+Record the scores and *why* each survivor beat the two it displaced — this is a judgment, logged, not a
+computed number. A *Rebuild*-band survivor triggers one regeneration before it ships.
+
+### 4. Emit a harness config (markup mode, states pinned)
+Write a `variant-set.json` for `build-variant-set.mjs`:
+- `axis.kind: "structural"` when the contested axes move markup; declare `axis.params` + per-variant
+  `axis_values` for every named sub-decision (so the gate's per-sub-decision isolation applies).
+- Each variant is a `panelTemplate` (its own markup + `<style>`), authored so the tier's
+  **render_surface** shows the **required states pinned open** (element 2) — e.g. a card rendered in its
+  hover-revealed state, a button strip across rest/hover/focus-visible/active/disabled. Judge the axis
+  where it lives.
+- Namespacing is *nice* but no longer required — panels are shadow-isolated (`block-svg-id-collision`
+  is advisory now).
+
+### 5. Run the harness — gate + checker, fail closed
+`node build-variant-set.mjs variant-set.json`. It runs the isolation gate **and** the constraint
+checker before emitting. On a BLOCK (exit 2, nothing written): a feasibility/owner violation or a samey
+set → **fix and regenerate**, never present. Advisories annotate the panels; a *Rebuild* band triggers
+one auto-regeneration.
+
+### 6. Present + record per-item picks
+Publish the artifact (stable URL). The owner picks a **value per sub-decision** — a mix is normal. Feed
+the pick vector through `scripts/generation/picks-to-ledger.mjs` → one `design_decisions` row per
+sub-decision (`chosen_value`, `mixed_from`, `rejected[]`, `profile_at_decision`). The rejected values
+become the next round's `rejected[]` input.
+
+## What this method deliberately does NOT do yet
+- **No mechanical rubric runner** — step 3 is model judgment. (Follow-up: score `computed` rules in the
+  Playwright harness.)
+- **No mechanical "state is visibly rendered" gate** — step 4 pins states by convention + checklist; a
+  gate that proves the axis is visible in a shown state is a noted follow-up.
+- **No proven generation-variance guarantee** — step 2 is `[REASONED]`; the gate is the safety net.
