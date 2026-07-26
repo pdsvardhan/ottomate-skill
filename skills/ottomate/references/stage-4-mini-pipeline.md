@@ -175,6 +175,15 @@ Scoped Stage 3 code generation:
 - No full nightly suite — that runs on cron, not per iteration
 - Auto-fix loop with same 3-iteration bound
 
+### 4.6.5 — Design-regression gate (Phase 2 snapshot differ, aesthetic items only)
+
+After a rebuild that touches a target with **locked design decisions**, run
+`diffAgainstSnapshots(lockedDecisions, currentByAxis, currentSourceByAxis)`
+(`scripts/generation/ledger-context.mjs`) against the ledger. A **regression** — a locked value or its
+source region silently changed — **blocks** until the owner unlocks it with a reason (PATCH 422 without
+`unlock_reason`, G3 rule 13). This is the ledger protecting committed design work: a later edit cannot
+quietly undo a locked decision. *Source/value-level; a rendered-pixel diff is the computed follow-up.*
+
 ### 4.7 — Verifier (MANDATORY)
 
 Run the full 4-pass verifier (see `references/stage-3-verifier.md`) PER ITEM, not per iteration. Each item gets independent verification.

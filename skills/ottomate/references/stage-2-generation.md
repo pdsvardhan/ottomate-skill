@@ -20,8 +20,11 @@ session (a long session produces repetitive designs; the ledger is the memory, t
    `audience_profiles`).
 4. **The committed direction** — one entry from `data/design-directions.json` (see step 1).
 5. **`design-doctrine.md`** — the 229 cited rules. Load it.
-6. **`rejected[]`** — every value already turned down for this target (empty on gen-1). **Never re-offer
-   a rejected value.**
+6. **`rejected[]` and frozen controls** — from the ledger via
+   `scripts/generation/ledger-context.mjs` (Phase 2): `rejectedByAxis(decisions)` = every value already
+   turned down for this target (empty on gen-1) — **never re-offer a rejected value**; and
+   `frozenByAxis(decisions)` = every **locked** sub-decision — a locked axis is a **frozen control**
+   (doctrine 39), **excluded from the round's contested axes**, never re-offered as a variant.
 
 ## The steps
 
@@ -85,7 +88,16 @@ one auto-regeneration.
 Publish the artifact (stable URL). The owner picks a **value per sub-decision** — a mix is normal. Feed
 the pick vector through `scripts/generation/picks-to-ledger.mjs` → one `design_decisions` row per
 sub-decision (`chosen_value`, `mixed_from`, `rejected[]`, `profile_at_decision`). The rejected values
-become the next round's `rejected[]` input.
+become the next round's `rejected[]` input (step 6 above).
+
+### 7. Lock + guard against regression (Phase 2)
+When the owner confirms a pick, **lock** it: `ledger-context.lockDecision(...)` PATCHes
+`status:'locked', confirmed:true, snapshot: snapshotForLock(decision, source)` — a lock is *earned*
+(422 without `confirmed`, G3 rule 12). On any later rebuild, run
+`diffAgainstSnapshots(lockedDecisions, currentByAxis, currentSourceByAxis)` and **block on a regression**
+(a locked value or its source region silently changed) until the owner unlocks with a reason (422
+without `unlock_reason`, G3 rule 13). This is the golden-file regression gate — the ledger protecting
+committed work. *Source/value-level; a rendered-pixel diff is the computed follow-up.*
 
 ## What this method deliberately does NOT do yet
 - **No mechanical rubric runner** — step 3 is model judgment. (Follow-up: score `computed` rules in the
