@@ -283,8 +283,13 @@ function advCssArchitecture(src, rule) {
   if (rule.params.forbid_important && /!important/i.test(css)) {
     problems.push('!important present — it collapses the system AND reverses @layer order');
   }
-  // An ID used as a *style* selector, not an anchor target or a JS hook.
-  const idSel = [...css.matchAll(/(^|[\s,>+~{}])#([A-Za-z][\w-]*)\s*[,{]/g)].map((m) => `#${m[2]}`);
+  // An ID used as a *style* selector, not an anchor target or a JS hook. Exclude hex COLOURS — a value
+  // like `,#ffcf8a,` inside a gradient matches the selector shape but is not a selector (hex starts
+  // with a-f too). A 3/4/6/8-digit all-hex name in value position is a colour, not an ID.
+  const idSel = [...css.matchAll(/(^|[\s,>+~{}])#([A-Za-z][\w-]*)\s*[,{]/g)]
+    .map((m) => m[2])
+    .filter((name) => !(/^[0-9a-fA-F]+$/.test(name) && [3, 4, 6, 8].includes(name.length)))
+    .map((name) => `#${name}`);
   if (rule.params.forbid_id_selectors && idSel.length) {
     problems.push(`ID selector(s) used for styling: ${[...new Set(idSel)].slice(0, 4).join(', ')}`);
   }

@@ -53,9 +53,21 @@ Record the scores and *why* each survivor beat the two it displaced — this is 
 computed number. A *Rebuild*-band survivor triggers one regeneration before it ships.
 
 ### 4. Emit a harness config (markup mode, states pinned)
-Write a `variant-set.json` for `build-variant-set.mjs`:
-- `axis.kind: "structural"` when the contested axes move markup; declare `axis.params` + per-variant
-  `axis_values` for every named sub-decision (so the gate's per-sub-decision isolation applies).
+Write a `variant-set.json` for `build-variant-set.mjs`. Declare `axis.params` + per-variant `axis_values`
+for **every** named sub-decision (so the gate's per-sub-decision isolation applies).
+
+**Set `axis.kind` to match the bundle's dominant nature — this matters:**
+- `"structural"` **only** when the contested axes genuinely move the DOM tree (layout: grid vs list;
+  nav: tabs vs sidebar). The gate then requires ≥15% *markup* divergence.
+- `"stylistic"` for a bundle whose differences are mostly CSS **values** (radius, elevation, colour,
+  motion, accent placement). **The structural markup fingerprint is BLIND to CSS-value differences** —
+  it counts tag/class/property *names*, not values — so declaring a stylistic bundle `"structural"`
+  makes the gate FALSE-REJECT three genuinely different cards as "98% identical." *(This is exactly
+  what happened on the first real round, 2026-07-23.)* For a stylistic bundle, **axis-diff on the
+  declared params is the divergence proof**; a rendered-appearance check (computed, browser) is the
+  proper backstop and is a noted follow-up.
+- A **mixed** bundle (some structural, some stylistic sub-decisions) is `"stylistic"` unless the
+  *majority* genuinely restructure the DOM.
 - Each variant is a `panelTemplate` (its own markup + `<style>`), authored so the tier's
   **render_surface** shows the **required states pinned open** (element 2) — e.g. a card rendered in its
   hover-revealed state, a button strip across rest/hover/focus-visible/active/disabled. Judge the axis

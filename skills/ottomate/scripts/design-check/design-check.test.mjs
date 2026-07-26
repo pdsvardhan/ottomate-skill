@@ -224,6 +224,8 @@ test('adv-css-layer-order fires on !important, ID selectors and a wrong @layer o
   assert.ok(fires('adv-css-layer-order', `<style>@layer utilities, components;</style>`), 'utilities before components');
   assert.ok(!fires('adv-css-layer-order', `<style>@layer reset, base, tokens, layout, components, utilities;</style>`));
   assert.ok(!fires('adv-css-layer-order', CLEAN));
+  // a hex COLOUR in a gradient must NOT be mistaken for an ID selector (regression from the first real round)
+  assert.ok(!fires('adv-css-layer-order', `<style>.p{background:linear-gradient(90deg,#0a5,#ffcf8a,#a05)}</style>`), 'hex colour is not an ID selector');
 });
 
 test('adv-inline-style-attr fires on real declarations but exempts custom-property-only', () => {
