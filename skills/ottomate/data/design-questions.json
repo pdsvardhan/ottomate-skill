@@ -1,0 +1,268 @@
+{
+  "$comment": "THE UNIVERSAL HALF. Tiers, the state matrix, and the finite registry of design QUESTIONS with their perceptual channel, scope hint and the CSS custom property each maps to (null = structural, cannot be a token). component-anatomy.json holds only per-component facts. Split 2026-07-27 (U1): both used to live in one blob, so adding a component re-authored the universal half too, which is why there were only three. Resolve the two with scripts/generation/anatomy.mjs.",
+  "meta": {
+    "version": 1,
+    "created": "2026-07-27",
+    "sources": {
+      "C1": "docs/research/C1componentanatomyandtaxonomy.md",
+      "B2": "docs/research/B2interactionstatesandaffordance.md"
+    },
+    "naming": "Parts use parent-prepended names (C1 §3.5): CardTitle, not a bare Title. States are never variants (C1 §3.4)."
+  },
+  "tiers": {
+    "primitive": {
+      "definition": "one interactive/display concern, nothing named nested inside, repeats many times (Button, Badge, Avatar). C1 §3.1",
+      "min_anatomy": "root/container + a content slot",
+      "render_surface": "the component rendered across its REQUIRED STATES, pinned open side by side — so the axis is judged where it lives, not in a collapsed state. A primitive round shows e.g. rest/hover/focus-visible/active/disabled in one strip."
+    },
+    "composite": {
+      "definition": "assembles >=2 primitives and OWNS the state orchestration between them, repeats several times (Card, Dialog, Tabs, Toast). C1 §3.1",
+      "min_anatomy": "root + (trigger if not always-visible) + content region + an explicit dismiss-or-commit affordance",
+      "render_surface": "1-3 real instances at real content density, with the required states of the orchestrating part pinned open (e.g. one card shown in its hover-revealed state)."
+    },
+    "surface": {
+      "definition": "a page-level layout region, usually once per screen (App-shell, Page-header, Empty-state). C1 §3.1",
+      "min_anatomy": "at least one landmark role (main/navigation/banner/contentinfo)",
+      "render_surface": "rendered once at real density. Do NOT render a whole surface to decide a primitive/composite question — that is a rung error (order of magnitude more cost, and it hides the axis if it lives in a collapsed region)."
+    }
+  },
+  "state_matrix": {
+    "$comment": "B2 §3.1: the whole matrix, not three states. C1 only says WHICH apply per tier (rule 11); B2 owns what each looks like. Every state carrying meaning also changes a NON-colour channel (B2 §3.2, = floor-not-colour-alone).",
+    "always": {
+      "rest": "the default",
+      "hover": "pointer over (never fires on touch/keyboard) — hover is polish, never the only affordance (B2 §3.5)",
+      "focus-visible": "keyboard focus landed — ring >=2px, >=3:1, via outline+outline-offset (B2 §3.13, A5)",
+      "active": "being pressed right now",
+      "disabled": "removed from tab order + a11y tree, exempt from contrast (B2 §3.10). NOT the same as read-only"
+    },
+    "conditional": {
+      "loading": "add when the component is asynchronous — skeleton/spinner by the timing ladder (B2 §3.6-3.7)",
+      "error": "add when it has a validity concept — aria-invalid + aria-describedby (B2 §3.3)",
+      "selected": "add when it is selectable — aria-selected/aria-current",
+      "read-only": "add when the value is shown-but-not-editable; stays focusable + announced (B2 §3.10)"
+    }
+  },
+  "questions": {
+    "corner-radius": {
+      "channel": "weight",
+      "scope_hint": "foundational",
+      "kind": "stylistic",
+      "axis": "radius",
+      "applies_to_tiers": [
+        "composite",
+        "primitive"
+      ],
+      "token": "--{t}-radius",
+      "hint": "0 sharp (data/tech voice) .. 8 friendly .. 20 soft (A4 rule 116); pick a tight OR a loose, not three"
+    },
+    "elevation": {
+      "channel": "weight",
+      "scope_hint": "foundational",
+      "kind": "stylistic",
+      "axis": "shadow",
+      "applies_to_tiers": [
+        "composite"
+      ],
+      "token": "--{t}-elevation",
+      "hint": "flat hairline vs dual-layer tinted shadow (A4 120-121); on dark prefer +lightness over shadow"
+    },
+    "media-aspect": {
+      "channel": "density",
+      "scope_hint": "local",
+      "kind": "structural",
+      "axis": "aspect-ratio",
+      "applies_to_tiers": [
+        "composite"
+      ],
+      "token": null,
+      "hint": "2:3 poster vs 16:9 still; object-fit:cover, never fill (D2 157)"
+    },
+    "title-placement": {
+      "channel": "density",
+      "scope_hint": "local",
+      "kind": "structural",
+      "axis": "layout",
+      "applies_to_tiers": [
+        "composite"
+      ],
+      "token": null,
+      "hint": "overlaid-on-media vs below-media vs hover-revealed footer"
+    },
+    "meta-density": {
+      "channel": "density",
+      "scope_hint": "local",
+      "kind": "structural",
+      "axis": "content-lines",
+      "applies_to_tiers": [
+        "composite"
+      ],
+      "token": "--{t}-meta-lines",
+      "hint": "0/1/2 meta lines; tabular-nums for any rating/year (C3 160)"
+    },
+    "actions-reveal": {
+      "channel": "motion",
+      "scope_hint": "local",
+      "kind": "motion",
+      "axis": "reveal",
+      "applies_to_tiers": [
+        "composite"
+      ],
+      "token": "--{t}-actions-reveal",
+      "hint": "always-visible vs hover-reveal; a hover-revealed CONTROL needs :focus-within (adv-hover-control-focus-within, B2 3.5)"
+    },
+    "accent-usage": {
+      "channel": "colour",
+      "scope_hint": "foundational",
+      "kind": "stylistic",
+      "axis": "colour",
+      "applies_to_tiers": [
+        "composite"
+      ],
+      "token": "--{t}-accent",
+      "hint": "content-derived accent on <= a few surfaces (border/badge/CTA), neutral elsewhere; 60/30/10 (A1 62)"
+    },
+    "badge-style": {
+      "channel": "colour",
+      "scope_hint": "local",
+      "kind": "stylistic",
+      "axis": "shape",
+      "applies_to_tiers": [
+        "composite"
+      ],
+      "token": "--{t}-badge-radius",
+      "hint": "pill vs corner-ribbon vs none; status via a second channel, not colour alone (B2 3.2)"
+    },
+    "hover-motion": {
+      "channel": "motion",
+      "scope_hint": "foundational",
+      "kind": "motion",
+      "axis": "transition",
+      "applies_to_tiers": [
+        "composite"
+      ],
+      "token": "--{t}-hover-transition",
+      "hint": "lift (translateY) vs scale vs none; transform+opacity only, 250-300ms standard (B1 70,74)"
+    },
+    "selected-signal": {
+      "channel": "colour",
+      "scope_hint": "foundational",
+      "kind": "stylistic",
+      "axis": "state-treatment",
+      "applies_to_tiers": [
+        "composite"
+      ],
+      "token": "--{t}-selected-treatment",
+      "hint": "how 'selected' reads — ring vs fill vs check; a non-colour channel required"
+    },
+    "emphasis-scale": {
+      "channel": "colour",
+      "scope_hint": "foundational",
+      "kind": "stylistic",
+      "axis": "fill",
+      "applies_to_tiers": [
+        "primitive"
+      ],
+      "token": "--{t}-emphasis",
+      "hint": "how primary/secondary/tertiary/ghost differ — a variant enum, mutually exclusive (C1 §3.2)"
+    },
+    "hover-delta": {
+      "channel": "motion",
+      "scope_hint": "foundational",
+      "kind": "motion",
+      "axis": "state-delta",
+      "applies_to_tiers": [
+        "primitive"
+      ],
+      "token": "--{t}-hover-delta",
+      "hint": "direction-aware lightness move (A1 67), not a hardcoded second hex; 100-150ms micro (B1 70)"
+    },
+    "focus-ring": {
+      "channel": "weight",
+      "scope_hint": "foundational",
+      "kind": "stylistic",
+      "axis": "focus",
+      "applies_to_tiers": [
+        "primitive"
+      ],
+      "token": "--{t}-focus-ring",
+      "hint": "outline-based, >=2px/3:1, never box-shadow-only (adv-focus-ring-not-shadow-only)"
+    },
+    "icon-affordance": {
+      "channel": "density",
+      "scope_hint": "local",
+      "kind": "structural",
+      "axis": "icon",
+      "applies_to_tiers": [
+        "primitive"
+      ],
+      "token": null,
+      "hint": "leading/trailing/none; icon-only needs aria-label (C1 §3.12); one icon set (D2 145)"
+    },
+    "loading-treatment": {
+      "channel": "motion",
+      "scope_hint": "local",
+      "kind": "motion",
+      "axis": "loading",
+      "applies_to_tiers": [
+        "primitive"
+      ],
+      "token": "--{t}-loading",
+      "hint": "spinner vs label-swap; aria-busy; keep width stable (no jitter)"
+    },
+    "row-height": {
+      "channel": "density",
+      "scope_hint": "local",
+      "kind": "structural",
+      "axis": "density",
+      "applies_to_tiers": [
+        "composite"
+      ],
+      "token": "--{t}-row-height",
+      "hint": "compact 32 / default 40-48 / relaxed 56 (C3 159)"
+    },
+    "separation": {
+      "channel": "weight",
+      "scope_hint": "local",
+      "kind": "stylistic",
+      "axis": "divider",
+      "applies_to_tiers": [
+        "composite"
+      ],
+      "token": "--{t}-divider",
+      "hint": "hairline 1px ~8-12% opacity (safer default) vs zebra (unproven, C3 165)"
+    },
+    "numeric-alignment": {
+      "channel": "density",
+      "scope_hint": "local",
+      "kind": "structural",
+      "axis": "alignment",
+      "applies_to_tiers": [
+        "composite"
+      ],
+      "token": null,
+      "hint": "numeric right + tabular-nums, text left (C3 160)"
+    },
+    "hover-highlight": {
+      "channel": "colour",
+      "scope_hint": "foundational",
+      "kind": "stylistic",
+      "axis": "state-delta",
+      "applies_to_tiers": [
+        "composite"
+      ],
+      "token": "--{t}-hover-layer",
+      "hint": "translucent state layer so it inverts in dark (B2 3.14)"
+    },
+    "select-affordance": {
+      "channel": "density",
+      "scope_hint": "local",
+      "kind": "structural",
+      "axis": "selection",
+      "applies_to_tiers": [
+        "composite"
+      ],
+      "token": null,
+      "hint": "checkbox vs whole-row click; aria-selected; a non-colour selected signal"
+    }
+  }
+}

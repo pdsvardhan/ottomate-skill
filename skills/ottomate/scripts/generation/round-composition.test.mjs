@@ -3,13 +3,10 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { composeRounds, formatComposition, DEFAULT_MAX_AXES } from './round-composition.mjs';
+import { resolveAnatomy } from './anatomy.mjs';
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-const anatomy = JSON.parse(readFileSync(path.join(HERE, '..', '..', 'data', 'component-anatomy.json'), 'utf8'));
+const anatomy = resolveAnatomy();
 const mediaCard = anatomy.archetypes['media-card'].sub_decisions;
 
 test('every sub-decision in every archetype carries a channel and a scope_hint', () => {

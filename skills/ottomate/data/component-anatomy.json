@@ -1,95 +1,164 @@
 {
-  "$comment": "The sub-decision inventory. Read by the generation method to know WHAT to vary for a target — doctrine rule 40: 'what to vary comes from the component's anatomy, not from invention'. Tier + parts + required states come from C1 §3-4; the required-state floor and its meaning come from B2 §3. A round's sub-decisions ARE these parts and states, never invented. NEVER read by a scoring runner; this is generation input.",
+  "$comment": "THE PER-COMPONENT HALF. Only what is true of THIS component: its tier, its named parts, its required states, and which universal questions apply (with an override when this component needs a more specific hint). The universal half lives in design-questions.json. Resolve both with scripts/generation/anatomy.mjs — never read this file directly.",
   "meta": {
-    "version": 1,
+    "version": 2,
     "created": "2026-07-23",
-    "sources": { "C1": "docs/research/C1componentanatomyandtaxonomy.md", "B2": "docs/research/B2interactionstatesandaffordance.md" },
+    "split": "2026-07-27",
+    "sources": {
+      "C1": "docs/research/C1componentanatomyandtaxonomy.md",
+      "B2": "docs/research/B2interactionstatesandaffordance.md"
+    },
     "naming": "Parts use parent-prepended names (C1 §3.5): CardTitle, not a bare Title. States are never variants (C1 §3.4)."
   },
-
-  "tiers": {
-    "primitive": {
-      "definition": "one interactive/display concern, nothing named nested inside, repeats many times (Button, Badge, Avatar). C1 §3.1",
-      "min_anatomy": "root/container + a content slot",
-      "render_surface": "the component rendered across its REQUIRED STATES, pinned open side by side — so the axis is judged where it lives, not in a collapsed state. A primitive round shows e.g. rest/hover/focus-visible/active/disabled in one strip."
-    },
-    "composite": {
-      "definition": "assembles >=2 primitives and OWNS the state orchestration between them, repeats several times (Card, Dialog, Tabs, Toast). C1 §3.1",
-      "min_anatomy": "root + (trigger if not always-visible) + content region + an explicit dismiss-or-commit affordance",
-      "render_surface": "1-3 real instances at real content density, with the required states of the orchestrating part pinned open (e.g. one card shown in its hover-revealed state)."
-    },
-    "surface": {
-      "definition": "a page-level layout region, usually once per screen (App-shell, Page-header, Empty-state). C1 §3.1",
-      "min_anatomy": "at least one landmark role (main/navigation/banner/contentinfo)",
-      "render_surface": "rendered once at real density. Do NOT render a whole surface to decide a primitive/composite question — that is a rung error (order of magnitude more cost, and it hides the axis if it lives in a collapsed region)."
-    }
-  },
-
-  "state_matrix": {
-    "$comment": "B2 §3.1: the whole matrix, not three states. C1 only says WHICH apply per tier (rule 11); B2 owns what each looks like. Every state carrying meaning also changes a NON-colour channel (B2 §3.2, = floor-not-colour-alone).",
-    "always": {
-      "rest": "the default",
-      "hover": "pointer over (never fires on touch/keyboard) — hover is polish, never the only affordance (B2 §3.5)",
-      "focus-visible": "keyboard focus landed — ring >=2px, >=3:1, via outline+outline-offset (B2 §3.13, A5)",
-      "active": "being pressed right now",
-      "disabled": "removed from tab order + a11y tree, exempt from contrast (B2 §3.10). NOT the same as read-only"
-    },
-    "conditional": {
-      "loading": "add when the component is asynchronous — skeleton/spinner by the timing ladder (B2 §3.6-3.7)",
-      "error": "add when it has a validity concept — aria-invalid + aria-describedby (B2 §3.3)",
-      "selected": "add when it is selectable — aria-selected/aria-current",
-      "read-only": "add when the value is shown-but-not-editable; stays focusable + announced (B2 §3.10)"
-    }
-  },
-
   "archetypes": {
     "media-card": {
       "tier": "composite",
-      "cross_ref": "the Screenroom poster card; the demo target",
-      "parts": ["Card", "CardMedia", "CardBadge", "CardOverlay", "CardTitle", "CardMeta", "CardActions"],
-      "required_states": ["rest", "hover", "focus-visible", "active", "selected"],
+      "parts": [
+        "Card",
+        "CardMedia",
+        "CardBadge",
+        "CardOverlay",
+        "CardTitle",
+        "CardMeta",
+        "CardActions"
+      ],
+      "required_states": [
+        "rest",
+        "hover",
+        "focus-visible",
+        "active",
+        "selected"
+      ],
       "required_variant_floor": "at least a default + one state-signalling treatment (owned vs watchlist here)",
-      "sub_decisions": [
-        { "id": "corner-radius", "part": "Card", "kind": "stylistic", "axis": "radius", "channel": "weight", "scope_hint": "foundational", "hint": "0 sharp (data/tech voice) .. 8 friendly .. 20 soft (A4 rule 116); pick a tight OR a loose, not three" },
-        { "id": "elevation", "part": "Card", "kind": "stylistic", "axis": "shadow", "channel": "weight", "scope_hint": "foundational", "hint": "flat hairline vs dual-layer tinted shadow (A4 120-121); on dark prefer +lightness over shadow" },
-        { "id": "media-aspect", "part": "CardMedia", "kind": "structural", "axis": "aspect-ratio", "channel": "density", "scope_hint": "local", "hint": "2:3 poster vs 16:9 still; object-fit:cover, never fill (D2 157)" },
-        { "id": "title-placement", "part": "CardTitle", "kind": "structural", "axis": "layout", "channel": "density", "scope_hint": "local", "hint": "overlaid-on-media vs below-media vs hover-revealed footer" },
-        { "id": "meta-density", "part": "CardMeta", "kind": "structural", "axis": "content-lines", "channel": "density", "scope_hint": "local", "hint": "0/1/2 meta lines; tabular-nums for any rating/year (C3 160)" },
-        { "id": "actions-reveal", "part": "CardActions", "kind": "motion", "axis": "reveal", "channel": "motion", "scope_hint": "local", "hint": "always-visible vs hover-reveal; a hover-revealed CONTROL needs :focus-within (adv-hover-control-focus-within, B2 3.5)" },
-        { "id": "accent-usage", "part": "Card", "kind": "stylistic", "axis": "colour", "channel": "colour", "scope_hint": "foundational", "hint": "content-derived accent on <= a few surfaces (border/badge/CTA), neutral elsewhere; 60/30/10 (A1 62)" },
-        { "id": "badge-style", "part": "CardBadge", "kind": "stylistic", "axis": "shape", "channel": "colour", "scope_hint": "local", "hint": "pill vs corner-ribbon vs none; status via a second channel, not colour alone (B2 3.2)" },
-        { "id": "hover-motion", "part": "Card", "kind": "motion", "axis": "transition", "channel": "motion", "scope_hint": "foundational", "hint": "lift (translateY) vs scale vs none; transform+opacity only, 250-300ms standard (B1 70,74)" },
-        { "id": "selected-signal", "part": "Card", "kind": "stylistic", "axis": "state-treatment", "channel": "colour", "scope_hint": "foundational", "hint": "how 'selected' reads — ring vs fill vs check; a non-colour channel required" }
+      "questions": [
+        {
+          "q": "corner-radius",
+          "part": "Card"
+        },
+        {
+          "q": "elevation",
+          "part": "Card"
+        },
+        {
+          "q": "media-aspect",
+          "part": "CardMedia"
+        },
+        {
+          "q": "title-placement",
+          "part": "CardTitle"
+        },
+        {
+          "q": "meta-density",
+          "part": "CardMeta"
+        },
+        {
+          "q": "actions-reveal",
+          "part": "CardActions"
+        },
+        {
+          "q": "accent-usage",
+          "part": "Card"
+        },
+        {
+          "q": "badge-style",
+          "part": "CardBadge"
+        },
+        {
+          "q": "hover-motion",
+          "part": "Card"
+        },
+        {
+          "q": "selected-signal",
+          "part": "Card"
+        }
       ]
     },
-
     "button": {
       "tier": "primitive",
-      "parts": ["Button", "ButtonLabel", "ButtonIcon"],
-      "required_states": ["rest", "hover", "focus-visible", "active", "disabled", "loading"],
+      "parts": [
+        "Button",
+        "ButtonLabel",
+        "ButtonIcon"
+      ],
+      "required_states": [
+        "rest",
+        "hover",
+        "focus-visible",
+        "active",
+        "disabled",
+        "loading"
+      ],
       "required_variant_floor": "primary + secondary at minimum (C1 §3.10); tone (danger/success) is a SEPARATE axis, never folded into emphasis (C1 §3.3)",
-      "sub_decisions": [
-        { "id": "emphasis-scale", "part": "Button", "kind": "stylistic", "axis": "fill", "channel": "colour", "scope_hint": "foundational", "hint": "how primary/secondary/tertiary/ghost differ — a variant enum, mutually exclusive (C1 §3.2)" },
-        { "id": "corner-radius", "part": "Button", "kind": "stylistic", "axis": "radius", "channel": "weight", "scope_hint": "foundational", "hint": "sharp / 6-8 / pill 9999 (A4 116)" },
-        { "id": "hover-delta", "part": "Button", "kind": "motion", "axis": "state-delta", "channel": "motion", "scope_hint": "foundational", "hint": "direction-aware lightness move (A1 67), not a hardcoded second hex; 100-150ms micro (B1 70)" },
-        { "id": "focus-ring", "part": "Button", "kind": "stylistic", "axis": "focus", "channel": "weight", "scope_hint": "foundational", "hint": "outline-based, >=2px/3:1, never box-shadow-only (adv-focus-ring-not-shadow-only)" },
-        { "id": "icon-affordance", "part": "ButtonIcon", "kind": "structural", "axis": "icon", "channel": "density", "scope_hint": "local", "hint": "leading/trailing/none; icon-only needs aria-label (C1 §3.12); one icon set (D2 145)" },
-        { "id": "loading-treatment", "part": "Button", "kind": "motion", "axis": "loading", "channel": "motion", "scope_hint": "local", "hint": "spinner vs label-swap; aria-busy; keep width stable (no jitter)" }
+      "questions": [
+        {
+          "q": "emphasis-scale",
+          "part": "Button"
+        },
+        {
+          "q": "corner-radius",
+          "part": "Button",
+          "hint": "sharp / 6-8 / pill 9999 (A4 116)"
+        },
+        {
+          "q": "hover-delta",
+          "part": "Button"
+        },
+        {
+          "q": "focus-ring",
+          "part": "Button"
+        },
+        {
+          "q": "icon-affordance",
+          "part": "ButtonIcon"
+        },
+        {
+          "q": "loading-treatment",
+          "part": "Button"
+        }
       ]
     },
-
     "data-table-row": {
       "tier": "composite",
-      "parts": ["Row", "RowCell", "RowSelect", "RowActions"],
-      "required_states": ["rest", "hover", "focus-visible", "selected", "disabled"],
+      "parts": [
+        "Row",
+        "RowCell",
+        "RowSelect",
+        "RowActions"
+      ],
+      "required_states": [
+        "rest",
+        "hover",
+        "focus-visible",
+        "selected",
+        "disabled"
+      ],
       "required_variant_floor": "a resting row + a selected row treatment",
-      "sub_decisions": [
-        { "id": "row-height", "part": "Row", "kind": "structural", "axis": "density", "channel": "density", "scope_hint": "local", "hint": "compact 32 / default 40-48 / relaxed 56 (C3 159)" },
-        { "id": "separation", "part": "Row", "kind": "stylistic", "axis": "divider", "channel": "weight", "scope_hint": "local", "hint": "hairline 1px ~8-12% opacity (safer default) vs zebra (unproven, C3 165)" },
-        { "id": "numeric-alignment", "part": "RowCell", "kind": "structural", "axis": "alignment", "channel": "density", "scope_hint": "local", "hint": "numeric right + tabular-nums, text left (C3 160)" },
-        { "id": "hover-highlight", "part": "Row", "kind": "stylistic", "axis": "state-delta", "channel": "colour", "scope_hint": "foundational", "hint": "translucent state layer so it inverts in dark (B2 3.14)" },
-        { "id": "actions-reveal", "part": "RowActions", "kind": "motion", "axis": "reveal", "channel": "motion", "scope_hint": "local", "hint": "1-2 inline vs overflow menu; hover-revealed controls need :focus-within + >=24px hit area (C3 164)" },
-        { "id": "select-affordance", "part": "RowSelect", "kind": "structural", "axis": "selection", "channel": "density", "scope_hint": "local", "hint": "checkbox vs whole-row click; aria-selected; a non-colour selected signal" }
+      "questions": [
+        {
+          "q": "row-height",
+          "part": "Row"
+        },
+        {
+          "q": "separation",
+          "part": "Row"
+        },
+        {
+          "q": "numeric-alignment",
+          "part": "RowCell"
+        },
+        {
+          "q": "hover-highlight",
+          "part": "Row"
+        },
+        {
+          "q": "actions-reveal",
+          "part": "RowActions",
+          "hint": "1-2 inline vs overflow menu; hover-revealed controls need :focus-within + >=24px hit area (C3 164)"
+        },
+        {
+          "q": "select-affordance",
+          "part": "RowSelect"
+        }
       ]
     }
   }

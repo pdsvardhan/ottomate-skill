@@ -9,14 +9,11 @@
 // PURE. No network here (unit-tested with no DB). The thin POST helper below is used only by the live
 // demo run, one door via the API, backup-first.
 
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { resolveAnatomy } from './anatomy.mjs';
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ANATOMY = path.join(HERE, '..', '..', 'data', 'component-anatomy.json');
-
-export function loadAnatomy(p = ANATOMY) { return JSON.parse(readFileSync(p, 'utf8')); }
+// The anatomy is now TWO files (U1, 2026-07-27) — the universal question registry and the
+// per-component records. anatomy.mjs resolves them into the shape this module has always used.
+export { loadAnatomy } from './anatomy.mjs';
 
 // rung index for a tier — the render/decision rung this target sits at.
 const TIER_RUNG = { primitive: 2, composite: 3, surface: 4 };
@@ -35,7 +32,7 @@ const TIER_RUNG = { primitive: 2, composite: 3, surface: 4 };
  * @param {object} [anatomy]
  * @returns {Array<object>} one design_decisions POST payload per picked sub-decision
  */
-export function picksToLedger(input, anatomy = loadAnatomy()) {
+export function picksToLedger(input, anatomy = resolveAnatomy()) {
   const { projectSlug, targetId, archetype, round, variantsShown, picks, constraints = null, profile = 'P1', sessionId = null } = input;
   const arche = anatomy.archetypes?.[archetype];
   if (!arche) throw new Error(`unknown archetype "${archetype}" (known: ${Object.keys(anatomy.archetypes).join(', ')})`);

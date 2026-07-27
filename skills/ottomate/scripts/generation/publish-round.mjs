@@ -29,13 +29,11 @@
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveAnatomy } from './anatomy.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const ANATOMY = path.join(HERE, '..', '..', 'data', 'component-anatomy.json');
-
-export function loadAnatomy(p = ANATOMY) {
-  return JSON.parse(readFileSync(p, 'utf8'));
-}
+// Two files since U1 (2026-07-27); anatomy.mjs resolves them to the pre-split shape.
+export { loadAnatomy } from './anatomy.mjs';
 
 // A round's HTML lives under a stable, guessable path so the URL survives a rebuild.
 // Dots are legal inside a data-oid (screenroom.media-card) but a LEADING dot is not:
@@ -69,7 +67,7 @@ export function roundPaths(manifest) {
  * @param {object} [anatomy]
  * @returns {Array<object>} one POST payload per sub-decision offered in this round
  */
-export function buildRoundPayloads(manifest, anatomy = loadAnatomy()) {
+export function buildRoundPayloads(manifest, anatomy = resolveAnatomy()) {
   const {
     target_id, archetype, round, variants_shown,
     target_kind, rung, profile = 'P1', constraints = null, session_id = null,
