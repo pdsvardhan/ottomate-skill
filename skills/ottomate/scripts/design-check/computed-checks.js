@@ -214,9 +214,18 @@
     // functions in computed-rules.mjs so they can be unit-tested in plain Node; this pass only has to
     // gather what they read. Emitted per panel and evaluated by the host runner.
     findings.records = [];
+    // `dark` is which colour scheme this collection ran under. adv-dark-mode-type-optical compares
+    // two record sets, so the HOST collects twice (emulateMedia) and merges — one pass cannot answer it.
+    const dark = !!(opts.dark != null ? opts.dark : (g.matchMedia && g.matchMedia('(prefers-color-scheme: dark)').matches));
+    // querySelectorAll('*') also returns <style>, <script>, <template>… — elements that render
+    // nothing but still report a computed colour, font-weight and letter-spacing. They were showing
+    // up in real output as `style.` rows drifting from the token set and failing the dark-mode type
+    // check. Not design, not measurable, out.
+    const NON_RENDERED = new Set(['style', 'script', 'template', 'link', 'meta', 'title', 'head', 'noscript']);
     for (const { label, sr } of scopes) {
       const rows = [];
       for (const node of sr.querySelectorAll('*')) {
+        if (NON_RENDERED.has(node.tagName.toLowerCase())) continue;
         const cs = getComputedStyle(node);
         const rect = node.getBoundingClientRect();
         const parent = node.parentElement;
@@ -228,6 +237,9 @@
           text: own.slice(0, 200),
           w: rect.width, h: rect.height,
           parentRadius: Number.isFinite(pr) ? pr : null,
+          dark,
+          // P1: a second channel beside colour can be an icon, so floor-not-colour-alone has to see one.
+          hasIcon: !!node.querySelector('svg, img, use, [class*="icon"]'),
           styles: {
             fontSize: parseFloat(cs.fontSize) || 0,
             lineHeight: parseFloat(cs.lineHeight) || 0,
@@ -241,11 +253,61 @@
             textAlign: cs.textAlign,
             paddingTop: parseFloat(cs.paddingTop) || 0,
             paddingBottom: parseFloat(cs.paddingBottom) || 0,
+            // P1 additions
+            marginTop: parseFloat(cs.marginTop) || 0,
+            marginBottom: parseFloat(cs.marginBottom) || 0,
+            // 'normal' parses to NaN; adv-dark-mode-type-optical needs a number it can subtract.
+            letterSpacing: parseFloat(cs.letterSpacing) || 0,
           },
         });
       }
       findings.records.push({ label, rows });
     }
+
+    // P1: the RESOLVED token set, for adv-token-adherence. Read off the declared custom properties
+    // rather than the source text — a grep cannot see cascade resolution or color-mix()/oklch() output,
+    // which is the whole reason that rule is method:"computed".
+    // A custom property is SUBSTITUTED, not computed — getPropertyValue('--accent') hands back the
+    // literal '#3395A9', never 'rgb(51, 149, 169)'. So each candidate is painted onto a throwaway
+    // probe and read back through `color`, which the engine normalises to rgb() for us. Anything that
+    // is not a colour fails to apply and reads back as the sentinel, which is how it gets filtered.
+    findings.tokens = [];
+    try {
+      const SENTINEL = 'rgb(1, 2, 3)';
+      for (const { label, sr } of scopes) {
+        // A ShadowRoot is nodeType 11, so getComputedStyle() cannot be called on it. `:host` custom
+        // properties compute on the HOST ELEMENT — reading them off document.body instead returned an
+        // empty token set on the first real-Chromium run, and adv-token-adherence would then have
+        // reported notApplicable forever without anyone noticing.
+        const isShadow = !!sr.host;
+        const anchor = isShadow ? sr.host : (sr.body || document.body);
+        const mount = isShadow ? sr : (sr.body || document.body);
+        if (!anchor || !mount) { findings.tokens.push({ label, values: [] }); continue; }
+        const names = new Set();
+        for (const sheet of (sr.styleSheets || [])) {
+          let rules; try { rules = sheet.cssRules; } catch (e) { continue; }
+          for (const rule of rules || []) {
+            if (!rule.style) continue;
+            for (const prop of rule.style) if (String(prop).startsWith('--')) names.add(String(prop));
+          }
+        }
+        if (!names.size) { findings.tokens.push({ label, values: [] }); continue; }
+        const probe = document.createElement('span');
+        probe.style.display = 'none';
+        mount.appendChild(probe);
+        const values = [];
+        for (const n of names) {
+          const raw = (getComputedStyle(anchor).getPropertyValue(n) || '').trim();
+          if (!raw) continue;
+          probe.style.color = SENTINEL;
+          probe.style.color = raw;
+          const resolved = getComputedStyle(probe).color;
+          if (resolved && resolved !== SENTINEL) values.push(resolved);
+        }
+        probe.remove();
+        findings.tokens.push({ label, values: [...new Set(values)] });
+      }
+    } catch (e) { findings.tokens = [{ label: 'error', values: [], error: String(e).slice(0, 120) }]; }
     return findings;
   }
 

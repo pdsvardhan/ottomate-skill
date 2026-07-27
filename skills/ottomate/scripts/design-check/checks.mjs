@@ -787,7 +787,170 @@ function feasDegradationBottomRung(src) {
     : ok('every advanced technique has a bottom rung');
 }
 
+// ── P1 · the source tail ────────────────────────────────────────────────────────────────────────
+// Four of these five are CHART rules. A variant with no chart must come back `notApplicable`, never
+// a silent pass — a pass here would let four rules claim coverage they never exercised, which is the
+// easiest way to fake a number in this whole file.
+const na = (detail) => ({ pass: true, detail, notApplicable: true });
+
+// Does this variant actually draw a chart? Deliberately conservative. A decorative <svg> icon is not
+// a chart, and a three-rect hamburger menu is not a bar series — so raw geometry alone is not enough:
+// an unnamed SVG must also carry axis furniture (<line>/<text>) before it counts.
+export function hasChart(src) {
+  const s = stripComments(src);
+  if (/(?:class|id|data-chart)\s*=\s*["'][^"']*\b(?:chart|graph|plot|sparkline|histogram|piechart|donut|treemap)\b/i.test(s)) return true;
+  for (const svg of [...s.matchAll(/<svg\b[\s\S]*?<\/svg>/gi)].map((m) => m[0])) {
+    const rects = (svg.match(/<rect\b/gi) || []).length;
+    const series = (svg.match(/<(?:polyline|path)\b/gi) || []).length;
+    const axis = /<line\b|<text\b|class\s*=\s*["'][^"']*axis/i.test(svg);
+    if ((rects >= 3 || series >= 2) && axis) return true;
+  }
+  return false;
+}
+
+// adv-bar-zero-baseline — C3 §3.11. A non-zero bar baseline distorts LENGTH-encoded comparison: C3
+// cites a real 13% increase reading as 460%. Two independent tells, because a generator can produce
+// either: an explicitly declared non-zero minimum, or bars whose bottom edges simply do not line up.
+function advBarZeroBaseline(src) {
+  if (!hasChart(src)) return na('no chart in this variant');
+  const s = stripComments(src);
+  const declared = [];
+  for (const m of s.matchAll(/\b(data-y-min|data-min|data-baseline|yMin|yAxisMin|baseline)\s*[:=]\s*["']?(-?\d+(?:\.\d+)?)/gi)) {
+    if (parseFloat(m[2]) !== 0) declared.push(`${m[1]}=${m[2]}`);
+  }
+  for (const m of s.matchAll(/domain\s*:\s*\[\s*(-?\d+(?:\.\d+)?)/gi)) {
+    if (parseFloat(m[1]) !== 0) declared.push(`domain:[${m[1]}`);
+  }
+  if (declared.length) {
+    return no(`bar chart declares a non-zero baseline (${[...new Set(declared)].join(', ')}) — length encodes magnitude, so a truncated axis exaggerates every difference`);
+  }
+  const bottoms = [];
+  for (const attrs of [...s.matchAll(/<rect\b([^>]*)>/gi)].map((m) => m[1])) {
+    const y = /\by\s*=\s*["'](-?\d+(?:\.\d+)?)/.exec(attrs);
+    const h = /\bheight\s*=\s*["'](-?\d+(?:\.\d+)?)/.exec(attrs);
+    if (y && h) bottoms.push(parseFloat(y[1]) + parseFloat(h[1]));
+  }
+  if (bottoms.length >= 3) {
+    const spread = Math.max(...bottoms) - Math.min(...bottoms);
+    if (spread > 0.5) return no(`bars do not share a baseline — bottom edges span ${spread.toFixed(1)}px, so the lengths are not comparable`);
+  }
+  return ok(bottoms.length >= 3 ? `${bottoms.length} bars share one baseline` : 'no non-zero baseline declared');
+}
+
+// adv-series-cap-and-labels — C3 §3.10/§3.9. A legend costs a memorise-then-cross-reference step;
+// direct labels at the endpoint remove it. The 8-hue cap is where categorical distinguishability dies.
+function advSeriesCapAndLabels(src, rule) {
+  if (!hasChart(src)) return na('no chart in this variant');
+  const s = stripComments(src);
+  const p = rule?.params ?? {};
+  const warn = p.series_warn ?? 5, fail = p.series_fail ?? 7, hueCap = p.categorical_hue_cap ?? 8;
+
+  let count = (s.match(/class\s*=\s*["'][^"']*\bseries\b/gi) || []).length;
+  let how = 'series';
+  if (!count) {
+    const svg = (s.match(/<svg\b[\s\S]*?<\/svg>/i) || [''])[0];
+    const colours = new Set([...svg.matchAll(/\b(?:stroke|fill)\s*=\s*["'](#[0-9a-f]{3,8}|rgba?\([^)]*\)|var\(\s*--[^)]*\))/gi)].map((m) => m[1].toLowerCase().replace(/\s+/g, '')));
+    count = colours.size; how = 'distinct series colours';
+  }
+  if (!count) return na('chart present but no series could be counted');
+
+  const problems = [];
+  if (count > fail) problems.push(`${count} ${how} — past ${fail} the mapping stops being holdable; switch to small multiples`);
+  else if (count > warn) problems.push(`${count} ${how} — past ${warn} readability drops`);
+  if (count > hueCap) problems.push(`${count} categorical hues exceeds the ~${hueCap} distinguishable ceiling`);
+  const legend = /class\s*=\s*["'][^"']*\blegend\b/i.test(s);
+  const directLabels = /class\s*=\s*["'][^"']*\b(?:label|annotation|endpoint)\b/i.test(s);
+  if (legend && !directLabels && count > 2) problems.push('a legend with no direct labels forces a memorise-then-cross-reference step');
+  return problems.length ? no(problems.join('; ')) : ok(`${count} ${how}, labelled directly or few enough to read`);
+}
+
+// adv-encoding-channel — C3 §3.9, Cleveland & McGill extended by Mackinlay. Encoding a PRECISE
+// comparison in area, angle or hue is the finding; using area for rough magnitude is legitimate.
+function advEncodingChannel(src) {
+  if (!hasChart(src)) return na('no chart in this variant');
+  const s = stripComments(src);
+  const named = /\b(pie|donut|doughnut|treemap|bubble|word-?cloud)\b/i.test(s);
+  const dashRing = /<circle\b/i.test(s) && /stroke-dasharray\s*=\s*["'][^"']*\d/i.test(s);
+  if (!named && !dashRing) return ok('quantitative comparison encoded by position or length');
+  const precise = /\d+\.\d+|\b\d{1,3}\s*%/.test(visibleText(s));
+  return precise
+    ? no('precise magnitudes encoded by angle or area (pie/donut/bubble/treemap) — position and length are read more accurately; use a bar or dot plot for the comparison that matters')
+    : ok('area/angle encoding present, but no precise magnitude depends on it');
+}
+
+// adv-p3-meaning-independent — E2 §3.12. P3 only SHOWS on a P3 display and is gamut-mapped
+// elsewhere, so the extra saturation can never be the carrier of meaning. The cascade must degrade it:
+// an sRGB declaration of the SAME property must come first in the same block.
+function advP3MeaningIndependent(src) {
+  const s = stripComments(src);
+  if (!/color\(\s*display-p3/i.test(s)) return ok('no display-p3 colour used');
+  const problems = [];
+  for (const block of [...s.matchAll(/\{([^{}]*)\}/g)].map((m) => m[1])) {
+    if (!/color\(\s*display-p3/i.test(block)) continue;
+    const srgbSeen = new Set();
+    for (const decl of block.split(';')) {
+      const m = /^\s*([\w-]+)\s*:\s*([\s\S]*)$/.exec(decl);
+      if (!m) continue;
+      const prop = m[1].toLowerCase(), val = m[2];
+      if (/color\(\s*display-p3/i.test(val)) {
+        if (!srgbSeen.has(prop)) problems.push(prop);
+      } else if (/#[0-9a-f]{3,8}|rgba?\(|hsla?\(|\bvar\(|\b(?:white|black|currentcolor)\b/i.test(val)) {
+        srgbSeen.add(prop);
+      }
+    }
+  }
+  return problems.length
+    ? no(`display-p3 with no sRGB declaration before it for: ${[...new Set(problems)].join(', ')} — on a non-P3 display the cascade has nothing to fall back to`)
+    : ok('every display-p3 value follows an sRGB declaration of the same property');
+}
+
+// adv-plain-language — D1 §3.13-3.15.
+//
+// Measured over PROSE BLOCKS, not over visibleText(). The first version of this measured the whole
+// panel's concatenated text and promptly fired on all three published Screenroom r1 panels, reporting
+// "rest · owned AR 2160p DV Owned 2016 14.2 GB i Arrival hover" as a 30-word run-on sentence. It is
+// not a sentence — it is every independent label in a poster card joined by spaces. A card of short
+// values is not bad copy, and a rule that says it is would be noise on every component round we run.
+//
+// So a block counts as prose only if it carries terminal punctuation FOLLOWED BY space-or-end (which
+// "14.2 GB" does not) and runs to at least 8 words.
+function advPlainLanguage(src, rule) {
+  const p = rule?.params ?? {};
+  const flagWords = p.sentence_words_flag ?? 25;
+  const maxSent = p.paragraph_sentences_max ?? 5;
+  const clean = stripComments(src)
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ');
+
+  const TERMINAL = /[.!?](?:\s|$)/;
+  const words = (t) => t.split(/\s+/).filter(Boolean);
+  const sentences = (t) => t.split(/(?<=[.!?])\s+/).map((x) => x.trim()).filter((x) => words(x).length > 1);
+
+  const blocks = [];
+  for (const m of clean.matchAll(/<(p|li|figcaption|blockquote|dd|h[1-6])\b[^>]*>([\s\S]*?)<\/\1>/gi)) {
+    const t = m[2].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    if (TERMINAL.test(t) && words(t).length >= 8) blocks.push(t);
+  }
+  if (!blocks.length) return na('no prose blocks — this variant is labels and values, not running copy');
+
+  const problems = [];
+  const all = blocks.flatMap(sentences);
+  const long = all.filter((x) => words(x).length > flagWords);
+  if (long.length) problems.push(`${long.length} sentence(s) over ${flagWords} words: "${long[0].slice(0, 60)}…"`);
+  const fat = blocks.find((b) => sentences(b).length > maxSent);
+  if (fat) problems.push(`a paragraph of ${sentences(fat).length} sentences (max ${maxSent})`);
+  return problems.length
+    ? no(`${problems.join('; ')} — plain-language defaults keep sentences short enough to survive translation`)
+    : ok(`${all.length} sentence(s) across ${blocks.length} prose block(s), within the plain-language budget`);
+}
+
 export const DETECTORS = {
+  // P1 — the source tail. The four chart rules return notApplicable on a chart-free variant.
+  'adv-p3-meaning-independent': { scope: 'variant', fn: advP3MeaningIndependent },
+  'adv-bar-zero-baseline': { scope: 'variant', fn: advBarZeroBaseline },
+  'adv-series-cap-and-labels': { scope: 'variant', fn: advSeriesCapAndLabels },
+  'adv-encoding-channel': { scope: 'variant', fn: advEncodingChannel },
+  'adv-plain-language': { scope: 'variant', fn: advPlainLanguage },
   'feas-baseline-gate': { scope: 'variant', fn: feasBaselineGate },
   'feas-degradation-bottom-rung': { scope: 'variant', fn: feasDegradationBottomRung },
   'floor-reduced-motion': { scope: 'variant', fn: floorReducedMotion },

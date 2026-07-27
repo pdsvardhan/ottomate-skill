@@ -6,6 +6,9 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import path from 'node:path';
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { runCheck, resolveFloor, loadRules, formatCheck, annotationsByVariant } from './design-check.mjs';
 import { stripComments, visibleText, actionLabels, animationNames } from './checks.mjs';
 
@@ -327,9 +330,26 @@ test('every enforced rule names a test AND either has a detector or is gate-enfo
     //     `lock-regression-gate` is the snapshot differ; `seq-parents-locked` is buildRoundInput
     //     excluding locked axes from the contested set. Both were built and left marked `pending`,
     //     which hides real coverage — the mirror image of overclaiming, and just as wrong.
-    const elsewhereEnforced = /isolation-gate\.test|harness-dsd\.test|computed-checks|computed-rules[.]test|ledger-context\.test|method-routing\.test/.test(rule.enforced_by);
+    const elsewhereEnforced = /isolation-gate\.test|harness-dsd\.test|computed-checks|computed-rules[\w-]*\.test|ledger-context\.test|method-routing\.test/.test(rule.enforced_by);
     assert.ok(DETECTOR_IDS.has(rule.id) || elsewhereEnforced, `rule "${rule.id}" claims enforced but has no detector and is not gate/computed-enforced`);
   }
+});
+
+// The check above matches a SUBSTRING, so a rule can pass it by mentioning a suite in passing —
+// which is exactly what happened when the P1 computed rules were first flipped: their prose named
+// `computed-checks.js` and matched by accident, while the real suite (`computed-rules-p1.test.mjs`)
+// was not in the alternation at all. A guard that can be satisfied by coincidence is not a guard.
+test('every test file named in an enforced_by actually exists on disk', () => {
+  const here = fileURLToPath(new URL('.', import.meta.url));
+  const roots = [here, path.join(here, '..', 'preview-build'), path.join(here, '..', 'generation')];
+  const missing = [];
+  for (const rule of RULES.rules) {
+    if (rule.status !== 'enforced' || !rule.enforced_by) continue;
+    for (const name of rule.enforced_by.match(/[\w.-]+\.test\.mjs/g) ?? []) {
+      if (!roots.some((r) => existsSync(path.join(r, name)))) missing.push(`${rule.id} -> ${name}`);
+    }
+  }
+  assert.deepEqual(missing, [], `enforced_by names a test file that does not exist: ${missing.join(', ')}`);
 });
 const D = await import('./checks.mjs');
 const DETECTOR_IDS = new Set(Object.keys(D.DETECTORS));

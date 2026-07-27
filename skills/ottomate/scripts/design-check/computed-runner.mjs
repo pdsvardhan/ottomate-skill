@@ -57,6 +57,26 @@ export function blockingFindings(findings, opts = {}) {
   return allFindings(findings, opts).filter((f) => !f.advise);
 }
 
+/**
+ * Assemble each panel's rule input from what the browser pass collected.
+ *
+ * Two of the P1 rules cannot be answered from one record set, and wiring this wrong is invisible —
+ * they simply return notApplicable forever and nobody notices the rule is inert:
+ *   - adv-dark-mode-type-optical compares the SAME role across colour schemes, so the light-scheme
+ *     rows are concatenated in (each row carries its own `dark` flag).
+ *   - adv-token-adherence needs the panel's RESOLVED token set, which the collector reads off the
+ *     shadow host's custom properties.
+ */
+function panelInputs(f) {
+  const lightByLabel = new Map((f.recordsLight ?? []).map((p) => [p.label, p.rows ?? []]));
+  const tokensByLabel = new Map((f.tokens ?? []).map((t) => [t.label, t.values ?? []]));
+  return (f.records ?? []).map((panel) => ({
+    label: panel.label,
+    rows: [...(panel.rows ?? []), ...(lightByLabel.get(panel.label) ?? [])],
+    opts: { 'adv-token-adherence': { tokens: tokensByLabel.get(panel.label) ?? [] } },
+  }));
+}
+
 /** Everything the computed pass found, blocking and advisory alike. */
 export function allFindings(findings, { profile = 'P1' } = {}) {
   const f = findings ?? {};
@@ -82,12 +102,14 @@ export function allFindings(findings, { profile = 'P1' } = {}) {
       out.push({ rule: 'colour_budget', detail: `${c.label}: ${c.distinctAccents} distinct accent colours across ${c.surfaces} surfaces, budget ${c.budget} — ${c.colours.slice(0, 4).join(', ')}` });
     }
   }
-  // C6 batch 3: the pure computed rules, evaluated over the records the browser collected.
-  // All ADVISE tier, so they annotate rather than block — but they are counted and shown.
-  for (const panel of f.records ?? []) {
-    const verdicts = runComputedRules(panel.rows ?? []);
+  // C6 batch 3 + P1: the pure computed rules, evaluated over the records the browser collected.
+  for (const { label, rows, opts } of panelInputs(f)) {
+    const verdicts = runComputedRules(rows, opts);
     for (const [id, v] of Object.entries(verdicts)) {
-      if (v.pass === false) out.push({ rule: id, advise: true, detail: `${panel.label}: ${v.detail}` });
+      // Two of the P1 rules are BLOCK-floor, not advise. They follow the same audience-profile
+      // treatment floor-contrast already gets above: block at P2/P3, advise at P1.
+      const isFloor = id === 'floor-not-colour-alone' || id === 'floor-focus-ring' || id === 'floor-target-size';
+      if (v.pass === false) out.push({ rule: id, advise: !(isFloor && profile !== 'P1'), detail: `${label}: ${v.detail}` });
     }
   }
   for (const c of f.coherence ?? []) {
@@ -104,7 +126,7 @@ export function summariseFindings(findings) {
     contrastFails: (f.contrast ?? []).filter((c) => c.ratio != null && c.need != null && c.ratio < c.need).length,
     divergencePairs: (f.divergence ?? []).length,
     divergenceFails: (f.divergence ?? []).filter((d) => d.differ === false).length,
-    computedRuleFails: (f.records ?? []).reduce((a, p) => a + Object.values(runComputedRules(p.rows ?? [])).filter((v) => v.pass === false).length, 0),
+    computedRuleFails: panelInputs(f).reduce((a, p) => a + Object.values(runComputedRules(p.rows, p.opts)).filter((v) => v.pass === false).length, 0),
     coherence: (f.coherence ?? []).length,
     colourOverBudget: (f.colourBudget ?? []).filter((c) => c.withinBudget === false).length,
     monochromePanels: (f.colourBudget ?? []).filter((c) => c.monochrome).length,

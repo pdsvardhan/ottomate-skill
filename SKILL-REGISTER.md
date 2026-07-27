@@ -106,7 +106,7 @@ re-derived by hand instead of read.
 | **scope × entry routing** | Scope selects the rungs; entry decides context; `ui-mode:none` is the default | ✅ | `routeRungs`/`routeEntry` in `method-routing.mjs`, `method-routing.test.mjs` 9/9; `references/stage-2-routing.md` |
 | **Graduation to `master_components`** | Locked bespoke variant → catalog per H1 | 🟡 | `references/graduation-protocol.md` + `graduate.mjs` **draft hook (never writes)** 6/6. The full ingest subsystem needs a migration (spdx/author/attribution/retrieved_at/trademark/grade columns absent) — the next unit |
 | **Audience profiles P1/P2/P3** | Profile selects which floor rules bind | ✅ | `resolveFloor()` in `design-check.mjs`; test proves P1 and P3 return **different** sets, and that a per-project override beats the preset |
-| **Constraint checker (source)** | Mechanically enforce source-readable rules | 🟡 | **29 of 90 rules + 3 of 5 contract keys enforced**, each naming a test. Source checker (pure Node) is wired into `build-variant-set.mjs` after the gate, before emit; blocks exit 2. **61 still `pending`** — reported as `skipped`, never passing |
+| **Constraint checker (source)** | Mechanically enforce source-readable rules | ✅ | **76 of 79 round-scope rules + 3 of 5 contract keys enforced**, each naming a test. Source checker (pure Node) is wired into `build-variant-set.mjs` after the gate, before emit; blocks exit 2. **3 still `pending`** — all three need pixel comparison (P2) — reported as `skipped`, never passing |
 | **Computed checker (browser)** | The rules that need resolved styles — contrast, coherence, appearance divergence | ✅ | `computed-checks.js` (one script, runs in Node for the math + in real Chromium for the DOM). **3 rules enforced: `floor-contrast`, `adv-cross-component-coherence`, `computed-axis-divergence`.** Math: `computed-checks.test.mjs` 6/6. DOM: `computed-checks.browser.test.mjs` 4/4 on the server's Chromium (real catch + real pass). Demonstrated on round-2 output. Host: `run-computed.mjs` (server) or claude-in-chrome. **A post-render pass, not auto-inlined in the harness yet** |
 | **Feasibility gate** | Refuse a variant that cannot RUN | 🟡 | **4 of 6 enforced** (`no-eval` · `no-wasm` · `no-network` incl. the placeholder-service list · `no-inline-handlers`). `feas-baseline-gate` needs real `@supports` parsing; `feas-degradation-bottom-rung` is `computed`. Proven profile-invariant by test |
 | **Cross-component coherence** | Same semantic role → same computed value across components; shared state vocab → same token delta | 📋 | `adv-cross-component-coherence`, C2 §3.10. **This is the mix-coherence check G1 requires and the per-item pick model (doctrine 38) depends on.** Needs a browser; no runner |
@@ -165,13 +165,14 @@ re-derived by hand instead of read.
 | **`forbidden`** — glassmorphism · parallax · bounce · glow · gradient-text | BLOCK-owner | contract | ✅ 5 detectors, each tested |
 | **`resolveFloor(profile)`** — which floor rules bind | mechanism | owner ruling | ✅ P1≠P3 proven; overrides honoured |
 | 10 advisory rules — font-smoothing · action labels · error copy · implementation vocabulary · CSS architecture · inline styles · webkit prefixes · default typeface · hover/focus-within · weight budget | ADVISE | A2/C3/D1/E1/E2 | ✅ annotated, never blocking |
+| **P1 source tail (5)** — `adv-p3-meaning-independent` · `adv-bar-zero-baseline` · `adv-series-cap-and-labels` · `adv-encoding-channel` · `adv-plain-language` | ADVISE | C3/D1/E2 | `checks.mjs` + `checks-p1.test.mjs` **13/13** ✅ |
+| **P1 computed tail (9)** — `floor-not-colour-alone` · `floor-focus-ring` · `adv-state-delta-relative` · `adv-derivation-contrast-guarantee` · `adv-density-scale` · `adv-whitespace-first` · `adv-body-type` · `adv-token-adherence` · `adv-dark-mode-type-optical` | 2 BLOCK-floor, 7 ADVISE | A1/A2/A3/C2/G2/A5 | `computed-rules.mjs` + `computed-rules-p1.test.mjs` **21/21** ✅, collector verified in real Chromium |
 
-### Specified, enforcing nothing (`status:"pending"`) — **61 of 90** *(Phase 3b enforced 3 computed rules; +1 new rule)*
-`source_policy` (needs a source-tagging convention that does not exist yet) · `colour_budget`
-(needs rendered surfaces → `computed`) · `floor-contrast` · `floor-reduced-motion` ·
-`floor-target-size` · `floor-not-colour-alone` · `hover-only-content` · all 18 templated-tax rows ·
-`seq-parents-locked` · `lock-regression-gate` · `feas-baseline-gate` (needs real `@supports` parsing) ·
-`feas-degradation-bottom-rung` · all 16 `computed` rules · the remaining `adv-*` rules
+### Specified, enforcing nothing (`status:"pending"`) — **3 of 79 round-scope** *(P1 closed the panel tail)*
+`adv-motion-behind-text` · `adv-accent-budget` · `adv-glass-legibility` — **all three need pixel
+comparison**, which is P2. Nothing else in round scope is pending. The other 11 `pending` rules in the
+file are the 7 `scope:'app'` + 4 `scope:'catalog'` rules, excluded from this denominator by owner
+decision D15 with a `scope_note` on each.
 
 **Two rules can never be fully enforced by any method** and must never be listed as enforced:
 `adv-glass-legibility` (the background behind glass is the blurred composite, invisible to
@@ -237,6 +238,57 @@ ceiling is 90.
   `declared-unenforceable`.
 - **A real find, twice over:** the numeric-cell matcher missed every real cell (`"12.4 GB"` has a unit
   suffix) — caught by its own must-fail test on the first run.
+
+### P1 — 2026-07-27 · the panel-rule tail is CLOSED
+**76 of 79 round-scope rules enforced** (62 at the start). **3 pending**, all needing pixel
+comparison (P2). Plan: `docs/plans/2026-07-27-P1-panel-rule-tail.md`.
+
+- **14 rules, each with a must-fail AND a must-pass case.** 5 source (`checks-p1.test.mjs` 13/13) and
+  9 computed (`computed-rules-p1.test.mjs` 21/21). Suites: design-check **116/117** (the 1 is the
+  Playwright test, which passes on VAULT7A — verified this session), generation 150/150, gate 36/36.
+- **The four chart rules return `notApplicable`, never a silent pass**, each with an explicit test.
+  `hasChart()` refuses to count a three-rect hamburger icon as a bar series — an unnamed SVG must
+  also carry axis furniture.
+- **CIEDE2000 was implemented rather than borrowed.** `adv-token-adherence` specifies ΔE2000 at a
+  tolerance of 1–2; the existing `deltaE` is CIE76 and says so in its own comment. At that tolerance
+  the two disagree, and CIE76 over-reports saturated blues — where brand accents live. Calling CIE76
+  "ΔE2000" would have been a quiet false claim. The coarse CIE76 gate elsewhere is untouched.
+- **Both halves landed.** A computed rule enforced in Node and inert in production is enforcement in
+  name only, so the collector was extended too — `hasIcon`, margins, `letterSpacing`, `dark`, the
+  resolved token set, and forced pseudo-states — and **run in real Chromium on VAULT7A**.
+
+**Four defects that only running it could have found** (every unit test was green throughout):
+1. **`adv-plain-language` fired on all three published Screenroom r1 panels**, calling
+   `rest · owned AR 2160p DV Owned 2016 14.2 GB i Arrival` a 30-word run-on sentence. It was
+   `visibleText()` concatenating every independent card label. **The detector was wrong, not the
+   panels** — it now measures prose blocks (terminal punctuation + ≥8 words). Regression test reads
+   the real panel byte-for-byte.
+2. **The token set came back empty.** A `ShadowRoot` is nodeType 11, so `getComputedStyle()` cannot be
+   called on it; `:host` custom properties compute on the **host element**. Reading them off
+   `document.body` returned nothing, and `adv-token-adherence` would have reported `notApplicable`
+   forever without anyone noticing.
+3. **No pseudo-states were collected, while meta still said "forced via CDP".** CDP's
+   `DOM.querySelectorAll` does **not** pierce shadow roots, and every harness panel is a declarative
+   shadow root. Now walks the pierced tree; meta reports the **count**, and says plainly when zero
+   controls resolved.
+4. **`<style>` elements were being measured as design.** They render nothing but report a computed
+   colour and weight, and were showing up as `style.` rows drifting from the token set. Pre-existing;
+   affected the batch-3 rules too.
+
+**Plus one pre-existing false positive the new output made visible:** `rgba(0, 0, 0, 0)` — the
+computed background of *every* element with no background — parses to pure black, so
+`adv-dark-surface-floor` reported "6 surfaces at or near pure black" on a page with one dark card.
+`paintedBg()` now returns null for a fully transparent background.
+
+**The meta-test was strengthened after it passed by coincidence.** The P1 computed rules satisfied it
+only because their prose happened to contain the substring `computed-checks`. A guard satisfiable by
+accident is not a guard: the alternation now recognises `computed-rules-*.test`, and a **new test
+asserts every `*.test.mjs` named in an `enforced_by` actually exists on disk** — demonstrated by
+injecting a fake name and watching it fail with the rule id.
+
+**No threshold was moved.** The one must-pass fixture that failed was the fixture's fault:
+`rgb(29,78,187)` is ΔL 0.095 off its base — a *press* delta offered as a hover. The rule was right;
+the test now pins both bands.
 
 ### Prose only (nothing checks them)
 Context gate · anti-slop tells · core-mechanic-before-page · colour-budget stated up front ·

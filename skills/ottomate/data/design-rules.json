@@ -330,8 +330,8 @@
       "method": "computed",
       "params": {
         "normal": 4.5,
-        "large": 3.0,
-        "non_text": 3.0,
+        "large": 3,
+        "non_text": 3,
         "large_px_bold": 18.66,
         "large_px_regular": 24
       },
@@ -382,8 +382,9 @@
       "check": "second_channel_present",
       "remedy": "regenerate_variant",
       "note": "Also the method's own 'state reads via form, not only colour' rule.",
-      "status": "pending",
-      "method": "computed"
+      "status": "enforced",
+      "method": "computed",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules-p1.test.mjs — must-fail AND must-pass in plain Node. Collector fields populated in computed-checks.js and VERIFIED IN REAL CHROMIUM on VAULT7A 2026-07-27 (forced pseudo-states via CDP, dual colour-scheme collection, resolved token set)"
     },
     {
       "id": "adv-flash-limit",
@@ -406,15 +407,16 @@
       "check": "focus_ring_spec",
       "params": {
         "min_px": 2,
-        "min_contrast": 3.0,
+        "min_contrast": 3,
         "require_outline": true,
         "require_focus_visible": true
       },
       "why_not_box_shadow": "forced-colors: active deletes box-shadow entirely, so a box-shadow-only ring vanishes for Windows High Contrast users.",
       "remedy": "regenerate_variant",
       "profile_dependent": true,
-      "status": "pending",
-      "method": "computed"
+      "status": "enforced",
+      "method": "computed",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules-p1.test.mjs — must-fail AND must-pass in plain Node. Collector fields populated in computed-checks.js and VERIFIED IN REAL CHROMIUM on VAULT7A 2026-07-27 (forced pseudo-states via CDP, dual colour-scheme collection, resolved token set)"
     },
     {
       "id": "adv-motion-duration",
@@ -612,8 +614,9 @@
           0.1
         ]
       },
-      "status": "pending",
-      "method": "computed"
+      "status": "enforced",
+      "method": "computed",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules-p1.test.mjs — must-fail AND must-pass in plain Node. Collector fields populated in computed-checks.js and VERIFIED IN REAL CHROMIUM on VAULT7A 2026-07-27 (forced pseudo-states via CDP, dual colour-scheme collection, resolved token set)"
     },
     {
       "id": "adv-derivation-contrast-guarantee",
@@ -622,8 +625,9 @@
       "statement": "Derive content colour by ROLE (vibrant swatch, not most-common pixel), then normalise L to the theme's accent target and clamp C so contrast is guaranteed AT DERIVATION TIME. Never paint a surface with the raw extracted pick.",
       "check": "derived_colour_normalised",
       "implementation_note": "theme-extract.mjs already picks vibrant-not-dominant and skips near-black/near-grey. The L-normalise + C-clamp step is the outstanding upgrade.",
-      "status": "pending",
-      "method": "computed"
+      "status": "enforced",
+      "method": "computed",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules-p1.test.mjs — must-fail AND must-pass in plain Node. Collector fields populated in computed-checks.js and VERIFIED IN REAL CHROMIUM on VAULT7A 2026-07-27 (forced pseudo-states via CDP, dual colour-scheme collection, resolved token set)"
     },
     {
       "id": "adv-line-length",
@@ -682,8 +686,9 @@
         "step_px": 4,
         "target_review_below": 32
       },
-      "status": "pending",
-      "method": "computed"
+      "status": "enforced",
+      "method": "computed",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules-p1.test.mjs — must-fail AND must-pass in plain Node. Collector fields populated in computed-checks.js and VERIFIED IN REAL CHROMIUM on VAULT7A 2026-07-27 (forced pseudo-states via CDP, dual colour-scheme collection, resolved token set)"
     },
     {
       "id": "adv-zindex-ladder",
@@ -711,11 +716,12 @@
       "params": {
         "above_below_ratio": [
           1.5,
-          2.0
+          2
         ]
       },
-      "status": "pending",
-      "method": "computed"
+      "status": "enforced",
+      "method": "computed",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules-p1.test.mjs — must-fail AND must-pass in plain Node. Collector fields populated in computed-checks.js and VERIFIED IN REAL CHROMIUM on VAULT7A 2026-07-27 (forced pseudo-states via CDP, dual colour-scheme collection, resolved token set)"
     },
     {
       "id": "adv-body-type",
@@ -729,8 +735,9 @@
         "line_height_min": 1.4,
         "line_height_max": 1.6
       },
-      "status": "pending",
-      "method": "computed"
+      "status": "enforced",
+      "method": "computed",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules-p1.test.mjs — must-fail AND must-pass in plain Node. Collector fields populated in computed-checks.js and VERIFIED IN REAL CHROMIUM on VAULT7A 2026-07-27 (forced pseudo-states via CDP, dual colour-scheme collection, resolved token set)"
     },
     {
       "id": "adv-spacing-scale",
@@ -741,7 +748,7 @@
       "method": "computed",
       "params": {
         "max_distinct": 8,
-        "geometry_tolerance_px": 1.0,
+        "geometry_tolerance_px": 1,
         "geometry_tolerance_px_strict": 0.5
       },
       "params_note": "C2 §3.10 supplies the tolerance the G2 statement lacked: a computed value is 'on-ramp' if it is within ±0.5-1px of a ramp entry. Sub-pixel drift from percentage/flex layout is expected and must not be reported as scale debt.",
@@ -775,7 +782,8 @@
         "delta_e_metric": "CIEDE2000"
       },
       "params_note": "C2 §3.10 supplies the tolerance the G2 statement lacked. ΔE2000 <=1 pass, <=2 warn, >2 fail. Compare the COMPUTED colour against the resolved token value, not the source text — a source grep cannot see cascade resolution or color-mix()/oklch() output.",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules-p1.test.mjs — must-fail AND must-pass in plain Node. Collector fields populated in computed-checks.js and VERIFIED IN REAL CHROMIUM on VAULT7A 2026-07-27 (forced pseudo-states via CDP, dual colour-scheme collection, resolved token set)"
     },
     {
       "id": "adv-token-layer-direction",
@@ -825,7 +833,7 @@
         ],
         "delta_e_pass": 1,
         "delta_e_warn": 2,
-        "geometry_tolerance_px": 1.0
+        "geometry_tolerance_px": 1
       },
       "params_note": "THE MIX-COHERENCE CHECK G1 REQUIRES. Makes a per-item mixed pick (doctrine 38) safe: when the owner takes the header from v1 and the card from v2, this proves the result is still one design. BUILT in computed-checks.js: groups [data-role] elements, getComputedStyle, ΔE across components. Requires the generation method to stamp data-role on role-bearing parts (a small addition). Runs in real Chromium.",
       "remedy": "annotate",
@@ -1090,7 +1098,8 @@
       },
       "params_note": "P3 only SHOWS on a P3 display and is gamut-mapped elsewhere, so extra saturation can never be the carrier of meaning. Pairs with floor-not-colour-alone.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "checks.mjs + checks-p1.test.mjs — must-fail AND must-pass; the four chart rules additionally assert notApplicable on chart-free source, so they can never claim a silent pass"
     },
     {
       "id": "block-svg-id-collision",
@@ -1337,7 +1346,8 @@
       },
       "params_note": "The OPTICAL half of the dark-mode adjustment; A1 rule 66 owns the CHROMATIC half (cut accent chroma, avoid pure white). Light-on-dark blooms, so identical weight and tracking in both modes means one of them is wrong. Prefer a GRAD axis change where the face has one: it re-weights without reflow.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules-p1.test.mjs — must-fail AND must-pass in plain Node. Collector fields populated in computed-checks.js and VERIFIED IN REAL CHROMIUM on VAULT7A 2026-07-27 (forced pseudo-states via CDP, dual colour-scheme collection, resolved token set)"
     },
     {
       "id": "adv-font-fallback-metrics",
@@ -1508,7 +1518,8 @@
       },
       "params_note": "A non-zero bar baseline distorts LENGTH-encoded comparison: C3 cites a 13% real increase reading as a 460% increase. Line charts encode by position/slope, so a non-zero baseline is defensible when zero is arbitrary (temperature) or would hide a critical change — but it must carry an axis-break mark or annotated range, never be silent.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "checks.mjs + checks-p1.test.mjs — must-fail AND must-pass; the four chart rules additionally assert notApplicable on chart-free source, so they can never claim a silent pass"
     },
     {
       "id": "adv-series-cap-and-labels",
@@ -1524,7 +1535,8 @@
       },
       "params_note": "Pairs with adv-encoding-channel. A legend costs a memorise-then-cross-reference step; direct labels at the endpoint or peak remove it. The 8-hue cap is the same number A1 rule 69 reached for CVD-safe categorical sets, from a different direction (Munzner: categorical hue distinguishability drops past ~8).",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "checks.mjs + checks-p1.test.mjs — must-fail AND must-pass; the four chart rules additionally assert notApplicable on chart-free source, so they can never claim a silent pass"
     },
     {
       "id": "adv-encoding-channel",
@@ -1549,7 +1561,8 @@
       },
       "params_note": "Cleveland & McGill, extended by Mackinlay. Precise numeric comparison -> position or length (bar/dot/line). Rough magnitude or a third dimension -> area (bubble). Category identity, NOT magnitude -> hue. Encoding a precise comparison in area or hue is the finding.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "checks.mjs + checks-p1.test.mjs — must-fail AND must-pass; the four chart rules additionally assert notApplicable on chart-free source, so they can never claim a silent pass"
     },
     {
       "id": "adv-three-empty-states",
@@ -1776,7 +1789,8 @@
       },
       "params_note": "The i18n clause is structural, not stylistic, and is the one a generator breaks by default: NEVER assemble a sentence from fragments concatenated around a variable — one full sentence per parameterised string, with real ICU plural categories. A button sized to the English verb will not fit German or Finnish. Never truncate an identifier, price, date or nav label — those are exactly what a user distinguishes items by.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "checks.mjs + checks-p1.test.mjs — must-fail AND must-pass; the four chart rules additionally assert notApplicable on chart-free source, so they can never claim a silent pass"
     },
     {
       "id": "adv-weight-budget",
