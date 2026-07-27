@@ -30,6 +30,7 @@ import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveAnatomy, rungForTier } from './anatomy.mjs';
+import { resolveLabels, buildShown } from './variant-slots.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 // Two files since U1 (2026-07-27); anatomy.mjs resolves them to the pre-split shape.
@@ -108,17 +109,16 @@ export function buildRoundPayloads(manifest, anatomy = resolveAnatomy()) {
 
   // T5: slot letters are RE-SHUFFLED every round (G3 §3.6), so "A" in round 1 is a different bundle
   // from "A" in round 2. Storing the value under a bare letter made `mixed_from:{variant:"A"}`
-  // unresolvable later without the harness manifest. Each entry now carries its label.
-  // SHAPE: { A: { value, label } }. Readers must tolerate the legacy { A: value } too — rows 18-27
-  // were written before this and are not rewritten.
-  const labels = manifest.variant_labels ?? {};
+  // unresolvable later without the harness manifest. Each entry carries its label, and a slot with
+  // NO label is now rejected rather than written as `label: null` — a row that cannot be traced is
+  // not a row worth writing, and there is no later chance to add the label.
+  // SHAPE: { A: { value, label } }. Readers tolerate the legacy { A: value } — rows 18-27 were
+  // written before this and are deliberately not rewritten.
+  const labels = resolveLabels(manifest);
   return offeredIds.map((id) => {
     const sub = arche.sub_decisions.find((s) => s.id === id);
-    const shown = {};
-    for (const slot of slots) {
-      const v = variants_shown[slot]?.[id];
-      if (v !== undefined) shown[slot] = { value: String(v), label: labels[slot] ?? null };
-    }
+    const shown = buildShown(slots, (slot) => variants_shown[slot]?.[id], labels,
+      `publishing round ${round} of ${archetype}`);
     return {
       target_id,
       target_kind: kind,

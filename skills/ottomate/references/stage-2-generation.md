@@ -141,6 +141,14 @@ Write a round manifest (`project_slug`, `target_id`, `archetype`, `round`, `prof
 `html`, and `variants_shown` keyed by the harness's **slot letters** so the pick UI matches the panel
 headers) and run:
 
+> **T5 — `variant_labels` is REQUIRED (2026-07-27).** Slot letters are re-shuffled every round
+> (G3 §3.6), so `A` in round 1 is a different bundle from `A` in round 2, and a row storing a bare
+> letter cannot be traced back afterwards. Pass **`variant_labels: { A: "<label>", … }`** — or simply
+> copy the **`slot_mapping`** the harness already writes into `variant-set.manifest.json`, which
+> `publish-round.mjs` accepts under either key. A slot with no label is **rejected**, not written as
+> `label: null`: there is no later opportunity to add it. Readers still tolerate the pre-T5 bare shape
+> forever — rows 18–27 predate this and are deliberately **not** rewritten.
+
 ```
 node scripts/generation/publish-round.mjs --manifest round.json \
      --previews-dir /mnt/storage/ottomate/assets/previews \

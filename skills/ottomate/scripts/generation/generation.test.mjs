@@ -66,6 +66,9 @@ const round = {
     'hover-motion': { value: 'lift', from: 'A' },
     'meta-density': { value: 0, from: 'C' },
   },
+  // T5: the slot letter is presentation and is re-shuffled every round, so each slot must name the
+  // bundle it showed. Without this the round is refused — see variant-slots.test.mjs.
+  variantLabels: { A: 'crisp', B: 'plush', C: 'quiet' },
   profile: 'P2',
   sessionId: 'sess-test',
 };
@@ -76,7 +79,8 @@ test('a mixed pick produces one payload per sub-decision, each recording its sou
 
   const radius = rows.find((r) => r.axis === 'media-card.corner-radius');
   assert.equal(radius.chosen_value, '20');
-  assert.deepEqual(radius.mixed_from, { variant: 'B' });
+  assert.deepEqual(radius.mixed_from, { variant: 'B', label: 'plush' },
+    'T5: the label travels with the slot, so this row still resolves after the next round reshuffles');
   assert.equal(radius.target_kind, 'component');
   assert.equal(radius.rung, 2, 'composite → rung 2 (a composite COMPONENT decides at the component rung; rung 3 is a cluster — T7)');
   assert.equal(radius.profile_at_decision, 'P2');
@@ -88,9 +92,10 @@ test('a mixed pick produces one payload per sub-decision, each recording its sou
   assert.ok(!radius.rejected.some((x) => x.value === 20), 'the chosen value is not in rejected[]');
 });
 
-test('describePicks flags a cross-variant mix', () => {
+test('describePicks flags a cross-variant mix, naming the bundles by LABEL not by slot letter', () => {
   const rows = picksToLedger(round, A);
-  assert.match(describePicks(rows), /MIX across variants A, B, C/);
+  // T5: "a MIX across variants A, B, C" was true only until the next round reshuffled the letters.
+  assert.match(describePicks(rows), /MIX across variants crisp, plush, quiet/);
 });
 
 test('a pick that is not in the anatomy is rejected — picks must trace to real sub-decisions', () => {

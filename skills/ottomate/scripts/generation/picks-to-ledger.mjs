@@ -11,6 +11,7 @@
 
 import { resolveAnatomy, rungForTier } from './anatomy.mjs';
 import { SOFT } from './ledger-context.mjs';
+import { resolveLabels, buildShown } from './variant-slots.mjs';
 
 // The anatomy is now TWO files (U1, 2026-07-27) — the universal question registry and the
 // per-component records. anatomy.mjs resolves them into the shape this module has always used.
@@ -38,6 +39,9 @@ export function picksToLedger(input, anatomy = resolveAnatomy()) {
   const known = new Set(arche.sub_decisions.map((s) => s.id));
   const rung = rungForTier(arche.tier);
   const slots = Object.keys(variantsShown);
+  // T5: the label is the stable identity; the slot letter is presentation and is re-shuffled every
+  // round. `variantLabels` (or the harness's own `slot_mapping`) is required — see variant-slots.mjs.
+  const labels = resolveLabels({ variant_labels: input.variantLabels, slot_mapping: input.slotMapping });
 
   const payloads = [];
   for (const [subId, pick] of Object.entries(picks)) {
@@ -49,7 +53,8 @@ export function picksToLedger(input, anatomy = resolveAnatomy()) {
       if (offered !== undefined && offered !== pick.value) {
         // T3: grade it. Simply not winning is `not_selected` and MAY come back in a later round;
         // only an explicit rule-out is a hard ban.
-        rejected.push({ value: offered, from: slot, grade: SOFT, why_rejected: 'not selected in the per-item pick' });
+        // T5: carry the label so a later round can tell WHICH bundle this value came from.
+        rejected.push({ value: offered, from: slot, label: labels[slot] ?? null, grade: SOFT, why_rejected: 'not selected in the per-item pick' });
       }
     }
     const isMix = pick.from && slots.length > 1;
@@ -60,11 +65,11 @@ export function picksToLedger(input, anatomy = resolveAnatomy()) {
       status: 'proposed',             // a pick is not LOCKED until confirmed (G3 rule 12: lock is earned)
       rung,
       round,
-      variants_shown: Object.fromEntries(slots.map((s) => [s, variantsShown[s]?.[subId]])),
+      variants_shown: buildShown(slots, (s) => variantsShown[s]?.[subId], labels, `picks for ${archetype} round ${round}`),
       chosen_value: String(pick.value),
-      mixed_from: pick.from ? { variant: pick.from } : null,
+      mixed_from: pick.from ? { variant: pick.from, label: labels[pick.from] ?? null } : null,
       rejected,
-      rationale: pick.rationale ?? `Selected ${pick.value} for ${subId}${pick.from ? ` (from variant ${pick.from})` : ''}.`,
+      rationale: pick.rationale ?? `Selected ${pick.value} for ${subId}${pick.from ? ` (from variant ${labels[pick.from] ?? pick.from})` : ''}.`,
       constraints_applied: constraints,
       profile_at_decision: profile,
       confirmed: false,
@@ -77,7 +82,8 @@ export function picksToLedger(input, anatomy = resolveAnatomy()) {
 // Summarise a pick vector as a one-liner (for the round record / owner echo).
 export function describePicks(payloads) {
   const mixed = payloads.filter((p) => p.mixed_from);
-  const froms = new Set(mixed.map((p) => p.mixed_from.variant));
+  // T5: name the bundle by its LABEL where there is one — the slot letter means nothing a round later.
+  const froms = new Set(mixed.map((p) => p.mixed_from.label ?? p.mixed_from.variant));
   return `${payloads.length} sub-decisions recorded` + (froms.size > 1 ? ` — a MIX across variants ${[...froms].sort().join(', ')}` : '');
 }
 

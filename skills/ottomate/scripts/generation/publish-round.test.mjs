@@ -17,6 +17,8 @@ const manifest = {
     v2: { 'corner-radius': '14px', elevation: 'dual-layer-tinted', 'hover-motion': 'scale-1.02' },
     v3: { 'corner-radius': '0', elevation: 'flat-hairline', 'hover-motion': 'none' },
   },
+  // T5: a label per slot is now REQUIRED — the slot key is presentation and reshuffles every round.
+  variant_labels: { v1: 'crisp', v2: 'plush', v3: 'square' },
 };
 
 test('one payload per offered sub-decision, in anatomy order', () => {
@@ -34,7 +36,7 @@ test('variants_shown on a row is { slot: value } across every slot that offered 
   const [radius] = buildRoundPayloads(manifest);
   // T5: each entry carries its LABEL, because slot letters reshuffle every round.
   assert.deepEqual(radius.variants_shown, {
-    v1: { value: '4px', label: null }, v2: { value: '14px', label: null }, v3: { value: '0', label: null },
+    v1: { value: '4px', label: 'crisp' }, v2: { value: '14px', label: 'plush' }, v3: { value: '0', label: 'square' },
   });
 });
 
@@ -43,7 +45,7 @@ test('a slot that omits an axis is simply absent from that row', () => {
   const out = buildRoundPayloads(m);
   const hover = out.find((p) => p.axis === 'media-card.hover-motion');
   assert.deepEqual(hover.variants_shown, {
-    v1: { value: 'lift-2px', label: null }, v2: { value: 'scale-1.02', label: null },
+    v1: { value: 'lift-2px', label: 'crisp' }, v2: { value: 'scale-1.02', label: 'plush' },
   });
 });
 
