@@ -115,7 +115,7 @@ re-derived by hand instead of read.
 | **Generation (the producer)** | Anatomy → over-generate 6 → filter 3 → states-pinned harness config | 🟡 | `component-anatomy.json` + `stage-2-generation.md` + `picks-to-ledger.mjs`. One **real round demonstrated** end-to-end. Filter is model judgment (no scorer); no computed appearance check yet |
 | **Sub-decision inventory** | Component → named parts + required states + the axes to vary | ✅ | `data/component-anatomy.json`, 3 archetypes, `generation.test.mjs` 8/8 |
 | **Bundle → per-item picks → ledger** | A mixed pick → one `design_decisions` row per sub-decision | ✅ | `picks-to-ledger.mjs`; live round-trip on a throwaway project verified `mixed_from` + `rejected[]` |
-| **Fresh-context rounds** | Each round in a clean sub-agent fed only ledger+constraints+rejected | ✅ | The default in `stage-2-generation.md`; `buildRoundInput` assembles the packet (contested = sub-decisions − frozen; + `rejectedByAxis`). **Demonstrated: round 2 ran in a fresh sub-agent fed the live ledger and its set re-offered NO rejected value + omitted the frozen axis — mechanically verified + rendered** |
+| **Fresh-context rounds** | Each round in a clean sub-agent fed only ledger+constraints+rejected | ✅ **re-practised 2026-07-27 (P4), 5/5 mechanical, verifier proven to bite** | The default in `stage-2-generation.md`; `buildRoundInput` assembles the packet (contested = sub-decisions − frozen; + `rejectedByAxis`). **Demonstrated: round 2 ran in a fresh sub-agent fed the live ledger and its set re-offered NO rejected value + omitted the frozen axis — mechanically verified + rendered** |
 | **Golden-file regression gate** | Diff locked targets after every rebuild | ✅ | `diffAgainstSnapshots` + `snapshotForLock` in `ledger-context.mjs`; `ledger-context.test.mjs` 9/9; **demonstrated live** — a snapshot stored on lock round-tripped through the API, the differ caught 14→8. Source/value-level (pixel diff is the computed follow-up). Wired into stage-4 §4.6.5 |
 | **Reload-on-resume** | Session start re-reads the ledger | ✅ | `resumeSummary` in `ledger-context.mjs`; wired into SKILL.md session-start step 4 (auto GET + partition into open/locked/frozen/rejected) |
 | **`rejected[]` + frozen-controls wiring** | A round is fed what to never re-offer | ✅ | `rejectedByAxis` + `frozenByAxis`; wired into `stage-2-generation.md` input #6; tested |
@@ -355,6 +355,32 @@ one thing the program is blocked on. A `prefers-reduced-motion` block changes **
 the owner is choosing between; it is inert unless the viewer asked for reduced motion. So the fixes
 landed in the source of truth and are proven clean, and **republishing waits for the owner's word.**
 Recorded so it reads as a decision, not an omission.
+
+### P4 — 2026-07-27 · the fresh-sub-agent round, PRACTISED (D17)
+`stage-2-generation.md` specified it and `buildRoundInput` assembled the packet, but it had not been
+*run* since 2026-07-23. Now it has, and the result is verified mechanically rather than read.
+
+**The setup, and why it is not vacuous.** Screenroom's ledger is 10 real rows, **all `in-review`,
+nothing locked** — so a rehearsal against them as-is could not test either property P4 exists to
+check: no frozen axes and no hard bans means an agent cannot violate them. So the real rows are the
+base, and **two locks plus one hard ban are applied in memory only**, labelled as a rehearsal. **The
+database is not touched** — the owner is mid-decision on exactly these rows.
+
+**The run.** A fresh `Agent` with no conversation context, given the packet file and nothing else:
+3 contested axes (corner-radius · elevation · meta-density), 2 frozen controls, 1 hard-banned value.
+
+**Verified mechanically — 5/5** (`docs/demos/2026-07-27-p4-verify-round.mjs`):
+frozen axes **omitted** from every option · the hard-banned `corner-radius: 18px` **never re-offered**
+· only contested axes present · every contested axis genuinely moves across the set.
+
+**And the verifier was proven to bite.** Against a deliberately sabotaged output — the banned value
+re-offered, a frozen axis presented as a choice, one axis held flat — **4 of the 5 checks fail with
+exact detail and the runner exits 1**. A check that has never failed is not evidence.
+
+**A defect-fix confirmed working in passing:** the first fixture's ban did not bind, because
+`rejectedByAxis` only honours `grade: 'rejected_with_reason'`. That is the two-grade fix for the
+logged "`rejected[]` conflates *not picked* with *rejected*" defect, behaving exactly as designed —
+a close second is no longer banned by the act of not winning once.
 
 ### Prose only (nothing checks them)
 Context gate · anti-slop tells · core-mechanic-before-page · colour-budget stated up front ·

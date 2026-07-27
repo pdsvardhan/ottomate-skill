@@ -1,0 +1,63 @@
+{
+  "target": "screenroom.poster-card",
+  "archetype": "media-card",
+  "tier": "composite",
+  "profile": "P1",
+  "round": "r1 (weight + density)",
+  "contestedAxesThisRound": [
+    {
+      "id": "corner-radius",
+      "part": "Card",
+      "kind": "stylistic",
+      "channel": "weight",
+      "hint": "0 sharp (data/tech voice) .. 8 friendly .. 20 soft (A4 rule 116); pick a tight OR a loose, not three"
+    },
+    {
+      "id": "elevation",
+      "part": "Card",
+      "kind": "stylistic",
+      "channel": "weight",
+      "hint": "flat hairline vs dual-layer tinted shadow (A4 120-121); on dark prefer +lightness over shadow"
+    },
+    {
+      "id": "meta-density",
+      "part": "CardMeta",
+      "kind": "structural",
+      "channel": "density",
+      "hint": "0/1/2 meta lines; tabular-nums for any rating/year (C3 160)"
+    }
+  ],
+  "frozenControls": {
+    "media-card.title-placement": "below-media",
+    "media-card.media-aspect": "2/3"
+  },
+  "neverReOffer": {
+    "media-card.corner-radius": [
+      {
+        "value": "18px",
+        "why": "REHEARSAL hard ban: too soft against the poster edge",
+        "grade": "rejected_with_reason",
+        "round": 1
+      }
+    ]
+  },
+  "requiredStates": [
+    "rest",
+    "hover",
+    "focus-visible",
+    "active",
+    "selected"
+  ],
+  "contract": {
+    "animation_vocab": [
+      "transform",
+      "opacity"
+    ],
+    "forbidden": [
+      "parallax",
+      "bounce",
+      "gradient-text"
+    ]
+  },
+  "renderSurface": "1-3 real instances at real content density, with the required states of the orchestrating part pinned open (e.g. one card shown in its hover-revealed state)."
+}

@@ -1,0 +1,31 @@
+{
+  "options": [
+    {
+      "label": "A",
+      "axis_values": {
+        "corner-radius": "0px",
+        "elevation": "flat-hairline",
+        "meta-density": "2-line"
+      },
+      "caption": "Sharp data-voice card: square corners, flat hairline border, full 2-line meta (title + tabular-nums rating/year)."
+    },
+    {
+      "label": "B",
+      "axis_values": {
+        "corner-radius": "8px",
+        "elevation": "dual-layer-tinted-shadow",
+        "meta-density": "1-line"
+      },
+      "caption": "Balanced friendly card: 8px rounding, dual-layer tinted drop shadow for lift, single condensed meta line."
+    },
+    {
+      "label": "C",
+      "axis_values": {
+        "corner-radius": "20px",
+        "elevation": "flat-plus-lightness",
+        "meta-density": "0-line"
+      },
+      "caption": "Soft minimal card: 20px rounding, no shadow (surface lightness bump instead), no meta line — title/media only."
+    }
+  ]
+}
