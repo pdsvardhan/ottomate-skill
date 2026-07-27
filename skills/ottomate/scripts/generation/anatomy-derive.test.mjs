@@ -3,7 +3,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { collectEvidence, inferTier, proposeRecord, validateRecord } from './anatomy-derive.mjs';
+import { collectEvidence, inferTier, proposeRecord, validateRecord, isTailwindUtility } from './anatomy-derive.mjs';
+import { questionRegistry } from './anatomy.mjs';
+import { composeRounds } from './round-composition.mjs';
 
 const CARD = `
   export function Card(p){ return (
@@ -47,7 +49,7 @@ test('data-role is authoritative when present, class names are the fallback', ()
 test('with no stylesheet the record SAYS the signal is weak rather than pretending', () => {
   const r = proposeRecord(collectEvidence(CARD.replace(/ data-role="media-card"/, ''), ''));
   assert.equal(r.confidence, 'low');
-  assert.match(r.part_source, /NO CSS SUPPLIED/);
+  assert.match(r.part_source, /weak|no stylesheet|NO CSS/i);
 });
 
 test('questions are RANKED by evidence, never silently filtered', () => {
@@ -97,4 +99,71 @@ test('MUST FAIL — an interactive component missing the always-states floor is 
 test('the honest happy path: the proposed record validates', () => {
   const ev = collectEvidence(CARD, CARD_CSS);
   assert.equal(validateRecord(proposeRecord(ev), ev).ok, true);
+});
+
+// ── U2b — hardening against real shadcn/Tailwind/Radix source (C12(2) findings), 2026-07-28 ────────
+
+// A shadcn button: classes live inside cva()/cn(), it renders <Comp>=<Slot> passthrough, no stylesheet.
+const SHADCN_BUTTON = `
+  import { cva } from 'class-variance-authority';
+  import { Slot } from '@radix-ui/react-slot';
+  const buttonVariants = cva("inline-flex items-center justify-center rounded-md text-sm font-medium",
+    { variants: { variant: { default: "bg-primary text-primary-foreground", ghost: "hover:bg-accent" } } });
+  function Button({ className, asChild, variant, ...props }) {
+    const Comp = asChild ? Slot : "button";
+    return <Comp className={cn(buttonVariants({ variant, className }))} {...props} />;
+  }`;
+
+test('D1 — classes inside cn()/cva() are seen, so a shadcn component no longer derives to zero parts', () => {
+  const ev = collectEvidence(SHADCN_BUTTON);
+  assert.ok(ev.classNames.includes('rounded-md'), 'cva base string must be collected');
+  assert.ok(ev.classNames.includes('bg-primary'), 'cva variant strings must be collected');
+  const v = validateRecord(proposeRecord(ev, { name: 'Button' }), ev);
+  assert.ok(!v.problems.some((p) => /no parts/.test(p)), 'must not fail with "no parts" anymore');
+});
+
+test('D3 — a lone <Slot>/<Comp> passthrough does NOT inflate a primitive to composite', () => {
+  assert.equal(inferTier(collectEvidence(SHADCN_BUTTON)).tier, 'primitive');
+});
+
+test('D2 — a namespaced <X.Root> child (the Radix idiom) is detected and reads composite', () => {
+  const AVATAR = `<AvatarPrimitive.Root className={cn("relative flex size-8")}>
+    <AvatarPrimitive.Image src={s} /><AvatarPrimitive.Fallback>AB</AvatarPrimitive.Fallback>
+  </AvatarPrimitive.Root>`;
+  const ev = collectEvidence(AVATAR);
+  assert.ok(ev.childComponents.includes('AvatarPrimitive'), 'namespaced child must be recorded');
+  assert.equal(inferTier(ev).tier, 'composite');
+});
+
+test('D4 — Tailwind utilities are recognised and never offered as parts; semantic classes survive', () => {
+  assert.equal(isTailwindUtility('flex'), true);
+  assert.equal(isTailwindUtility('bg-primary'), true);
+  assert.equal(isTailwindUtility('absolute'), true);
+  assert.equal(isTailwindUtility('mt-4'), true);
+  assert.equal(isTailwindUtility('hover:bg-accent'), true);
+  assert.equal(isTailwindUtility('cardbase'), false);
+  assert.equal(isTailwindUtility('chip'), false);
+  const ev = collectEvidence('<div className="cardbase flex gap-2"><span className="chip absolute" /></div>');
+  const parts = proposeRecord(ev).parts;
+  assert.ok(parts.includes('cardbase') && parts.includes('chip'), 'semantic classes are parts');
+  assert.ok(!parts.some((p) => ['flex', 'gap-2', 'absolute'].includes(p)), 'no Tailwind utility is a part');
+});
+
+test('D5 — a full-page height utility marks a surface even with no landmark tag', () => {
+  const t = inferTier(collectEvidence('<div className="min-h-screen"><h1>Library</h1></div>'));
+  assert.equal(t.tier, 'surface');
+  assert.match(t.why, /page-level/);
+});
+
+test('D6 — weak evidence chooses only the evidenced questions, not all of them, so no forced over-wide round', () => {
+  // A composite (has a child) with exactly ONE evidenced question (<img> -> media-aspect).
+  const ev = collectEvidence('<section className="stack"><Rack /><img src={u} /></section>');
+  const rec = proposeRecord(ev);
+  assert.equal(rec.tier, 'composite');
+  assert.ok(rec.likely.length >= 1 && rec.questions.length === rec.likely.length, 'chosen == evidenced');
+  assert.ok(rec.questions.length < 10, 'must not dump all composite questions');
+  assert.ok(rec.possible.length > 0, 'the unevidenced ones stay visible, ranked, never silently dropped');
+  const REG = questionRegistry();
+  const sub = rec.questions.map((e) => ({ id: e.q, ...REG[e.q] }));
+  assert.equal(composeRounds(sub, { scope: 'component' }).matrix.regime, 'per-item-viable');
 });

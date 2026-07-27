@@ -21,9 +21,46 @@ import { questionsForTier, questionRegistry } from './anatomy.mjs';
 const LANDMARK_TAGS = new Set(['main', 'nav', 'header', 'footer', 'aside']);
 const LANDMARK_ROLES = new Set(['main', 'navigation', 'banner', 'contentinfo', 'complementary']);
 const INTERACTIVE_TAGS = new Set(['button', 'a', 'input', 'select', 'textarea', 'summary']);
+// Passthrough / wrapper components that assemble NOTHING — a component rendering only these is not
+// orchestrating (C12(2) D3: shadcn `const Comp = asChild ? Slot : "button"` made button read composite).
+const PASSTHROUGH_COMPONENTS = new Set(['Slot', 'Fragment', 'Comp', 'Children', 'Suspense', 'Provider']);
+// Full-page utilities that mark a surface even without a landmark tag (C12(2) D5).
+const SURFACE_UTILS = new Set(['min-h-screen', 'h-screen', 'min-h-dvh', 'h-dvh', 'min-h-full']);
+const CLASS_HELPERS = ['cn', 'cva', 'clsx', 'cx', 'twMerge', 'twJoin', 'classnames', 'classNames'];
 
 // Case-insensitive dedupe-preserving collector.
 function uniq(xs) { return [...new Set(xs.filter(Boolean))]; }
+
+/**
+ * Is this a Tailwind utility rather than a nameable component part? (C12(2) D4.) Utilities stay in
+ * evidence — they still rank questions — but must never be offered as a "part" a round could vary,
+ * because "vary the `absolute` part" is meaningless. Heuristic and openly so: it recognises the
+ * utility grammar (state/breakpoint prefixes + the utility stems), erring toward calling a thing a
+ * utility only on a clear match, so a semantic class like `chip` or `cardbase` survives.
+ */
+export function isTailwindUtility(cls) {
+  const c = String(cls);
+  if (/^(sm|md|lg|xl|2xl|hover|focus|focus-visible|focus-within|active|disabled|group|group-hover|peer|dark|first|last|odd|even|motion-safe|motion-reduce|aria|data|before|after|placeholder|file|marker|selection|rtl|ltr|open|print|supports)[:-]/.test(c)) return true;
+  return /^(flex|grid|table|block|inline|inline-flex|inline-block|hidden|contents|container|absolute|relative|fixed|sticky|static|isolate|float-|clear-|box-|(min-|max-)?[wh]-|size-|-?p[xytrbl]?-|-?m[xytrbl]?-|gap-|gap-[xy]-|space-[xy]-|-?inset-|-?top-|-?right-|-?bottom-|-?left-|-?z-|order-|col-|row-|grid-|auto-|justify-|items-|content-|self-|place-|text-|font-|leading-|tracking-|align-|whitespace-|break-|truncate$|line-clamp-|list-|bg-|from-|via-|to-|border($|-)|rounded($|-)|divide-|ring($|-)|shadow($|-)|opacity-|mix-blend-|backdrop-|blur$|blur-|brightness-|contrast-|drop-shadow($|-)|grayscale$|invert$|saturate-|sepia$|transition($|-)|duration-|ease-|delay-|animate-|scale-|-?rotate-|-?translate-|-?skew-|origin-|transform$|cursor-|select-|resize$|resize-|scroll-|snap-|touch-|will-change-|overflow($|-)|overscroll-|object-|aspect-|columns-|w-full|h-full|w-screen|h-screen|pointer-events-|appearance-|outline($|-)|underline$|overline$|line-through$|no-underline$|uppercase$|lowercase$|capitalize$|normal-case$|italic$|not-italic$|antialiased$|subpixel-antialiased$|tabular-nums$|slashed-zero$|fill-|stroke-|sr-only$|not-sr-only$|flex-|shrink($|-)|grow($|-)|basis-|p-|m-|w-|h-)/.test(c);
+}
+
+/** Extract the balanced-paren argument text of every `name(...)` call, for the given helper names. */
+function extractCallArgs(src, names) {
+  const out = [];
+  const re = new RegExp(`\\b(?:${names.join('|')})\\s*\\(`, 'g');
+  let m;
+  while ((m = re.exec(src))) {
+    let i = m.index + m[0].length, depth = 1;
+    const start = i;
+    for (; i < src.length && depth > 0; i++) {
+      if (src[i] === '(') depth++;
+      else if (src[i] === ')') depth--;
+    }
+    out.push(src.slice(start, i - 1));
+    re.lastIndex = i; // continue after this call
+  }
+  return out;
+}
 
 /**
  * Gather what is actually IN the file. No interpretation here — interpretation is the model's job and
@@ -36,15 +73,22 @@ export function collectEvidence(source, css = '') {
   const sheet = String(css ?? '');
 
   const elements = uniq([...src.matchAll(/<([a-z][a-z0-9-]*)[\s/>]/g)].map((m) => m[1]));
-  const childComponents = uniq([...src.matchAll(/<([A-Z][A-Za-z0-9_]*)[\s/>]/g)].map((m) => m[1]));
+  // A child component may be bare (`<OwnChip>`) or namespaced (`<AvatarPrimitive.Root>`, the Radix
+  // idiom) — C12(2) D2. Record the namespace ROOT so `<X.Root>` counts as assembling X.
+  const childComponents = uniq([...src.matchAll(/<([A-Z][A-Za-z0-9_]*)(?:\.[A-Za-z0-9_]+)?[\s/>]/g)].map((m) => m[1]));
   const dataRoles = uniq([...src.matchAll(/data-role\s*=\s*["'{`]([a-zA-Z0-9_-]+)/g)].map((m) => m[1]));
   const dataOids = uniq([...src.matchAll(/data-oid\s*=\s*["'{`]([^"'`}]+)/g)].map((m) => m[1]));
 
-  // className="a b" and className={`a ${x} b`} and class="a b"
+  // className="a b", className={`a ${x} b`}, class="a b" — AND classes inside cn()/cva()/clsx() call
+  // arguments, which the attribute matcher never sees (C12(2) D1: shadcn's whole idiom lives there).
+  const attrClassText = [...src.matchAll(/class(?:Name)?\s*=\s*(?:"([^"]*)"|'([^']*)'|\{`([^`]*)`\})/g)]
+    .map((m) => m[1] ?? m[2] ?? m[3] ?? '');
+  const helperClassText = extractCallArgs(src, CLASS_HELPERS)
+    .flatMap((args) => [...args.matchAll(/["'`]([^"'`]*)["'`]/g)].map((s) => s[1]));
   const classNames = uniq(
-    [...src.matchAll(/class(?:Name)?\s*=\s*(?:"([^"]*)"|'([^']*)'|\{`([^`]*)`\})/g)]
-      .flatMap((m) => (m[1] ?? m[2] ?? m[3] ?? '').split(/[\s${}]+/))
-      .filter((c) => /^[a-zA-Z][\w-]*$/.test(c)),
+    [...attrClassText, ...helperClassText]
+      .flatMap((s) => s.split(/[\s${}]+/))
+      .filter((c) => /^[a-zA-Z][\w:-]*$/.test(c)),
   );
 
   const cssSelectors = uniq([...sheet.matchAll(/\.([a-zA-Z][\w-]*)/g)].map((m) => m[1]));
@@ -54,14 +98,23 @@ export function collectEvidence(source, css = '') {
     ...elements.filter((e) => LANDMARK_TAGS.has(e)),
     ...[...src.matchAll(/role\s*=\s*["']([a-z]+)["']/g)].map((m) => m[1]).filter((r) => LANDMARK_ROLES.has(r)),
   ]);
+  // Surface signals a landmark tag misses (C12(2) D5): a full-page height utility or role="main".
+  const surfaceSignals = uniq([
+    ...classNames.filter((c) => SURFACE_UTILS.has(c)),
+    ...(/role\s*=\s*["']main["']/.test(src) ? ['role=main'] : []),
+  ]);
   const interactiveEls = uniq([
     ...elements.filter((e) => INTERACTIVE_TAGS.has(e)),
     ...(/onClick|onKeyDown|onSubmit/.test(src) ? ['handler'] : []),
   ]);
+  // Child components that actually assemble something — passthroughs excluded (C12(2) D3).
+  const orchestratedChildren = childComponents.filter((c) => !PASSTHROUGH_COMPONENTS.has(c));
+  // Classes that could name a part: not Tailwind utilities (C12(2) D4).
+  const semanticClasses = classNames.filter((c) => !isTailwindUtility(c));
 
   return {
-    elements, childComponents, dataRoles, dataOids, classNames,
-    cssSelectors, cssProps, landmarkRoles, interactiveEls,
+    elements, childComponents, orchestratedChildren, dataRoles, dataOids, classNames, semanticClasses,
+    cssSelectors, cssProps, landmarkRoles, surfaceSignals, interactiveEls,
     hasCss: sheet.length > 0,
     hasImage: elements.includes('img') || /background-image/.test(sheet),
     hasAspectRatio: cssProps.includes('aspect-ratio'),
@@ -76,8 +129,15 @@ export function inferTier(ev) {
   if (ev.landmarkRoles.length) {
     return { tier: 'surface', why: `declares landmark(s): ${ev.landmarkRoles.join(', ')}` };
   }
-  if (ev.childComponents.length >= 1) {
-    return { tier: 'composite', why: `assembles named component(s): ${ev.childComponents.slice(0, 4).join(', ')}` };
+  // A full-page component often has no landmark tag, just a page-height utility (C12(2) D5).
+  if ((ev.surfaceSignals ?? []).length) {
+    return { tier: 'surface', why: `page-level signal(s): ${ev.surfaceSignals.join(', ')}` };
+  }
+  // Count only children that ASSEMBLE something — a lone `<Slot>`/`<Comp>` passthrough is not
+  // orchestration (C12(2) D3: it made shadcn button/badge read composite).
+  const children = ev.orchestratedChildren ?? ev.childComponents;
+  if (children.length >= 1) {
+    return { tier: 'composite', why: `assembles named component(s): ${children.slice(0, 4).join(', ')}` };
   }
   if (ev.interactiveEls.length >= 2) {
     return { tier: 'composite', why: `orchestrates ${ev.interactiveEls.length} interactive regions` };
@@ -86,7 +146,8 @@ export function inferTier(ev) {
   // classified `primitive` because it imports no child component and has only one interactive
   // element — yet it plainly orchestrates parts. C1 §3.1 classifies by ORCHESTRATION, and four
   // separately-styled regions is orchestration whether or not they were extracted into components.
-  const styledParts = ev.classNames.filter((c) => ev.cssSelectors.includes(c));
+  // Use SEMANTIC classes styled by the sheet — Tailwind utilities are not parts (C12(2) D4).
+  const styledParts = (ev.semanticClasses ?? ev.classNames).filter((c) => ev.cssSelectors.includes(c));
   if (styledParts.length >= 4) {
     return { tier: 'composite', why: `orchestrates ${styledParts.length} separately-styled parts (${styledParts.slice(0, 4).join(', ')}…)` };
   }
@@ -102,13 +163,19 @@ export function proposeRecord(ev, { name = 'unnamed' } = {}) {
   const { tier, why } = inferTier(ev);
   // data-role is our own convention and is authoritative when present. Otherwise fall back to class
   // names that the stylesheet actually styles — a class nobody styles is not a part.
-  const styled = uniq(ev.classNames.filter((c) => ev.cssSelectors.includes(c)));
+  const styled = uniq((ev.semanticClasses ?? ev.classNames).filter((c) => ev.cssSelectors.includes(c)));
+  const semantic = uniq(ev.semanticClasses ?? ev.classNames.filter((c) => !isTailwindUtility(c)));
+  const children = ev.orchestratedChildren ?? ev.childComponents;
   // Resolve parts FULLY before anything reads them: an earlier draft computed `questions` against a
   // parts list that had not fallen back yet, and every question ended up naming a part that did not
-  // exist. The validator caught it, which is the point of having one.
+  // exist. The validator caught it, which is the point of having one. Preference order (C12(2) D4):
+  // data-role → styled classes → SEMANTIC classes (Tailwind utilities are never parts) → the
+  // component's own children → raw classes as the last resort.
   const parts = ev.dataRoles.length ? ev.dataRoles
     : styled.length ? styled
-      : ev.classNames.slice(0, 8);
+      : semantic.length ? semantic.slice(0, 10)
+        : children.length ? children.slice(0, 8)
+          : ev.classNames.slice(0, 8);
 
   // Relevance, not a filter. Matching is EXACT on the evidence tokens: a substring fallback fired
   // `row-height` on any rule containing `height`, which is most of them. `questionsForTier` returns everything ANY component of this tier ever
@@ -123,7 +190,11 @@ export function proposeRecord(ev, { name = 'unnamed' } = {}) {
   }));
   const likely = scored.filter((s) => s.hit).map((s) => s.q);
   const possible = scored.filter((s) => !s.hit).map((s) => s.q);
-  const chosen = likely.length >= 3 ? likely : scored.map((s) => s.q);
+  // Choose the EVIDENCED questions when any exist; the rest stay in `possible`, ranked and visible,
+  // never silently dropped (the module's ethos). Dumping every tier question into `chosen` on weak
+  // evidence guaranteed an over-wide round the composition rule then rejected (C12(2) D6) — the honest
+  // signal is "few evidenced, low confidence", not "all of them are contested".
+  const chosen = likely.length ? likely : scored.map((s) => s.q);
 
   const partFor = (q) => parts.find((p) => (q.evidence_any ?? []).some((k) => p.toLowerCase().includes(k)))
     ?? parts[0] ?? name;
@@ -134,7 +205,9 @@ export function proposeRecord(ev, { name = 'unnamed' } = {}) {
     parts,
     part_source: ev.dataRoles.length ? 'data-role (authoritative)'
       : styled.length ? 'class names the stylesheet actually styles'
-        : 'class names only — NO CSS SUPPLIED, so this is weak',
+        : semantic.length ? 'semantic (non-utility) class names — weak, no stylesheet to confirm'
+          : children.length ? 'child components — no semantic classes found'
+            : 'raw class names only — NO CSS and no semantic names, so this is very weak',
     required_states: tier === 'surface' ? ['rest'] : ['rest', 'hover', 'focus-visible', 'active', 'disabled'],
     required_variant_floor: 'a default plus one state-signalling treatment',
     questions: chosen.map((q) => ({ q: q.id, part: partFor(q) })),

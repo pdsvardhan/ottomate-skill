@@ -65,6 +65,29 @@ never needing derive), so it is a capability defect, not a live regression.
 Treat these as one unit — **U2b: harden `anatomy-derive` against real shadcn/Tailwind/Radix source**
 (read `cn`/`cva` string arguments; match `<X.Y>` children; a Tailwind-utility stop-list so utilities
 are never parts; landmark-independent surface signals; and reconcile the weak-evidence → all-questions
-fallback with the composition bound). Until it lands, "derive a round on an unregistered component" on
-a shadcn/Tailwind project should be treated as **not yet working**. Priority relative to the rest of
-the C-list is the owner's call.
+fallback with the composition bound).
+
+## U2b — done 2026-07-28. Before → after on the same 23 components
+
+Re-ran the identical harness against the hardened module (plan: `docs/plans/2026-07-28-U2b-derive-hardening.md`).
+
+| metric | before | after |
+|---|---|---|
+| validate ok | 17 / 23 | **23 / 23** — the six hard failures are gone |
+| findings | 45 | **9** |
+| over-wide (`expect-panel-level`) | 13 | **9** |
+| button / badge tier | composite (via `<Slot>`) | **primitive** (D3) |
+| parts | raw classes incl. Tailwind utilities | **semantic** where present (WatchCard 10, Facets 9, OwnChip 7) |
+
+- **D1/D2/D3/D4/D6 fixed and demonstrated** — shadcn `cn`/`cva` classes are collected, Radix `<X.Y>`
+  children are seen (avatar/progress/tabs/hover-card now read composite), a lone `<Slot>` no longer
+  inflates the tier, Tailwind utilities are excluded from parts, and weak evidence chooses only the
+  evidenced questions (over-wide down from 13 to 9).
+- **The residual 9 are honest, not bugs.** They are composites with **zero** exactly-evidenced
+  questions (PeoplePills, CollectionCells, avatar, …) whose full question set is legitimately too wide
+  for one round — the composition rule's "narrow before running" signal, working as intended — plus
+  the truly utility-only primitives (button/badge, which are *registered* archetypes anyway, so derive
+  is never used for them in practice).
+- **D5 is correct but did not fire here:** the page-level components (FilmsList, QueueView, DetailHero)
+  do not carry `min-h-screen` themselves — that lives in the route shell — so they still read composite.
+  The fix generalises correctly; this corpus just does not exercise it. Left as a known, honest gap.
