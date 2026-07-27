@@ -1,5 +1,5 @@
 {
-  "$comment": "THE UNIVERSAL HALF. Tiers, the state matrix, and the finite registry of design QUESTIONS with their perceptual channel, scope hint and the CSS custom property each maps to (null = structural, cannot be a token). component-anatomy.json holds only per-component facts. Split 2026-07-27 (U1): both used to live in one blob, so adding a component re-authored the universal half too, which is why there were only three. Resolve the two with scripts/generation/anatomy.mjs.",
+  "$comment": "THE UNIVERSAL HALF. Tiers, the state matrix, and the finite registry of design QUESTIONS with their perceptual channel, scope hint and the CSS custom property each maps to (null = structural, cannot be a token). component-anatomy.json holds only per-component facts. Split 2026-07-27 (U1): both used to live in one blob, so adding a component re-authored the universal half too, which is why there were only three. Resolve the two with scripts/generation/anatomy.mjs. Each question also carries `evidence_any`: keywords that, if found in a component's source evidence, make that question LIKELY relevant to it. Heuristic and openly so — it ranks, it never filters silently (U2).",
   "meta": {
     "version": 1,
     "created": "2026-07-27",
@@ -53,7 +53,11 @@
         "primitive"
       ],
       "token": "--{t}-radius",
-      "hint": "0 sharp (data/tech voice) .. 8 friendly .. 20 soft (A4 rule 116); pick a tight OR a loose, not three"
+      "hint": "0 sharp (data/tech voice) .. 8 friendly .. 20 soft (A4 rule 116); pick a tight OR a loose, not three",
+      "evidence_any": [
+        "border-radius",
+        "radius"
+      ]
     },
     "elevation": {
       "channel": "weight",
@@ -64,7 +68,12 @@
         "composite"
       ],
       "token": "--{t}-elevation",
-      "hint": "flat hairline vs dual-layer tinted shadow (A4 120-121); on dark prefer +lightness over shadow"
+      "hint": "flat hairline vs dual-layer tinted shadow (A4 120-121); on dark prefer +lightness over shadow",
+      "evidence_any": [
+        "box-shadow",
+        "shadow",
+        "background"
+      ]
     },
     "media-aspect": {
       "channel": "density",
@@ -75,7 +84,14 @@
         "composite"
       ],
       "token": null,
-      "hint": "2:3 poster vs 16:9 still; object-fit:cover, never fill (D2 157)"
+      "hint": "2:3 poster vs 16:9 still; object-fit:cover, never fill (D2 157)",
+      "evidence_any": [
+        "img",
+        "picture",
+        "video",
+        "aspect-ratio",
+        "poster"
+      ]
     },
     "title-placement": {
       "channel": "density",
@@ -86,7 +102,17 @@
         "composite"
       ],
       "token": null,
-      "hint": "overlaid-on-media vs below-media vs hover-revealed footer"
+      "hint": "overlaid-on-media vs below-media vs hover-revealed footer",
+      "evidence_any": [
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "title",
+        "heading",
+        "cap",
+        "t"
+      ]
     },
     "meta-density": {
       "channel": "density",
@@ -97,7 +123,15 @@
         "composite"
       ],
       "token": "--{t}-meta-lines",
-      "hint": "0/1/2 meta lines; tabular-nums for any rating/year (C3 160)"
+      "hint": "0/1/2 meta lines; tabular-nums for any rating/year (C3 160)",
+      "evidence_any": [
+        "meta",
+        "cap",
+        "sub",
+        "yr",
+        "gb",
+        "caption"
+      ]
     },
     "actions-reveal": {
       "channel": "motion",
@@ -108,7 +142,13 @@
         "composite"
       ],
       "token": "--{t}-actions-reveal",
-      "hint": "always-visible vs hover-reveal; a hover-revealed CONTROL needs :focus-within (adv-hover-control-focus-within, B2 3.5)"
+      "hint": "always-visible vs hover-reveal; a hover-revealed CONTROL needs :focus-within (adv-hover-control-focus-within, B2 3.5)",
+      "evidence_any": [
+        "button",
+        "acts",
+        "actions",
+        "a"
+      ]
     },
     "accent-usage": {
       "channel": "colour",
@@ -119,7 +159,13 @@
         "composite"
       ],
       "token": "--{t}-accent",
-      "hint": "content-derived accent on <= a few surfaces (border/badge/CTA), neutral elsewhere; 60/30/10 (A1 62)"
+      "hint": "content-derived accent on <= a few surfaces (border/badge/CTA), neutral elsewhere; 60/30/10 (A1 62)",
+      "evidence_any": [
+        "color",
+        "background",
+        "border-color",
+        "accent"
+      ]
     },
     "badge-style": {
       "channel": "colour",
@@ -130,7 +176,14 @@
         "composite"
       ],
       "token": "--{t}-badge-radius",
-      "hint": "pill vs corner-ribbon vs none; status via a second channel, not colour alone (B2 3.2)"
+      "hint": "pill vs corner-ribbon vs none; status via a second channel, not colour alone (B2 3.2)",
+      "evidence_any": [
+        "badge",
+        "pill",
+        "chip",
+        "ribbon",
+        "tag"
+      ]
     },
     "hover-motion": {
       "channel": "motion",
@@ -141,7 +194,12 @@
         "composite"
       ],
       "token": "--{t}-hover-transition",
-      "hint": "lift (translateY) vs scale vs none; transform+opacity only, 250-300ms standard (B1 70,74)"
+      "hint": "lift (translateY) vs scale vs none; transform+opacity only, 250-300ms standard (B1 70,74)",
+      "evidence_any": [
+        "transition",
+        "transform",
+        "hover"
+      ]
     },
     "selected-signal": {
       "channel": "colour",
@@ -152,7 +210,14 @@
         "composite"
       ],
       "token": "--{t}-selected-treatment",
-      "hint": "how 'selected' reads — ring vs fill vs check; a non-colour channel required"
+      "hint": "how 'selected' reads — ring vs fill vs check; a non-colour channel required",
+      "evidence_any": [
+        "selected",
+        "aria-selected",
+        "active",
+        "sel",
+        "current"
+      ]
     },
     "emphasis-scale": {
       "channel": "colour",
@@ -163,7 +228,14 @@
         "primitive"
       ],
       "token": "--{t}-emphasis",
-      "hint": "how primary/secondary/tertiary/ghost differ — a variant enum, mutually exclusive (C1 §3.2)"
+      "hint": "how primary/secondary/tertiary/ghost differ — a variant enum, mutually exclusive (C1 §3.2)",
+      "evidence_any": [
+        "button",
+        "variant",
+        "primary",
+        "secondary",
+        "ghost"
+      ]
     },
     "hover-delta": {
       "channel": "motion",
@@ -174,7 +246,11 @@
         "primitive"
       ],
       "token": "--{t}-hover-delta",
-      "hint": "direction-aware lightness move (A1 67), not a hardcoded second hex; 100-150ms micro (B1 70)"
+      "hint": "direction-aware lightness move (A1 67), not a hardcoded second hex; 100-150ms micro (B1 70)",
+      "evidence_any": [
+        "transition",
+        "hover"
+      ]
     },
     "focus-ring": {
       "channel": "weight",
@@ -185,7 +261,11 @@
         "primitive"
       ],
       "token": "--{t}-focus-ring",
-      "hint": "outline-based, >=2px/3:1, never box-shadow-only (adv-focus-ring-not-shadow-only)"
+      "hint": "outline-based, >=2px/3:1, never box-shadow-only (adv-focus-ring-not-shadow-only)",
+      "evidence_any": [
+        "outline",
+        "focus"
+      ]
     },
     "icon-affordance": {
       "channel": "density",
@@ -196,7 +276,13 @@
         "primitive"
       ],
       "token": null,
-      "hint": "leading/trailing/none; icon-only needs aria-label (C1 §3.12); one icon set (D2 145)"
+      "hint": "leading/trailing/none; icon-only needs aria-label (C1 §3.12); one icon set (D2 145)",
+      "evidence_any": [
+        "svg",
+        "icon",
+        "path",
+        "use"
+      ]
     },
     "loading-treatment": {
       "channel": "motion",
@@ -207,7 +293,13 @@
         "primitive"
       ],
       "token": "--{t}-loading",
-      "hint": "spinner vs label-swap; aria-busy; keep width stable (no jitter)"
+      "hint": "spinner vs label-swap; aria-busy; keep width stable (no jitter)",
+      "evidence_any": [
+        "loading",
+        "spinner",
+        "aria-busy",
+        "busy"
+      ]
     },
     "row-height": {
       "channel": "density",
@@ -218,7 +310,13 @@
         "composite"
       ],
       "token": "--{t}-row-height",
-      "hint": "compact 32 / default 40-48 / relaxed 56 (C3 159)"
+      "hint": "compact 32 / default 40-48 / relaxed 56 (C3 159)",
+      "evidence_any": [
+        "tr",
+        "td",
+        "row",
+        "table"
+      ]
     },
     "separation": {
       "channel": "weight",
@@ -229,7 +327,14 @@
         "composite"
       ],
       "token": "--{t}-divider",
-      "hint": "hairline 1px ~8-12% opacity (safer default) vs zebra (unproven, C3 165)"
+      "hint": "hairline 1px ~8-12% opacity (safer default) vs zebra (unproven, C3 165)",
+      "evidence_any": [
+        "divider",
+        "hr",
+        "tr",
+        "stripe",
+        "zebra"
+      ]
     },
     "numeric-alignment": {
       "channel": "density",
@@ -240,7 +345,14 @@
         "composite"
       ],
       "token": null,
-      "hint": "numeric right + tabular-nums, text left (C3 160)"
+      "hint": "numeric right + tabular-nums, text left (C3 160)",
+      "evidence_any": [
+        "td",
+        "tabular-nums",
+        "align",
+        "number",
+        "numeric"
+      ]
     },
     "hover-highlight": {
       "channel": "colour",
@@ -251,7 +363,12 @@
         "composite"
       ],
       "token": "--{t}-hover-layer",
-      "hint": "translucent state layer so it inverts in dark (B2 3.14)"
+      "hint": "translucent state layer so it inverts in dark (B2 3.14)",
+      "evidence_any": [
+        "tr",
+        "row",
+        "hover"
+      ]
     },
     "select-affordance": {
       "channel": "density",
@@ -262,7 +379,13 @@
         "composite"
       ],
       "token": null,
-      "hint": "checkbox vs whole-row click; aria-selected; a non-colour selected signal"
+      "hint": "checkbox vs whole-row click; aria-selected; a non-colour selected signal",
+      "evidence_any": [
+        "checkbox",
+        "aria-selected",
+        "select",
+        "input"
+      ]
     }
   }
 }
