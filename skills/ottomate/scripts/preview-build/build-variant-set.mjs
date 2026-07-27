@@ -93,6 +93,32 @@ export function renderPanelStatic(p) {
 
 // Deterministic shuffle when a seed is given, so a rerun reproduces the same layout for the same round
 // but a NEW round reshuffles (G3 §3.6: randomise slot order on every presentation, not just the first).
+/**
+ * C7 — the colour budget must be STATED, not silently absent. The *honoured* half is enforced in
+ * pixels and blocks (P2); this closes the *stated* half: a round config must carry a budget or an
+ * explicit, reasoned exception. AC9. Pure + exported so it is testable without a build.
+ * @returns {{ok:boolean, budget?:number|object, reason?:string}}
+ */
+export function validateColourBudget(cfg) {
+  const b = cfg?.colorBudget ?? cfg?.colourBudget;
+  if (b == null) {
+    return { ok: false, reason: 'colorBudget is required — give a positive number of accent surfaces (e.g. 4), or an explicit {mode:"unconstrained", why:"…"}. A budget silently absent is exactly what this rule prevents.' };
+  }
+  if (typeof b === 'number') {
+    return b > 0 ? { ok: true, budget: b } : { ok: false, reason: `colorBudget must be a positive number of surfaces, got ${b}` };
+  }
+  if (b && typeof b === 'object') {
+    if (b.mode === 'unconstrained') {
+      return (b.why && String(b.why).trim())
+        ? { ok: true, budget: b }
+        : { ok: false, reason: 'colorBudget {mode:"unconstrained"} requires a non-empty `why` — an unstated exception is not a stated choice.' };
+    }
+    if (typeof b.surfaces === 'number' && b.surfaces > 0) return { ok: true, budget: b };
+    return { ok: false, reason: `colorBudget object must be {mode:"unconstrained", why} or {surfaces:<n>}, got ${JSON.stringify(b)}` };
+  }
+  return { ok: false, reason: `colorBudget must be a number or an object, got ${typeof b}` };
+}
+
 export function shuffle(arr, seed) {
   const a = [...arr];
   let s = seed == null ? Math.floor(Math.random() * 2 ** 31) : seed;
@@ -108,6 +134,14 @@ function main() {
   const configPath = process.argv[2];
   if (!configPath) { console.error('usage: node build-variant-set.mjs <variant-set.json>'); process.exit(1); }
   const cfg = JSON.parse(readFileSync(configPath, 'utf8'));
+
+  // C7 — the colour budget must be STATED before any work happens (AC9). Fail closed like the gate.
+  const cb = validateColourBudget(cfg);
+  if (!cb.ok) {
+    console.error(`\ncolour budget: FAIL — ${cb.reason}\nNOTHING WRITTEN.`);
+    process.exit(2);
+  }
+  console.log(`colour budget: ${typeof cb.budget === 'number' ? cb.budget + ' accent surface(s)' : (cb.budget.mode === 'unconstrained' ? 'UNCONSTRAINED — ' + cb.budget.why : JSON.stringify(cb.budget))}`);
 
   const axis = cfg.axis ?? {};
   const variants = cfg.variants ?? [];
@@ -258,6 +292,7 @@ function main() {
     variants: variants.map((v) => ({ label: v.label, axis_values: v.axis_values, resolved: resolved[v.label] })),
     slot_mapping: Object.fromEntries(panels.map((p) => [p.slot, p.label])),
     gate: { pass: gate.pass, checks: gate.checks },
+    colour_budget: cb.budget, // C7: the stated choice, carried into the round record so it is auditable
     accents: tokens,
   }, null, 2));
 
