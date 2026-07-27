@@ -72,6 +72,10 @@ silently**. Routing was the second failure, not the first. That reorders the fix
 (open to-do #306). Graduation writes *into* a catalog that is already 57% unregistered. That is a
 prerequisite, not a footnote.
 
+> **Unit plans written 2026-07-27: `2026-07-27-STAGE4-GRADUATION-PLANS.md`.** Every S-item below now
+> has build steps and an acceptance bar with a must-fail *and* a must-pass case. Three items changed
+> shape once S1 was measured, and one new prerequisite (S1b) appeared.
+
 | # | Item | Type |
 |---|---|---|
 | S1 | ~~Live-state check~~ | ✅ **done today** |
