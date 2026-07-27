@@ -298,10 +298,10 @@ test('every enforced rule names a test AND either has a detector or is gate-enfo
   for (const rule of RULES.rules) {
     if (rule.status !== 'enforced') continue;
     assert.ok(rule.enforced_by, `rule "${rule.id}" claims enforced without naming a test`);
-    // A rule is legitimately enforced either by a design-check detector, or by the isolation gate
-    // (a separate file, its own suite) — in which case enforced_by names isolation-gate.test.mjs.
-    const gateEnforced = /isolation-gate\.test|harness-dsd\.test/.test(rule.enforced_by);
-    assert.ok(DETECTOR_IDS.has(rule.id) || gateEnforced, `rule "${rule.id}" claims enforced but has no detector and is not gate-enforced`);
+    // A rule is legitimately enforced by: a design-check source detector; the isolation gate / harness
+    // (own suites); or the COMPUTED checker (a browser test, computed-checks.*). Each names its file.
+    const elsewhereEnforced = /isolation-gate\.test|harness-dsd\.test|computed-checks/.test(rule.enforced_by);
+    assert.ok(DETECTOR_IDS.has(rule.id) || elsewhereEnforced, `rule "${rule.id}" claims enforced but has no detector and is not gate/computed-enforced`);
   }
 });
 const DETECTOR_IDS = new Set(Object.keys((await import('./checks.mjs')).DETECTORS));

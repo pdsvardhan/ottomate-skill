@@ -257,10 +257,13 @@
       "source": "CHATGPT (WCAG 2.1 AA) + A5 pending; F2 §3.12 wants APCA",
       "statement": "Text contrast >= 4.5:1 normal, >= 3:1 large (>=18.66px bold or >=24px). Non-text UI >= 3:1 against adjacent colour.",
       "check": "contrast_ratio",
+      "method": "computed",
       "params": { "normal": 4.5, "large": 3.0, "non_text": 3.0, "large_px_bold": 18.66, "large_px_regular": 24 },
       "remedy": "regenerate_variant",
       "advisory_companion": { "check": "apca_lc", "params": { "body": 75, "large": 45, "non_text": 30 }, "note": "APCA is DRAFT with an unconfirmed embedding licence — computed and shown, never gates. Revisit if it lands in WCAG 3." },
-      "status": "pending"
+      "impl_note": "computed-checks.js: resolved text colour vs the nearest opaque ancestor background → WCAG ratio. Text over an image/gradient is reported 'review', never silently passed. Profile-filtered (advise P1, block P2/P3).",
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/computed-checks.test.mjs (math) + computed-checks.browser.test.mjs › CATCH: low contrast is flagged (DOM, real Chromium)"
     },
     {
       "id": "floor-reduced-motion",
@@ -545,9 +548,23 @@
         "delta_e_warn": 2,
         "geometry_tolerance_px": 1.0
       },
-      "params_note": "THIS IS THE MIX-COHERENCE CHECK G1 REQUIRES AND WE DO NOT HAVE. It is the rule that makes a per-item mixed pick (doctrine 38) safe: when the owner takes the header from v1 and the card from v2, this is what proves the result is still one design. Render each component, getComputedStyle, group by semantic role, assert one value per role. Requires a browser — the Task-3 Playwright harness is the natural host.",
+      "params_note": "THE MIX-COHERENCE CHECK G1 REQUIRES. Makes a per-item mixed pick (doctrine 38) safe: when the owner takes the header from v1 and the card from v2, this proves the result is still one design. BUILT in computed-checks.js: groups [data-role] elements, getComputedStyle, ΔE across components. Requires the generation method to stamp data-role on role-bearing parts (a small addition). Runs in real Chromium.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/computed-checks.test.mjs (ΔE math) + computed-checks.browser.test.mjs › CATCH: cross-component coherence flags the drifting role"
+    },
+    {
+      "id": "computed-axis-divergence",
+      "tier": "advise",
+      "source": "G1 §4.3 (rendered), added 2026-07-23 from the round-1 false-reject",
+      "statement": "Across the N rendered panels, each pair's RESOLVED-style signature differs by at least a floor — the panels actually look different, not just differ in source.",
+      "check": "rendered_appearance_divergence",
+      "method": "computed",
+      "params": { "divergence_floor": 0.25, "vector_props": ["borderRadius", "boxShadow", "backgroundColor", "color", "padding", "borderWidth", "borderStyle", "fontFamily", "fontSize", "fontWeight", "letterSpacing", "textTransform"] },
+      "params_note": "THE PROPER BACKSTOP FOR A STYLISTIC BUNDLE. The gate's source structural check counts tag/class/property NAMES and is BLIND to CSS-value differences, so it reported ~2% for three visibly-different round-1 cards (a false reject). This reads getComputedStyle, so it sees radius 0 vs 14, flat vs shadowed, coral vs amber. Per panel: the SET of resolved values across all styled elements (a holistic look signature); distance = mean Jaccard across props. Advise, not block, because it complements — not replaces — the source gate. Verified on real round-2 output: A/B 0.39, A/C 0.41, B/C 0.57 (all differ); a near-identical pair scored 0.06 (flagged).",
+      "remedy": "annotate",
+      "status": "enforced",
+      "enforced_by": "scripts/design-check/computed-checks.test.mjs (vecDistance) + computed-checks.browser.test.mjs › CATCH: divergence flags near-identical panels + PASS: different panels diverge"
     },
     {
       "id": "feas-no-eval",

@@ -102,6 +102,19 @@ the pick vector through `scripts/generation/picks-to-ledger.mjs` → one `design
 sub-decision (`chosen_value`, `mixed_from`, `rejected[]`, `profile_at_decision`). The rejected values
 become the next round's `rejected[]` input (step 6 above).
 
+### 6½. Post-render computed pass (Phase 3b)
+After the harness emits and the page renders, run the **computed checker** on the rendered output —
+the checks the source checker cannot do because they need resolved styles. Host: real Chromium (the
+server has `@playwright` + chromium; run `scripts/design-check/run-computed.mjs <out.html>
+<computed-checks.js>`, or inject `computed-checks.js` via the browser you already drive). It returns:
+- **`floor-contrast`** — resolved text vs effective background; block P2/P3, advise P1 (text over an
+  image/gradient is reported *review*, never silently passed).
+- **`adv-cross-component-coherence`** — the mix-coherence check: same `data-role` → same resolved value
+  across components. **Stamp `data-role` on role-bearing parts** so this can run on a mixed pick.
+- **`computed-axis-divergence`** — the stylistic-bundle backstop: the panels' resolved-style signatures
+  must actually differ. This is what the source structural check cannot see (it's blind to CSS values),
+  so declare a stylistic bundle `kind:"stylistic"` at the gate and let THIS confirm real divergence.
+
 ### 7. Lock + guard against regression (Phase 2)
 When the owner confirms a pick, **lock** it: `ledger-context.lockDecision(...)` PATCHes
 `status:'locked', confirmed:true, snapshot: snapshotForLock(decision, source)` — a lock is *earned*

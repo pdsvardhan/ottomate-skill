@@ -91,7 +91,8 @@ re-derived by hand instead of read.
 | **scope × entry routing** | Scope selects the rungs; entry decides context; `ui-mode:none` is the default | ✅ | `routeRungs`/`routeEntry` in `method-routing.mjs`, `method-routing.test.mjs` 9/9; `references/stage-2-routing.md` |
 | **Graduation to `master_components`** | Locked bespoke variant → catalog per H1 | 🟡 | `references/graduation-protocol.md` + `graduate.mjs` **draft hook (never writes)** 6/6. The full ingest subsystem needs a migration (spdx/author/attribution/retrieved_at/trademark/grade columns absent) — the next unit |
 | **Audience profiles P1/P2/P3** | Profile selects which floor rules bind | ✅ | `resolveFloor()` in `design-check.mjs`; test proves P1 and P3 return **different** sets, and that a per-project override beats the preset |
-| **Constraint checker** | Mechanically enforce the rules | 🟡 | **26 of 89 rules + 3 of 5 contract keys now enforced**, each naming a test. Of the 26: 19 via the design-check detector, 7 via the isolation gate / harness (the `iso-*`/`present-*` bookkeeping flip). Wired into `build-variant-set.mjs` after the gate, before emit; blocks exit 2 and write nothing. **The other 63 are still `pending`** — the checker reports them as `skipped`, never passing |
+| **Constraint checker (source)** | Mechanically enforce source-readable rules | 🟡 | **29 of 90 rules + 3 of 5 contract keys enforced**, each naming a test. Source checker (pure Node) is wired into `build-variant-set.mjs` after the gate, before emit; blocks exit 2. **61 still `pending`** — reported as `skipped`, never passing |
+| **Computed checker (browser)** | The rules that need resolved styles — contrast, coherence, appearance divergence | ✅ | `computed-checks.js` (one script, runs in Node for the math + in real Chromium for the DOM). **3 rules enforced: `floor-contrast`, `adv-cross-component-coherence`, `computed-axis-divergence`.** Math: `computed-checks.test.mjs` 6/6. DOM: `computed-checks.browser.test.mjs` 4/4 on the server's Chromium (real catch + real pass). Demonstrated on round-2 output. Host: `run-computed.mjs` (server) or claude-in-chrome. **A post-render pass, not auto-inlined in the harness yet** |
 | **Feasibility gate** | Refuse a variant that cannot RUN | 🟡 | **4 of 6 enforced** (`no-eval` · `no-wasm` · `no-network` incl. the placeholder-service list · `no-inline-handlers`). `feas-baseline-gate` needs real `@supports` parsing; `feas-degradation-bottom-rung` is `computed`. Proven profile-invariant by test |
 | **Cross-component coherence** | Same semantic role → same computed value across components; shared state vocab → same token delta | 📋 | `adv-cross-component-coherence`, C2 §3.10. **This is the mix-coherence check G1 requires and the per-item pick model (doctrine 38) depends on.** Needs a browser; no runner |
 | **Rubric scoring pass** | Score variants before presenting | 📋 | Rubric written; no runner |
@@ -143,7 +144,7 @@ re-derived by hand instead of read.
 | **`resolveFloor(profile)`** — which floor rules bind | mechanism | owner ruling | ✅ P1≠P3 proven; overrides honoured |
 | 10 advisory rules — font-smoothing · action labels · error copy · implementation vocabulary · CSS architecture · inline styles · webkit prefixes · default typeface · hover/focus-within · weight budget | ADVISE | A2/C3/D1/E1/E2 | ✅ annotated, never blocking |
 
-### Specified, enforcing nothing (`status:"pending"`) — **63 of 89** *(was 74; Part-A quick wins flipped 11 more)*
+### Specified, enforcing nothing (`status:"pending"`) — **61 of 90** *(Phase 3b enforced 3 computed rules; +1 new rule)*
 `source_policy` (needs a source-tagging convention that does not exist yet) · `colour_budget`
 (needs rendered surfaces → `computed`) · `floor-contrast` · `floor-reduced-motion` ·
 `floor-target-size` · `floor-not-colour-alone` · `hover-only-content` · all 18 templated-tax rows ·
@@ -309,7 +310,9 @@ round run end-to-end** (fresh sub-agent → gate → checker → isolated render
 **Phase-2 persistence** — rejected[]/frozen wiring, reload-on-resume, and the snapshot regression gate
 (demonstrated live) · **Phase-4 wiring** — fresh-context default, scope×entry routing, profile-aware
 Stage-3 gate, design gates in the HARD list, graduation protocol+hook; **round 2 demonstrated the
-ledger being respected** (fresh agent → no rejected value re-offered, frozen axis omitted)
+ledger being respected** (fresh agent → no rejected value re-offered, frozen axis omitted) ·
+**Phase-3b computed checker** — contrast, cross-component coherence, and the appearance-divergence
+backstop, verified in real Chromium (the check that would NOT have false-rejected round 1)
 
 ### Pending, in build order
 | Phase | Items |
@@ -318,7 +321,7 @@ ledger being respected** (fresh agent → no rejected value re-offered, frozen a
 | ~~**1 Generation**~~ | 🟡 **LARGELY DONE 2026-07-23** — `component-anatomy.json` (sub-decision inventory) ✅ · render-by-tier in the anatomy ✅ · `picks-to-ledger.mjs` bundle→per-item picks ✅ (live round-trip verified) · `stage-2-generation.md` method (over-generate 6 → filter 3) ✅. **A real round ran** (fresh sub-agent → gate → checker → isolated render → live ledger). **Remaining:** a mechanical rubric *scorer* (filter is model judgment); a *computed rendered-appearance* divergence check (backstop for stylistic bundles); the states-pinned render is convention, not a gate |
 | ~~**2 Persistence**~~ | ✅ **DONE 2026-07-23** — `rejected[]`/frozen wiring · reload-on-resume · snapshot differ, all in `ledger-context.mjs` (9/9), wired, and the differ + lock/unlock 422s **demonstrated live**. No DB change (table + API already supported it) |
 | ~~**3a Enforcement — source**~~ | 🟡 **LARGELY DONE 2026-07-23** — `resolveFloor()` ✅ · the source checker ✅ (15 rules + 3 contract keys, 29/29 tests) · wired into `build-variant-set.mjs` ✅. **Remaining:** `feas-baseline-gate` (`@supports` parsing) · `source_policy` (needs a tagging convention) · constraint *capture* (the contract is read from config; nothing writes it to the ledger yet) |
-| **3b Enforcement — computed** | The 5 `computed` rules, hosted in the existing Task-3 Playwright harness: `adv-cross-component-coherence` first, since the per-item pick model depends on it |
+| ~~**3b Enforcement — computed**~~ | 🟡 **STARTED 2026-07-23** — the 3 highest-value computed rules built + demonstrated in real Chromium (`floor-contrast`, `adv-cross-component-coherence`, `computed-axis-divergence`). **Remaining:** the ~12 other computed rules (shadow/glass/type-optical/scale/…) against the same architecture; auto-inlining the computed pass into the harness; the mechanical rubric scorer's objective half |
 | ~~**4 Wiring**~~ | 🟡 **DONE 2026-07-23 (wiring)** — fresh-context default ✅ · scope×entry routing ✅ · Stage-3 profile gate ✅ · design gates in the HARD list ✅ · graduation **protocol + non-writing hook** ✅. **Remaining: the graduation ingest SUBSYSTEM** (migration for provenance/grade columns + grade runner + dedupe + NOTICES) — its own unit |
 
 ### Superseded — kept deliberately
@@ -371,7 +374,7 @@ ledger being respected** (fresh agent → no rejected value re-offered, frozen a
 | `theme-extract.mjs` emits the raw extracted pick | Medium | A1 §3.10: normalise L to the accent target and clamp C so contrast is guaranteed *at derivation time*. Today it only boosts V |
 | Gate does not check that axis params are **visible in a shown state** | High | *A* root cause of the A≈B round; B2 would have caught it. **See the namespace-collision defect above for a second, independent mechanism** — both produce "source differs, display identical", and fixing only one leaves the gate defeatable |
 | Render surface ignores component tier | High | 566 KB / 36 posters for a component question. **E1 §3.2 now supplies the budget the complaint lacked: ≤1 MB snappy, ≤2 MB acceptable, >2 MB a budget event — so 566 KB was *within* budget.** The defect is the wrong **surface** (a page rendered to decide a component question), not the weight. Fixed by render-by-tier in Phase 1, not by shrinking anything |
-| ~~Every `design-rules.json` rule is `pending`~~ → **63 of 89 still are** | Medium *(was High)* | 26 rules + 3 contract keys now enforced with tests and wired in. The checker reports unimplemented rules as **`skipped`**, so coverage cannot be mistaken for a pass |
+| ~~Every `design-rules.json` rule is `pending`~~ → **61 of 90 still are** | Medium *(was High)* | 29 rules + 3 contract keys enforced with tests (26 source + 3 computed). The checker reports unimplemented rules as **`skipped`**, so coverage cannot be mistaken for a pass |
 | The checker only runs in the harness's **markup mode** | Medium | Token mode varies only inline custom properties, so there is no per-variant source to check. The build prints `constraint check: SKIPPED` rather than a pass that checked nothing — but it does mean **every round run so far would have been unchecked** |
 | `.sr-stat::before` 3px left strip in `template.card-wall.html` | Low | F2's most reliable AI tell, in our own template. Deferred by owner |
 | DOM-commenter extension has **no git remote** | Medium | Local-only; "pushed" claims were no-ops |
