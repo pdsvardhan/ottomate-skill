@@ -33,6 +33,34 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 }
 
+// ── shared content INTO a markup panel (U6a) ────────────────────────────────────────────────────
+// Found while planning Stage 1: the harness had only SIX template-level placeholders and none were
+// per-card, so a markup-mode panel received no shared content at all. Theme-from-content and markup
+// mode were therefore incompatible — which is a structural reason the first real round fell back to
+// CSS gradients. Token mode never hit this because its shared component is rendered from
+// VARIANT_DATA on the client.
+//
+// The content is CONTROL, not axis: every panel gets the same cards in the same order, which is what
+// makes "functionally identical, stylistically distinct" structural rather than hopeful. Text is
+// escaped; the image is a data: URI produced upstream and must NOT be escaped.
+const CARD_SLOT_RE = /\{\{(IMG|TITLE|META|ACCENT|RATING)_(\d+)\}\}/g;
+
+export function fillCardSlots(markup, cards = []) {
+  if (!markup || !cards.length) return markup;
+  return markup.replace(CARD_SLOT_RE, (whole, kind, nStr) => {
+    const c = cards[Number(nStr) - 1];
+    if (!c) return whole;               // leave it — the placeholder guard downstream fails loudly
+    switch (kind) {
+      case 'IMG':    return c.img ?? whole;
+      case 'TITLE':  return escapeHtml(c.title ?? '');
+      case 'META':   return escapeHtml(c.meta ?? '');
+      case 'ACCENT': return c.accent ?? whole;
+      case 'RATING': return c.rating == null ? '' : escapeHtml(String(c.rating));
+      default:       return whole;
+    }
+  });
+}
+
 // Static panel render for MARKUP mode — each variant's markup goes into its OWN declarative shadow
 // root, so ids / classes / @keyframes / :root custom properties CANNOT leak across panels. Verified
 // isolating in the real Artifact sandbox 2026-07-23 (probe artifact 1d77da20). `innerHTML` does NOT
@@ -106,7 +134,9 @@ function main() {
     resolved[v.label] = { ...control, ...(v.axis_values ?? {}) };
     if (v.panelTemplate) {
       const p = path.isAbsolute(v.panelTemplate) ? v.panelTemplate : path.join(path.dirname(configPath), v.panelTemplate);
-      renderedMarkup[v.label] = readFileSync(p, 'utf8');
+      // Fill the shared content into the panel BEFORE the gate, so every check reads the artifact that
+      // will actually render rather than a template. Same principle as the axis-realised check.
+      renderedMarkup[v.label] = fillCardSlots(readFileSync(p, 'utf8'), cards);
     }
   }
 
