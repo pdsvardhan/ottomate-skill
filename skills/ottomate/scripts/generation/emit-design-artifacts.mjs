@@ -114,10 +114,29 @@ export function repoGuards(repo) {
 /**
  * Write + commit. NEVER pushes (D13). Returns what it did, or what it refused to do and why.
  */
-export function emitToRepo(repo, artifacts, { project, round, dryRun = false } = {}) {
+export function emitToRepo(repo, artifacts, { project, round, dryRun = false, allowSkipped = false } = {}) {
   const dir = path.join(repo, ARTIFACT_DIR);
   const cssPath = path.join(dir, TOKENS_FILE);
   const specPath = path.join(dir, SPEC_FILE);
+
+  // C1 step 1 — FAIL LOUDLY. A locked decision whose question the registry cannot resolve used to be
+  // logged as `SKIPPED …` and the emit continued, so the owner got a green run and a tokens file that
+  // silently omitted a decision they had explicitly locked. That is the worst available failure mode:
+  // it looks like success. The write now REFUSES until every locked decision resolves — or until the
+  // caller passes `allowSkipped` and thereby says out loud that it is dropping them.
+  if (artifacts.skipped?.length && !allowSkipped) {
+    return {
+      ok: false,
+      unresolved: artifacts.skipped,
+      refused: [
+        `${artifacts.skipped.length} LOCKED decision(s) could not be resolved to a token or a spec entry, `
+        + 'and a locked decision must never be dropped silently:',
+        ...artifacts.skipped.map((s) => `  ${s.axis} — ${s.why}`),
+        'Fix by giving the target an anatomy entry, or by letting anatomy-derive resolve it. '
+        + 'Pass --allow-skipped only when you deliberately intend to emit without them.',
+      ],
+    };
+  }
 
   const guards = repoGuards(repo);
   if (guards.length) return { ok: false, refused: guards };
@@ -154,7 +173,8 @@ export function formatEmit(artifacts, result) {
   l.push(`tokens: ${artifacts.tokens.length}   structural: ${artifacts.structural.length}   skipped: ${artifacts.skipped.length}`);
   for (const t of artifacts.tokens) l.push(`  ${t.token.padEnd(30)} ${t.value}   (${t.axis})`);
   for (const s of artifacts.structural) l.push(`  [spec] ${s.axis} = ${s.value}`);
-  for (const s of artifacts.skipped) l.push(`  SKIPPED ${s.axis} — ${s.why}`);
+  // Not "SKIPPED" — that read like a note. An unresolved LOCKED decision is a blocker.
+  for (const s of artifacts.skipped) l.push(`  UNRESOLVED (blocks emit) ${s.axis} — ${s.why}`);
   if (!result) return l.join('\n');
   if (!result.ok) l.push(`REFUSED:\n  - ${result.refused.join('\n  - ')}`);
   else if (result.dryRun) l.push(`dry run — would write ${result.cssPath}${result.unchanged ? ' (no change)' : ''}`);

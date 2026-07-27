@@ -7,7 +7,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync } from 
 import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { buildArtifacts, emitToRepo, repoGuards, tokenName, TOKENS_FILE, SPEC_FILE, ARTIFACT_DIR } from './emit-design-artifacts.mjs';
+import { buildArtifacts, emitToRepo, repoGuards, tokenName, formatEmit, TOKENS_FILE, SPEC_FILE, ARTIFACT_DIR } from './emit-design-artifacts.mjs';
 
 const d = (o) => ({ id: 1, status: 'locked', target_id: 'screenroom.poster-card', axis: 'media-card.corner-radius', chosen_value: '4px', round: 1, ...o });
 
@@ -133,4 +133,60 @@ test('a dirty file elsewhere in design/ does NOT block us — only our own subdi
 
 test('guards report a clean repo as safe', () => {
   assert.deepEqual(repoGuards(repo()), []);
+});
+
+// ── C1 step 1 — an unresolved LOCKED decision must BLOCK the emit, not be logged and skipped ─────
+
+test('MUST FAIL — a locked decision the registry cannot resolve refuses the write, naming the axis', () => {
+  const r = repo();
+  const decisions = [
+    { id: 1, status: 'locked', axis: 'library-list.surface-strategy', chosen_value: 'reuse-browse-surface', target_id: 'screenroom.library-lists' },
+  ];
+  const artifacts = buildArtifacts(decisions, { project: 'screenroom' });
+  assert.equal(artifacts.skipped.length, 1, 'precondition: this axis is not in the registry');
+
+  const res = emitToRepo(r, artifacts, { project: 'screenroom' });
+  assert.equal(res.ok, false, 'a locked decision must never be dropped silently');
+  assert.equal(res.unresolved.length, 1);
+  assert.match(res.refused.join('\n'), /library-list\.surface-strategy/);
+  assert.match(res.refused.join('\n'), /never be dropped silently/);
+  assert.equal(existsSync(path.join(r, 'design')), false, 'nothing was written');
+});
+
+test('MUST FAIL — the refusal fires even when OTHER decisions resolve cleanly (a partial emit is the trap)', () => {
+  const r = repo();
+  const decisions = [
+    { id: 1, status: 'locked', axis: 'media-card.corner-radius', chosen_value: '12px', target_id: 'x.card' },
+    { id: 2, status: 'locked', axis: 'library-list.surface-strategy', chosen_value: 'reuse', target_id: 'x.list' },
+  ];
+  const artifacts = buildArtifacts(decisions, { project: 'p' });
+  assert.ok(artifacts.tokens.length >= 1, 'precondition: one axis DOES resolve');
+  const res = emitToRepo(r, artifacts, { project: 'p' });
+  assert.equal(res.ok, false, 'a green run that quietly omits one locked decision is exactly the failure');
+});
+
+test('MUST PASS — --allow-skipped emits anyway, because dropping them is then said out loud', () => {
+  const r = repo();
+  const decisions = [
+    { id: 1, status: 'locked', axis: 'media-card.corner-radius', chosen_value: '12px', target_id: 'x.card' },
+    { id: 2, status: 'locked', axis: 'library-list.surface-strategy', chosen_value: 'reuse', target_id: 'x.list' },
+  ];
+  const artifacts = buildArtifacts(decisions, { project: 'p' });
+  const res = emitToRepo(r, artifacts, { project: 'p', allowSkipped: true, dryRun: true });
+  assert.equal(res.ok, true);
+});
+
+test('MUST PASS — a fully resolvable set is unaffected by the new guard', () => {
+  const r = repo();
+  const decisions = [{ id: 1, status: 'locked', axis: 'media-card.corner-radius', chosen_value: '12px', target_id: 'x.card' }];
+  const artifacts = buildArtifacts(decisions, { project: 'p' });
+  assert.equal(artifacts.skipped.length, 0);
+  assert.equal(emitToRepo(r, artifacts, { project: 'p', dryRun: true }).ok, true);
+});
+
+test('the report calls it UNRESOLVED and says it blocks — "SKIPPED" read like a note', () => {
+  const artifacts = buildArtifacts(
+    [{ id: 1, status: 'locked', axis: 'library-list.surface-strategy', chosen_value: 'r', target_id: 't' }], { project: 'p' },
+  );
+  assert.match(formatEmit(artifacts), /UNRESOLVED \(blocks emit\)/);
 });
