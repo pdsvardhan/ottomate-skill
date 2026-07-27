@@ -44,8 +44,8 @@ test('deferral guidance keeps the load-bearing decisions out of "cheap to defer"
 
 test('buildRoundInput excludes LOCKED axes from the contested set and carries rejected values', () => {
   const decisions = [
-    { axis: 'media-card.corner-radius', status: 'locked', chosen_value: '14', rejected: [{ value: 0, why_rejected: 'too sharp' }] },
-    { axis: 'media-card.accent-usage', status: 'rejected', chosen_value: 'badge', rejected: [{ value: 'frame', why_rejected: 'x' }] },
+    { axis: 'media-card.corner-radius', status: 'locked', chosen_value: '14', rejected: [{ value: 0, grade: 'rejected_with_reason', why_rejected: 'too sharp' }] },
+    { axis: 'media-card.accent-usage', status: 'rejected', chosen_value: 'badge', rejected: [{ value: 'frame', grade: 'rejected_with_reason', why_rejected: 'x' }] },
   ];
   const inp = buildRoundInput({ anatomy: A, archetype: 'media-card', profile: 'P2', direction: 'editorial', decisions });
   const contestedIds = inp.contested.map((s) => s.id);

@@ -1,5 +1,5 @@
 {
-  "$comment": "THE UNIVERSAL HALF. Tiers, the state matrix, and the finite registry of design QUESTIONS with their perceptual channel, scope hint and the CSS custom property each maps to (null = structural, cannot be a token). component-anatomy.json holds only per-component facts. Split 2026-07-27 (U1): both used to live in one blob, so adding a component re-authored the universal half too, which is why there were only three. Resolve the two with scripts/generation/anatomy.mjs. Each question also carries `evidence_any`: keywords that, if found in a component's source evidence, make that question LIKELY relevant to it. Heuristic and openly so — it ranks, it never filters silently (U2).",
+  "$comment": "THE UNIVERSAL HALF. Tiers, the state matrix, and the finite registry of design QUESTIONS with their perceptual channel, scope hint and the CSS custom property each maps to (null = structural, cannot be a token). component-anatomy.json holds only per-component facts. Split 2026-07-27 (U1): both used to live in one blob, so adding a component re-authored the universal half too, which is why there were only three. Resolve the two with scripts/generation/anatomy.mjs. Each question also carries `evidence_any`: keywords that, if found in a component's source evidence, make that question LIKELY relevant to it. Heuristic and openly so — it ranks, it never filters silently (U2). Also owns tier_rung: the ladder rung a tier decides at. Corrected 2026-07-27 (T7) — composite mapped to 3, which is named CLUSTER, so every composite-component round was validated against the cluster count rule (2-3) instead of the component one (exactly 3).",
   "meta": {
     "version": 1,
     "created": "2026-07-27",
@@ -387,5 +387,10 @@
         "input"
       ]
     }
+  },
+  "tier_rung": {
+    "primitive": 2,
+    "composite": 2,
+    "surface": 4
   }
 }

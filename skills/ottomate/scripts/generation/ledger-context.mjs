@@ -20,15 +20,43 @@ const sha256 = (s) => createHash('sha256').update(String(s)).digest('hex');
  * @param {Array<object>} decisions  design_decisions rows for one target
  * @returns {Record<string, Array<{value:*, why:string, round?:number}>>}
  */
+// T3, 2026-07-27. "Not picked" and "ruled out" used to be the same word, and the method says a round
+// must NEVER re-offer a rejected value — so a close second was banned permanently for losing once.
+// Two grades now:
+//   not_selected          simply did not win this round. MAY come back.
+//   rejected_with_reason  the owner ruled it out and said why. Hard ban.
+// A legacy row carries no grade. It is read as `not_selected`, which errs toward offering a value
+// again rather than silently withholding it — the safe direction for a change like this.
+export const HARD_BAN = 'rejected_with_reason';
+export const SOFT = 'not_selected';
+
+export function gradeOf(entry) {
+  if (entry?.grade === HARD_BAN || entry?.grade === SOFT) return entry.grade;
+  return SOFT;
+}
+
+/**
+ * Values a round must never re-offer. ONLY hard bans bind.
+ * @param {Array<object>} decisions  design_decisions rows for one target
+ */
 export function rejectedByAxis(decisions) {
+  return collectRejections(decisions, (e) => gradeOf(e) === HARD_BAN);
+}
+
+/** Everything turned down, both grades — context for a round, not a prohibition. */
+export function passedOverByAxis(decisions) {
+  return collectRejections(decisions, () => true);
+}
+
+function collectRejections(decisions, keep) {
   const out = {};
   for (const d of decisions) {
     const rej = Array.isArray(d.rejected) ? d.rejected : [];
     for (const r of rej) {
-      (out[d.axis] ??= []).push({ value: r.value, why: r.why_rejected ?? r.why ?? 'rejected', round: d.round });
+      if (!keep(r)) continue;
+      (out[d.axis] ??= []).push({ value: r.value, why: r.why_rejected ?? r.why ?? 'rejected', grade: gradeOf(r), round: d.round });
     }
   }
-  // de-dupe by value within an axis
   for (const axis of Object.keys(out)) {
     const seen = new Set();
     out[axis] = out[axis].filter((r) => { const k = JSON.stringify(r.value); if (seen.has(k)) return false; seen.add(k); return true; });

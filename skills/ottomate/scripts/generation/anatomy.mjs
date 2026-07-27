@@ -87,6 +87,18 @@ export function questionsForTier(tier, dir = DATA) {
     .map(([id, v]) => ({ id, ...v }));
 }
 
+/**
+ * The ladder rung a tier decides at. ONE home (T7, 2026-07-27).
+ * It was duplicated verbatim in picks-to-ledger.mjs and publish-round.mjs, and mapped
+ * `composite -> 3`. Rung 3 is named CLUSTER, so every composite-COMPONENT round was validated against
+ * the cluster count rule (2-3) instead of the component one (exactly 3). A primitive and a composite
+ * are both components; rung 3 is for a genuine multi-component cluster.
+ */
+export function rungForTier(tier, dir = DATA) {
+  const map = loadRaw(dir).questions.tier_rung ?? {};
+  return map[tier] ?? 2;
+}
+
 /** Token-shaped questions only — U5 reads this to know which picks can become CSS. */
 export function tokenShapedQuestions(dir = DATA) {
   const q = questionRegistry(dir);

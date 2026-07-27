@@ -9,14 +9,13 @@
 // PURE. No network here (unit-tested with no DB). The thin POST helper below is used only by the live
 // demo run, one door via the API, backup-first.
 
-import { resolveAnatomy } from './anatomy.mjs';
+import { resolveAnatomy, rungForTier } from './anatomy.mjs';
+import { SOFT } from './ledger-context.mjs';
 
 // The anatomy is now TWO files (U1, 2026-07-27) — the universal question registry and the
 // per-component records. anatomy.mjs resolves them into the shape this module has always used.
 export { loadAnatomy } from './anatomy.mjs';
 
-// rung index for a tier — the render/decision rung this target sits at.
-const TIER_RUNG = { primitive: 2, composite: 3, surface: 4 };
 
 /**
  * @param {object} input
@@ -37,7 +36,7 @@ export function picksToLedger(input, anatomy = resolveAnatomy()) {
   const arche = anatomy.archetypes?.[archetype];
   if (!arche) throw new Error(`unknown archetype "${archetype}" (known: ${Object.keys(anatomy.archetypes).join(', ')})`);
   const known = new Set(arche.sub_decisions.map((s) => s.id));
-  const rung = TIER_RUNG[arche.tier] ?? 2;
+  const rung = rungForTier(arche.tier);
   const slots = Object.keys(variantsShown);
 
   const payloads = [];
@@ -48,7 +47,9 @@ export function picksToLedger(input, anatomy = resolveAnatomy()) {
     for (const slot of slots) {
       const offered = variantsShown[slot]?.[subId];
       if (offered !== undefined && offered !== pick.value) {
-        rejected.push({ value: offered, from: slot, why_rejected: 'not selected in the per-item pick' });
+        // T3: grade it. Simply not winning is `not_selected` and MAY come back in a later round;
+        // only an explicit rule-out is a hard ban.
+        rejected.push({ value: offered, from: slot, grade: SOFT, why_rejected: 'not selected in the per-item pick' });
       }
     }
     const isMix = pick.from && slots.length > 1;

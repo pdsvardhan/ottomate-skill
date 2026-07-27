@@ -70,7 +70,7 @@ const round = {
   sessionId: 'sess-test',
 };
 
-test('a mixed pick produces one payload per sub-decision, each recording its source and the rejected values', () => {
+test('a mixed pick produces one payload per sub-decision, each recording its source and the passed-over values', () => {
   const rows = picksToLedger(round, A);
   assert.equal(rows.length, 3, 'one row per picked sub-decision');
 
@@ -78,7 +78,7 @@ test('a mixed pick produces one payload per sub-decision, each recording its sou
   assert.equal(radius.chosen_value, '20');
   assert.deepEqual(radius.mixed_from, { variant: 'B' });
   assert.equal(radius.target_kind, 'component');
-  assert.equal(radius.rung, 3, 'composite → rung 3');
+  assert.equal(radius.rung, 2, 'composite → rung 2 (a composite COMPONENT decides at the component rung; rung 3 is a cluster — T7)');
   assert.equal(radius.profile_at_decision, 'P2');
   assert.equal(radius.status, 'proposed', 'a pick is not locked until confirmed (G3 rule 12)');
   assert.equal(radius.confirmed, false);

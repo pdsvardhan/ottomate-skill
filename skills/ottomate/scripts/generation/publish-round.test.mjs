@@ -32,14 +32,19 @@ test('one payload per offered sub-decision, in anatomy order', () => {
 
 test('variants_shown on a row is { slot: value } across every slot that offered one', () => {
   const [radius] = buildRoundPayloads(manifest);
-  assert.deepEqual(radius.variants_shown, { v1: '4px', v2: '14px', v3: '0' });
+  // T5: each entry carries its LABEL, because slot letters reshuffle every round.
+  assert.deepEqual(radius.variants_shown, {
+    v1: { value: '4px', label: null }, v2: { value: '14px', label: null }, v3: { value: '0', label: null },
+  });
 });
 
 test('a slot that omits an axis is simply absent from that row', () => {
   const m = { ...manifest, variants_shown: { ...manifest.variants_shown, v3: { 'corner-radius': '0' } } };
   const out = buildRoundPayloads(m);
   const hover = out.find((p) => p.axis === 'media-card.hover-motion');
-  assert.deepEqual(hover.variants_shown, { v1: 'lift-2px', v2: 'scale-1.02' });
+  assert.deepEqual(hover.variants_shown, {
+    v1: { value: 'lift-2px', label: null }, v2: { value: 'scale-1.02', label: null },
+  });
 });
 
 test('rows are proposed and unconfirmed — a published round is not a decision', () => {
@@ -50,8 +55,8 @@ test('rows are proposed and unconfirmed — a published round is not a decision'
   }
 });
 
-test('rung defaults from the archetype tier (media-card is composite → 3)', () => {
-  assert.equal(buildRoundPayloads(manifest)[0].rung, 3);
+test('rung defaults from the archetype tier — a composite COMPONENT decides at rung 2, not the cluster rung (T7)', () => {
+  assert.equal(buildRoundPayloads(manifest)[0].rung, 2);
   assert.equal(buildRoundPayloads({ ...manifest, rung: 5 })[0].rung, 5);
 });
 

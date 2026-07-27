@@ -29,7 +29,7 @@
 import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveAnatomy } from './anatomy.mjs';
+import { resolveAnatomy, rungForTier } from './anatomy.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 // Two files since U1 (2026-07-27); anatomy.mjs resolves them to the pre-split shape.
@@ -86,8 +86,7 @@ export function buildRoundPayloads(manifest, anatomy = resolveAnatomy()) {
   }
 
   const known = new Set(arche.sub_decisions.map((s) => s.id));
-  const TIER_RUNG = { primitive: 2, composite: 3, surface: 4 };
-  const resolvedRung = rung ?? TIER_RUNG[arche.tier] ?? 2;
+  const resolvedRung = rung ?? rungForTier(arche.tier);
   const kind = target_kind ?? (arche.tier === 'surface' ? 'page' : 'component');
 
   // Every sub-decision any slot offered a value for. Order follows the anatomy so the
@@ -107,12 +106,18 @@ export function buildRoundPayloads(manifest, anatomy = resolveAnatomy()) {
 
   const { url } = roundPaths(manifest);
 
+  // T5: slot letters are RE-SHUFFLED every round (G3 §3.6), so "A" in round 1 is a different bundle
+  // from "A" in round 2. Storing the value under a bare letter made `mixed_from:{variant:"A"}`
+  // unresolvable later without the harness manifest. Each entry now carries its label.
+  // SHAPE: { A: { value, label } }. Readers must tolerate the legacy { A: value } too — rows 18-27
+  // were written before this and are not rewritten.
+  const labels = manifest.variant_labels ?? {};
   return offeredIds.map((id) => {
     const sub = arche.sub_decisions.find((s) => s.id === id);
     const shown = {};
     for (const slot of slots) {
       const v = variants_shown[slot]?.[id];
-      if (v !== undefined) shown[slot] = String(v);
+      if (v !== undefined) shown[slot] = { value: String(v), label: labels[slot] ?? null };
     }
     return {
       target_id,
@@ -130,6 +135,28 @@ export function buildRoundPayloads(manifest, anatomy = resolveAnatomy()) {
       session_id,
     };
   });
+}
+
+/**
+ * T4. A round SHOULD declare every candidate it generated, marking which shipped. When it does not,
+ * say so out loud rather than quietly recording three of six — an unaudited filter that looks audited
+ * is worse than one that is obviously not.
+ */
+export function summariseFilter(manifest) {
+  const shown = Object.keys(manifest.variants_shown ?? {}).length;
+  const cands = manifest.candidates;
+  if (!Array.isArray(cands) || !cands.length) {
+    return { generated: null, shipped: shown, discarded: 0, candidates: [],
+      missing: `no \`candidates\` in the manifest — the ${shown} shipped bundles are recorded but the ones the filter discarded are NOT. The filter is unaudited for this round.` };
+  }
+  const shippedC = cands.filter((c) => c.shipped);
+  const discarded = cands.filter((c) => !c.shipped);
+  return {
+    generated: cands.length, shipped: shippedC.length, discarded: discarded.length,
+    candidates: cands.map((c) => ({ label: c.label, shipped: !!c.shipped, why: c.why ?? null, axis_values: c.axis_values ?? null })),
+    missing: shippedC.length === shown ? null
+      : `manifest declares ${shippedC.length} shipped candidates but ${shown} variants were published — the record does not match what was shown.`,
+  };
 }
 
 // ── live side ────────────────────────────────────────────────────────────────────────
@@ -185,7 +212,12 @@ async function main() {
   const dest = path.join(args.previews_dir, relFile);
   mkdirSync(path.dirname(dest), { recursive: true });
   if (path.resolve(manifest.html) !== path.resolve(dest)) copyFileSync(manifest.html, dest);
-  writeFileSync(path.join(path.dirname(dest), 'round.json'), JSON.stringify(manifest, null, 2));
+  // T4: the filter over-generates 6 and keeps 3, and the three it discards used to vanish — so the
+  // filter was unauditable and the next round could not learn from what was thrown away. They are
+  // recorded here, beside the preview, in the file publish-round already wrote. No schema change.
+  const record = { ...manifest, filter: summariseFilter(manifest) };
+  writeFileSync(path.join(path.dirname(dest), 'round.json'), JSON.stringify(record, null, 2));
+  if (record.filter.missing) console.warn(`  note: ${record.filter.missing}`);
   console.log(`\nwrote ${dest} (${(readFileSync(dest).length / 1024).toFixed(1)} KB)`);
 
   // 2. idempotency — refuse to double-publish a (target, round)
