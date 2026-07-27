@@ -24,54 +24,45 @@ love 3D cards" converged to a precise owned design in ~two dozen quick rounds �
 single-shot generation. The failure modes were all **colour discipline** and **varying the wrong
 axis/level** — both cheap to fix with the rules below (retrospective folded into §4/§6/§7).
 
-> ## ⚠ BUILD STATUS — last updated 2026-07-23 (post variant-harness). Still **ITERATE**, not APPROVE.
-> **Live and proven:** the one-command pipeline (fetch → extract → inject → emit, ~0.2s, with a
-> placeholder guard that really fires), machine-derived theme-from-content tokens, self-contained
-> CSP-safe previews with real content + light/dark, the colour-budget honoured in code, and the
-> **uncapped** decision ledger (834-char rationale round-tripped).
+> ## ⚠ BUILD STATUS — last updated 2026-07-27. Still **ITERATE**, not APPROVE.
+> *The previous block (2026-07-23) is superseded: most of what it listed as "STILL NOT BUILT" now
+> exists. A stale status block is how a doc starts lying in the flattering direction as easily as the
+> unflattering one.*
 >
-> **NEW — the central gap is closed.** `scripts/preview-build/build-variant-set.mjs` emits **N labelled
-> variants on one named axis from one command**, and `isolation-gate.mjs` (G1 §4.3, executable) **refuses
-> to emit a set it has not proven** — axis-diff, control-diff, blind-sort, count-by-rung, neutral labels,
-> and a structural fingerprint for structural axes. Verified: 20/20 gate tests green (the pass case + every
-> failure mode G1 §6 names); a real 3-variant density round built from **12 real posters** in 0.87s and
-> published to the stable URL; a deliberately "samey" set was **rejected, wrote nothing, exit 2**.
-> Core-loop rule 2 and decision D2 are now mechanical, not prose.
+> **Live and proven:** the one-command round (`scripts/generation/design-round.mjs`: gates → build →
+> gate → source policy → constraint checker → computed pass → publish, fail-closed at each step) ·
+> the isolation gate incl. `distinct-source` / `control-held` (36/36) · the **constraint checker**
+> (30 of 91 rules + **5 of 5 contract keys**) · the **computed pass inline** in real Chromium, which
+> says `UNAVAILABLE` rather than passing where there is no browser · per-panel shadow-DOM isolation ·
+> theme-from-content on real posters · `design_decisions` with lock-earned / unlock-harder as live
+> 422s · **picks → a real tokens file + spec, committed on the project branch, never pushed** ·
+> prior-art, round-composition, style-priors and derive-anatomy-from-source.
 >
-> **Doctrine ingested.** `references/design-doctrine.md` (durable cited rules, injected every round),
-> `data/design-rules.json` (machine-readable, three enforcement tiers), `data/design-rubric.md`
-> (G2's 4×25 with hard-gate overrides). Raw corpus in `docs/research/`, on demand only.
+> **The design surface is the app**, not a Claude Artifact: `/projects/<slug>/design/<target>`.
 >
-> **STILL NOT BUILT — do not claim these:**
-> - **The constraint checker does not exist.** Every rule in `data/design-rules.json` is
->   `status:"pending"`. `must_use` / `animation_vocab` / `forbidden` / `source_policy` / colour-budget
->   are specified and **enforce nothing today**. The variant panels have `constraints_honoured` and
->   `rubric` slots that are still `null`. This is the next build item and the owner's #1 trust problem.
-> - **Rounds do not run in a fresh sub-agent**, and there is no `rejected[]` — the long-session
->   degradation fix is designed but unbuilt.
-> - **The ledger is still one JSON blob** — not per-target, no `proposed→in-review→locked` state machine,
->   no snapshot per lock, so **the golden-file regression gate has nothing to diff against**.
-> - **Scope × entry-point routing is prose** — a `component` scope does not yet mechanically select rungs.
-> - **No real design session has been run.** The live ledger is a seeded demonstration: foundation
->   tokens are all NULL and only 2 of 4 worklist items have decisions. It proves the plumbing, not
->   the method.
-> - **Reload-on-resume and the Stage 3 handoff are unwired** (see `stage-2-ui-master-plan.md`);
->   Stage 3's own references never read the ledger. There is **no YAML mirror** despite an earlier claim.
-> - **The context gate and anti-slop rules are prose-only** — not in SKILL.md's HARD gate list, not in
->   `anti-gaslight-rules.md`, not in `sanity-check.md`. Nothing mechanically enforces them.
-> - **The asset-fetcher is local-path only** — not the "project APIs, retry/proxy-robust" of §5D-A.
-> - **Known pre-existing tell:** `template.card-wall.html`'s `.sr-stat::before` is a coloured 3px left
->   strip — F2 §5.5 names that the single most reliable AI tell (doctrine rule 27). Not yet fixed.
+> **STILL NOT TRUE — do not claim these:**
+> - **61 of 91 rules remain `pending`**, reported as *skipped*, never as passing.
+> - **`adv-brand-mark-authentic` can never be mechanically enforced** — it ships declared-unenforceable
+>   with its reason, so 90/91 is the real ceiling.
+> - **The computed divergence metric under-reads.** It measures vocabulary overlap, not visual
+>   difference; a pixel diff is the actual answer and is not built.
+> - **No round has been generated in a fresh sub-agent since 2026-07-23** — the rounds live on
+>   Screenroom were authored inline.
+> - **The owner has locked nothing yet**, so style priors on real data and the real-repo emit remain
+>   proven only on a throwaway project.
+> - **Graduation to `master_components` is unbuilt** (Stage 4).
+> - `template.card-wall.html`'s coloured 3px left strip is still there — deferred by the owner — and
+>   `adv-no-slop-tells` now **detects it**, along with an emoji nobody had noticed.
 
 ## The core loop (non-negotiables)
 
 1. **Show, don't tell** — build a small real thing and let them look; never "here's a description, ok?".
 2. **Options, not one answer** — 2–4 genuinely different; the owner **picks or mixes** ("1A's meta + 2C's button").
-3. **Real + CSS-interactive** *(bound clarified 2026-07-27, spec §11b)* — hover, focus-visible, active
-   and transitions all work; **JavaScript inside a panel does NOT run** (declarative shadow DOM content
-   is inert, which is the same property that keeps panels isolated). A variant that needs scripting to
-   be judged is a signal the round is at the wrong rung.
-3b. **Real + interactive** — real content, real hover/motion (they are often choosing the *interaction*); respect `prefers-reduced-motion`.
+3. **Real + CSS-interactive** — real content, real hover/motion (they are often choosing the
+   *interaction*); respect `prefers-reduced-motion`. **Bound, clarified 2026-07-27 (spec §11b):** hover,
+   focus-visible, active and transitions all work, but **JavaScript inside a panel does NOT run** —
+   declarative-shadow-DOM content is inert, which is the same property that keeps panels isolated. A
+   variant needing script to be judged signals the round is at the wrong rung.
 4. **One evolving preview** — every round lands at its own stable in-app URL,
    `/projects/<slug>/design/<target>?round=N` (not a tab graveyard; earlier rounds stay addressable).
 5. **Precise reaction → precise rebuild** — restate what you understood (anti-gaslight), change exactly that, keep what they liked.
