@@ -122,5 +122,67 @@ const undeclared = {
 };
 t('an unnamed axis is REJECTED (you cannot isolate what you have not named)', runGate(undeclared).pass, false);
 
+// ── axis-realised: the declaration must be present in the artifact ─────────────────────────────
+// Reproduces the hole found 2026-07-27 — three BYTE-IDENTICAL panels declaring three different
+// values passed every other check and would have been published as three options.
+const realisedSet = (a, b, c) => ({
+  axis: { name: 'radius', parameter: 'corner radius', rung: 2, kind: 'stylistic', params: ['radius'] },
+  control: { content: 'same' },
+  variants: [
+    { label: 'tight',  axis_values: { radius: '4px' } },
+    { label: 'medium', axis_values: { radius: '12px' } },
+    { label: 'loose',  axis_values: { radius: '20px' } },
+  ],
+  _rendered: { tight: a, medium: b, loose: c },
+});
+
+const identical = '<style>.c{border-radius:4px}</style><div class="c">x</div>';
+const fake = realisedSet(identical, identical, identical);
+const rF = runGate(fake, fake._rendered);
+t('THREE IDENTICAL PANELS with different declared values are REJECTED', rF.pass, false);
+t('  ...and it is distinct-source that catches it', checkOf(rF, 'distinct-source').pass, false);
+t('  ...while axis-diff still (correctly) passes — it only reads the declaration', checkOf(rF, 'axis-diff').pass, true);
+
+const honest = realisedSet(
+  '<style>.c{border-radius:4px}</style><div class="c">x</div>',
+  '<style>.c{border-radius:12px}</style><div class="c">x</div>',
+  '<style>.c{border-radius:20px}</style><div class="c">x</div>',
+);
+const rH = runGate(honest, honest._rendered);
+t('panels that really implement their declared values PASS', rH.pass, true);
+t('  ...and value-present finds every declared literal', /every declared literal/.test(checkOf(rH, 'value-present').detail), true);
+
+// Whitespace alone is not a difference.
+const wsOnly = realisedSet(identical, `  ${identical}  `, '<b>different</b>');
+t('panels differing ONLY by whitespace are still identical', runGate(wsOnly, wsOnly._rendered).pass, false);
+
+// The advisory half never blocks, and never fires on a symbolic value.
+const symbolic = {
+  axis: { name: 'elevation', parameter: 'elevation treatment', rung: 2, kind: 'stylistic', params: ['elevation'] },
+  control: { content: 'same' },
+  variants: [
+    { label: 'flat',   axis_values: { elevation: 'flat-hairline' } },
+    { label: 'raised', axis_values: { elevation: 'surface-lightness' } },
+    { label: 'cast',   axis_values: { elevation: 'dual-layer-shadow' } },
+  ],
+};
+const rS = runGate(symbolic, { flat: '<div class="a">x</div>', raised: '<div class="b">y</div>', cast: '<div class="c">z</div>' });
+t('a SYMBOLIC value is never reported as missing from source', rS.pass, true);
+t('  ...value-present says nothing about it', /every declared literal/.test(checkOf(rS, 'value-present').detail), true);
+
+// A declared literal authored in another legal unit ADVISES, never blocks.
+const otherUnit = realisedSet(
+  '<style>.c{border-radius:0.25rem}</style><div class="c">x</div>',
+  '<style>.c{border-radius:12px}</style><div class="c">y</div>',
+  '<style>.c{border-radius:20px}</style><div class="c">z</div>',
+);
+const rU = runGate(otherUnit, otherUnit._rendered);
+t('a legal unit swap ADVISES but does not block', rU.pass, true);
+t('  ...and it is named in the advisory', /tight\.radius="4px"/.test(checkOf(rU, 'value-present').detail), true);
+
+// Token mode (no rendered markup) must be unaffected.
+t('token mode (no markup) skips the realised checks entirely',
+  runGate(fake).checks.some((c) => c.name === 'distinct-source'), false);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

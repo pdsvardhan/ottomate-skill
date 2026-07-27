@@ -38,6 +38,14 @@ function isNum(v) {
   return typeof v === 'number' && Number.isFinite(v);
 }
 
+// A value we can honestly look for in source text: a number with an optional CSS unit, or a hex
+// colour. Symbolic values ("flat-hairline", "corner-ribbon") name a treatment, not a token, so their
+// absence from the text proves nothing and must never be reported.
+const LITERAL_RE = /^(-?\d+(?:\.\d+)?(?:px|rem|em|%|s|ms|deg|vh|vw|ch|fr)?|#[0-9a-fA-F]{3,8})$/;
+export function isLiteralValue(v) {
+  return typeof v === 'number' || (typeof v === 'string' && LITERAL_RE.test(v.trim()));
+}
+
 // Relative step between two numbers, scale-free so it works for 8px padding and 1.6 line-height alike.
 function relStep(a, b) {
   const m = Math.max(Math.abs(a), Math.abs(b));
@@ -231,6 +239,51 @@ export function runGate(set, rendered = null) {
       }
       add('structural', problems.length === 0, problems.length ? problems.join('; ') : notes.join(' · '));
     }
+  }
+
+  // ── 7. axis-realised (markup mode, EVERY axis kind) ──────────────────────────
+  // The hole this closes, found 2026-07-27 and reproduced before it was fixed: every check above
+  // reads `axis_values`, which is a DECLARATION. Nothing read the artifact. Three BYTE-IDENTICAL
+  // panels declared "4px"/"12px"/"20px" passed count, labels, control-diff, axis-diff, blind-sort
+  // and the constraint checker, and would have been published as three options. That is the original
+  // "the variants felt identical" bug re-entering through a different door: the failure moved from
+  // "the model made them similar" to "the model mis-declared them", and the gate could not see it.
+  //
+  // Two tiers, because they have different false-alarm profiles:
+  //   distinct-source  BLOCKS. Two panels with identical source cannot be two options. No false alarms.
+  //   value-present    ADVISES. A declared LITERAL value should appear in its own panel's source.
+  //                    Advisory because `4px` authored as `0.25rem` is correct but unfindable, and a
+  //                    blocking check that punishes a legal unit choice would just get switched off.
+  // The subtle case — different source, same rendered appearance — belongs to `computed-axis-divergence`
+  // (a browser is the only thing that can see it). These three are layers, not alternatives.
+  if (rendered && variants.length > 1) {
+    const problems = [], notes = [];
+    const squash = (h) => String(h ?? '').replace(/\s+/g, ' ').trim();
+
+    for (let i = 0; i < variants.length; i++) {
+      for (let j = i + 1; j < variants.length; j++) {
+        const a = variants[i].label, b = variants[j].label;
+        if (rendered[a] !== undefined && rendered[b] !== undefined && squash(rendered[a]) === squash(rendered[b])) {
+          problems.push(`"${a}" and "${b}" have IDENTICAL panel source — the declared axis values are a fiction`);
+        }
+      }
+    }
+    add('distinct-source', problems.length === 0,
+      problems.length ? problems.join('; ') : `${variants.length} panels, all sources distinct`);
+
+    // advisory half — reported, never blocking
+    const missing = [];
+    for (const v of variants) {
+      const src = rendered[v.label];
+      if (src === undefined) continue;
+      for (const p of params) {
+        const val = (v.axis_values ?? {})[p];
+        if (!isLiteralValue(val)) continue;
+        if (!String(src).includes(String(val))) missing.push(`${v.label}.${p}="${val}"`);
+      }
+    }
+    if (missing.length) notes.push(`declared literal not found verbatim in its own panel (may be a legal unit choice): ${missing.join(', ')}`);
+    add('value-present', true, notes.length ? notes.join(' · ') : 'every declared literal appears in its own panel');
   }
 
   const failures = checks.filter((c) => !c.pass).map((c) => `${c.name}: ${c.detail}`);

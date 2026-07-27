@@ -60,8 +60,32 @@ silent default). Record it; it frames every bundle. Flag a `trend_bound` directi
 
 ### 1. Enumerate the sub-decisions
 Take the archetype's `sub_decisions` from the anatomy. These are the round's axes — the parts and
-states, nothing invented (doctrine 40). A round is normally a **bundle** of ~8–12 of them across 2–4
-variants; the pick is per-item (doctrine 38).
+states, nothing invented (doctrine 40). The pick is per-item (doctrine 38).
+
+### 1½. COMPOSE the round — how many axes, and which travel together
+⛔ *Was: "a bundle of ~8–12 across 2–4 variants" — prose, no rule, no citation.* **Replaced
+2026-07-27** by `scripts/generation/round-composition.mjs` (`composeRounds`), returned as
+`composition` from `buildRoundInput`. Three rules, and the reasoning is in the module header:
+
+- **Bound the MATRIX, not the option count.** Choice overload is not the constraint (Scheibehenne
+  et al. 2010, d≈0.02) and Hick's law is logarithmic — *options* are cheap. What breaks is the
+  alternatives × attributes matrix: past roughly **5 attributes** people switch from compensatory
+  comparison to non-compensatory heuristics (Payne/Bettman/Johnson 1993; conjoint practice puts the
+  band at 4–6). Our per-item-pick model **is** a compensatory task, so **≤5 contested axes per round**.
+  Above it, expect "I like panel B" plus tweaks — which the module reports as
+  `regime: 'expect-panel-level'` rather than pretending otherwise.
+- **Group by perceptual channel; never split one.** `weight` (radius/elevation/borders/padding) ·
+  `density` · `type` · `colour` · `motion`. Radius reads differently flat vs raised, so those fuse and
+  must be judged together; accent placement is largely independent and belongs in its own round.
+  Order is **structure before dress**: weight → density → type → colour → motion.
+- **Promote foundational axes out of a component round.** An axis is `local` if two components may
+  legitimately differ (meta-density, badge-style) and `foundational` if a sibling difference reads as
+  inconsistency (radius ladder, elevation ladder, accent policy, motion vocabulary). Deciding a
+  foundational axis inside one component round and again inside another **is how the conflict that
+  `prior-art.mjs` reports gets created.** Promote, don't repair.
+
+Every sub-decision in `component-anatomy.json` now carries `channel` + `scope_hint` (22/22).
+Print `formatComposition(...)` before generating — the composition should be a visible decision.
 
 ### 2. Over-generate 6, SEEDED FOR DIVERGENCE  `[REASONED]`
 Author **6** complete bundles. To get genuinely different ones from one model — the open LLM-behaviour

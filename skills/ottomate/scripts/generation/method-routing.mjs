@@ -9,6 +9,7 @@
 
 import { rejectedByAxis, frozenByAxis } from './ledger-context.mjs';
 import { priorArtByAxis, applyPriorArt } from './prior-art.mjs';
+import { composeRounds } from './round-composition.mjs';
 
 // ── 2. scope × entry routing (owner ruling, docs/plans/2026-07-23-task2-remaining-work.md §3) ─────
 
@@ -68,7 +69,7 @@ export const DEFERRAL = {
  */
 export function buildRoundInput({
   anatomy, archetype, contract = {}, profile = 'P1', direction = null, decisions = [],
-  projectDecisions = null, targetId = null, diverge = [],
+  projectDecisions = null, targetId = null, diverge = [], scope = 'component', maxAxes = undefined,
 }) {
   const arche = anatomy.archetypes?.[archetype];
   if (!arche) throw new Error(`unknown archetype "${archetype}"`);
@@ -90,10 +91,14 @@ export function buildRoundInput({
     inheritedControls: {},
     priorArtConflicts: [],
   };
-  if (!projectDecisions || !targetId) return base;
+  const withPriorArt = (projectDecisions && targetId)
+    ? { ...applyPriorArt(base, priorArtByAxis(projectDecisions, { targetId, archetype, subDecisions: arche.sub_decisions }), { diverge }),
+        priorArt: priorArtByAxis(projectDecisions, { targetId, archetype, subDecisions: arche.sub_decisions }) }
+    : base;
 
-  const priorArt = priorArtByAxis(projectDecisions, { targetId, archetype, subDecisions: arche.sub_decisions });
-  return { ...applyPriorArt(base, priorArt, { diverge }), priorArt };
+  // Composition is computed LAST, on what is actually still contested — a round's width should be
+  // decided after frozen, inherited and rejected axes have already been taken out, not before.
+  return { ...withPriorArt, composition: composeRounds(withPriorArt.contested, { scope, maxAxes }) };
 }
 
 // ── 3. Stage-3 design-lock gate, profile-aware ───────────────────────────────────────────────────
