@@ -1,6 +1,6 @@
 <style>
   .sr { background: #101216; color: #f4f5f8; padding: 20px; font-family: system-ui, sans-serif;
-        --au: #e9b84c; --dim: #9aa1b2; --dim2: #5f6575; --line: #ffffff1a; --card: #161a22; }
+        --au: #e9b84c; --dim: #9aa1b2; --dim2: #7c8292; --line: #ffffff1a; --card: #161a22; }
   .sr-row { display: grid; grid-template-columns: repeat(4, 168px); gap: 18px; align-items: start; }
   .sr-state { font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--dim2);
               margin-bottom: 7px; }
@@ -37,6 +37,11 @@
        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sub { display: block; margin-top: 3px; font-size: 11px; color: var(--dim);
          font-variant-numeric: tabular-nums; }
+
+  /* P3: motion must be switchable off (floor-reduced-motion). */
+  @media (prefers-reduced-motion: reduce){
+    .mc, .mc *, .acts { transition: none; animation: none; scroll-behavior: auto; }
+  }
 </style>
 
 <div class="sr">

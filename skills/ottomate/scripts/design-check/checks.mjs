@@ -37,15 +37,26 @@ export function visibleText(src) {
   return (body.replace(/<[^>]*>/g, ' ') + ' ' + attrs.join(' ')).replace(/\s+/g, ' ').trim();
 }
 
-// The text of every actionable element — what a button actually says.
+// The ACCESSIBLE NAME of every actionable element — what a button actually says to a user.
+//
+// P3: this used to return inner text only, so an icon button read as its glyph. On our own nine
+// published Screenroom panels that meant `<button aria-label="Quick look">i</button>` was reported as
+// the 1-word label "i", and `&#9654;` likewise — i.e. adv-action-label-specific misfired on every
+// CORRECTLY built icon button, which is worse than not running: it trains you to ignore it.
+// aria-label (then aria-labelledby's absence notwithstanding, then title) wins over inner text,
+// which is the accessible-name order a browser itself uses.
 export function actionLabels(src) {
   const body = stripComments(src).replace(/<script[\s\S]*?<\/script>/gi, ' ');
   const out = [];
-  const re = /<(button|a)\b[^>]*>([\s\S]*?)<\/\1>/gi;
+  const re = /<(button|a)\b([^>]*)>([\s\S]*?)<\/\1>/gi;
   let m;
   while ((m = re.exec(body)) !== null) {
-    const text = m[2].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-    if (text) out.push(text);
+    const attrs = m[2] ?? '';
+    const aria = /\saria-label\s*=\s*"([^"]*)"/i.exec(attrs) || /\saria-label\s*=\s*'([^']*)'/i.exec(attrs);
+    const title = /\stitle\s*=\s*"([^"]*)"/i.exec(attrs);
+    const text = m[3].replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const name = (aria?.[1] ?? title?.[1] ?? text ?? '').trim();
+    if (name) out.push(name);
   }
   return out;
 }

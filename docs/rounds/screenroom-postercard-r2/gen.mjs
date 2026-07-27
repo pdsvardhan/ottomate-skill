@@ -29,7 +29,7 @@ function css(v, accentPerCard) {
   const e = ELEV[v.elevation];
   return `
   .sr{background:#101216;color:#f4f5f8;padding:20px;font-family:system-ui,sans-serif;
-      --au:#e9b84c;--dim:#9aa1b2;--dim2:#5f6575;--line:#ffffff1a;--card:#161a22;}
+      --au:#e9b84c;--dim:#9aa1b2;--dim2:#7c8292;--line:#ffffff1a;--card:#161a22;}
   .sr-row{display:grid;grid-template-columns:repeat(4,${v.aspect === '16/9' ? '208px' : '168px'});gap:18px;align-items:start;}
   .sr-state{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim2);margin-bottom:7px;}
   .mc{position:relative;border-radius:${v.radius};overflow:hidden;background:var(--card);
@@ -37,6 +37,11 @@ function css(v, accentPerCard) {
   .mc.s-hover{${HOVER[v.hoverMotion]}${e.hoverExtra}}
   .mc.s-focus{outline:2px solid var(--au);outline-offset:2px;}
   .mc.unowned{border-style:dashed;border-color:#ffffff2e;box-shadow:none;}
+  /* P3: motion must be switchable off. Every panel declares transitions; without this block there
+     is no way to turn them off, and floor-reduced-motion fired on all nine published panels. */
+  @media (prefers-reduced-motion: reduce){
+    .mc,.mc *,.acts{transition:none;animation:none;scroll-behavior:auto;}
+  }
   ${SELECTED[v.selectedSignal]}
   .pz{aspect-ratio:${v.aspect};position:relative;overflow:hidden;background:#1a1e28;}
   .pz img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -87,7 +92,7 @@ function card(v, i, state, label, owned, accentPerCard) {
           ${overlay}
           <span class="own"><span class="chip ${owned ? 'c-full' : 'c-out'}">${owned ? 'Owned' : 'Not ours yet'}</span></span>
           ${v.accentUsage === 'chip-and-meter' && owned ? '<div class="meter"><i></i></div>' : ''}
-          <div class="acts"><button aria-label="Quick look">i</button><button aria-label="Play">&#9654;</button></div>
+          <div class="acts"><button aria-label="Quick look">i</button><button aria-label="Play film">&#9654;</button></div>
         </div>
         ${caption}
       </article>

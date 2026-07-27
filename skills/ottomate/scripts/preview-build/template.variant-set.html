@@ -135,14 +135,14 @@
         var watch = !c.owned;
         var meta = '';
         if (metaLines >= 1) meta += esc(c.meta);
-        if (metaLines >= 3 && c.rating) meta += ' · ★ ' + esc(c.rating);
+        if (metaLines >= 3 && c.rating) meta += ' · <svg class="ico-star" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2.5l2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.4l-5.8 3-1.1-6.45L.4 9.35l6.5-.95z"/></svg> ' + esc(c.rating);
         return '<article class="vs-card' + (watch ? ' vs-card--watch' : '') + '" style="--accent:' + esc(c.accent) + '" tabindex="0">'
           + '<img src="' + esc(c.img) + '" alt="' + esc(c.title) + ' poster" loading="lazy">'
           + '<span class="vs-badge' + (watch ? ' vs-badge--watch' : '') + '">' + (watch ? 'Watchlist' : 'Owned') + '</span>'
           + '<div class="vs-foot"><h3>' + esc(c.title) + '</h3>'
           + (metaLines >= 1 ? '<div class="m">' + meta + '</div>' : '')
-          + (metaLines >= 2 ? '<div class="vs-row"><button class="vs-play" type="button">▶ Play</button>'
-              + (c.rating ? '<span class="vs-rate">★ ' + esc(c.rating) + '</span>' : '') + '</div>' : '')
+          + (metaLines >= 2 ? '<div class="vs-row"><button class="vs-play" type="button"><svg class="ico-play" viewBox="0 0 24 24" width="11" height="11" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 5.2v13.6L19 12z"/></svg> Play</button>'
+              + (c.rating ? '<span class="vs-rate"><svg class="ico-star" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2.5l2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.4l-5.8 3-1.1-6.45L.4 9.35l6.5-.95z"/></svg> ' + esc(c.rating) + '</span>' : '') + '</div>' : '')
           + '</div></article>';
       }).join('');
     }

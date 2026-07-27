@@ -224,6 +224,11 @@ ceiling is 90.
   realistic content · semantic-vs-brand separation · reduced-transparency · canvas a11y mirror.
 - **They fire on real markup, not just fixtures:** `floor-reduced-motion` flagged **our own published
   Screenroom round panels** — they declare transitions with no `prefers-reduced-motion` block.
+  ⚠ **Corrected in P3:** the P1 run reported "11 real panels, all clean", but **6 of those 11 were not
+  panels.** The r2 variant-set JSON stores `panelTemplate` as a *filename*, and the harness fed that
+  24-character string to the detectors as markup, so every r2 verdict in that run was vacuous. The
+  real r2 panels are written by `gen.mjs`; against those, **all nine panels failed**
+  `floor-reduced-motion`, not three. Honest version: 5 real panels checked, 6 vacuous.
 - **Batch 3 — 14 computed rules as PURE FUNCTIONS** (`computed-rules.mjs`, 14/14). Written over
   collected *element records* rather than a live DOM, so each has a must-fail and a must-pass case
   runnable **in plain Node without a browser** — the previous computed rules could only be exercised on
@@ -329,6 +334,27 @@ controlled variant set is *designed* to be mostly identical, because the isolati
 everything off-axis held constant. A high "percentage differing" floor would reject exactly the
 well-controlled sets the gate demands and reward sloppy ones. This is a **near-identity guard**, not a
 score of how different two panels are.
+
+### P3 — 2026-07-27 · the defects our own tooling found, fixed
+Plan: `docs/plans/2026-07-27-P3-our-own-defects.md`. Every item was found by a detector this program
+built, firing on this program's own work. **Nothing was fixed by moving a threshold** — each fix
+changed the artifact.
+
+| Defect | Found by | Fix |
+|---|---|---|
+| **All NINE published panels** declare transitions with no `prefers-reduced-motion` | `floor-reduced-motion` | Block added to r2's `gen.mjs` and to the three committed r1 panels. All nine now clean |
+| `template.card-wall.html`'s coloured 3px left strip — F2's most reliable AI tell, in our own template | `adv-no-slop-tells` | Removed rather than deferred a third time |
+| `★` / `▶` glyphs as iconography in **both** templates (only card-wall was in the queue) | `adv-no-slop-tells` | Replaced with inline SVG per `adv-icon-delivery-inline-svg` |
+| Harness state captions at **3.22:1**, floor 4.5 | measured | `--dim2` `#5f6575` → `#7c8292`: **4.88:1** on the page, **4.54:1** on the card. Computed, not eyeballed, and kept in the same cool-grey hue family |
+| **NEW, not in the queue:** `adv-action-label-specific` fired on every icon button in all nine panels, reporting the glyph `i` / `▶` as a 1-word label — while those buttons carried `aria-label="Quick look"` / `"Play"` | itself, on real panels | `actionLabels()` now returns the **accessible name** (aria-label → title → inner text), the order a browser uses. A rule that misfires on correctly-built markup is worse than one that does not run: it trains you to ignore it |
+| **My own fix introduced one:** the reduced-motion block used `!important` | `adv-css-layer-order`, immediately | Dropped — the media query already follows the rules it overrides at equal specificity, so source order wins |
+
+**Deliberately NOT done: republishing the live rounds.** The queue said "and republish".
+`publish-round.mjs` writes rows into `design_decisions`, and the owner is mid-decision on 18–27 — the
+one thing the program is blocked on. A `prefers-reduced-motion` block changes **nothing** about what
+the owner is choosing between; it is inert unless the viewer asked for reduced motion. So the fixes
+landed in the source of truth and are proven clean, and **republishing waits for the owner's word.**
+Recorded so it reads as a decision, not an omission.
 
 ### Prose only (nothing checks them)
 Context gate · anti-slop tells · core-mechanic-before-page · colour-budget stated up front ·

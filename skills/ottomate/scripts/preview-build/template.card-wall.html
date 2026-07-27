@@ -47,7 +47,9 @@
   .sr-stats { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 28px; }
   .sr-stat { flex: 1 1 150px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
     padding: 14px 16px; position: relative; overflow: hidden; }
-  .sr-stat::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--tile, var(--stat-a)); }
+  /* P3: the coloured 3px left strip is F2's most reliable AI tell, and adv-no-slop-tells fired on
+     it in our own template. Removed rather than deferred again — the stat tile carries its meaning
+     in the number and the label, which is what a reader actually reads. */
   .sr-stat b { display: block; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
   .sr-stat span { font-size: 12.5px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.06em; }
 
@@ -123,8 +125,8 @@
         + '<img src="' + esc(c.img) + '" alt="' + esc(c.title) + ' poster" loading="lazy">'
         + '<span class="sr-badge' + (watch ? ' sr-badge--watch' : '') + '">' + (watch ? 'Watchlist' : 'Owned') + '</span>'
         + '<div class="sr-foot"><h3>' + esc(c.title) + '</h3><div class="m">' + esc(c.meta) + '</div>'
-        + '<div class="sr-row"><button class="sr-play" type="button">▶ Play</button>'
-        + (c.rating ? '<span class="sr-rate">★ ' + esc(c.rating) + '</span>' : '') + '</div></div>'
+        + '<div class="sr-row"><button class="sr-play" type="button"><svg class="ico-play" viewBox="0 0 24 24" width="11" height="11" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 5.2v13.6L19 12z"/></svg> Play</button>'
+        + (c.rating ? '<span class="sr-rate"><svg class="ico-star" viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2.5l2.9 5.9 6.5.95-4.7 4.6 1.1 6.45L12 17.4l-5.8 3-1.1-6.45L.4 9.35l6.5-.95z"/></svg> ' + esc(c.rating) + '</span>' : '') + '</div></div>'
         + '</article>';
     }).join('');
 

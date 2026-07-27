@@ -8,7 +8,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DETECTORS, hasChart } from './checks.mjs';
+import { DETECTORS, hasChart, actionLabels } from './checks.mjs';
 import { readFileSync } from 'node:fs';
 
 const RULES = JSON.parse(readFileSync(new URL('../../data/design-rules.json', import.meta.url), 'utf8'));
@@ -126,6 +126,25 @@ test('adv-plain-language — a card of short labels is NOT a run-on sentence', (
   const real = readFileSync(new URL('../../../../docs/rounds/screenroom-postercard-r1/panel-cinema-plate.html', import.meta.url), 'utf8');
   const r = run('adv-plain-language', real);
   assert.equal(r.pass, true, `must not fire on our own published panel: ${r.detail}`);
+});
+
+// P3 — actionLabels must read the ACCESSIBLE NAME, not the glyph. Before this, every correctly-built
+// icon button in all nine published Screenroom panels was reported as a 1-word label ("i", "▶"),
+// which is worse than the rule not running: it trains you to ignore the finding.
+test('actionLabels — aria-label wins over inner text, so an icon button reads correctly', () => {
+  assert.deepEqual(actionLabels('<button aria-label="Quick look">i</button>'), ['Quick look']);
+  assert.deepEqual(actionLabels('<button aria-label="Play film">&#9654;</button>'), ['Play film']);
+  assert.deepEqual(actionLabels('<button title="Add to list">+</button>'), ['Add to list'], 'title is the next fallback');
+  assert.deepEqual(actionLabels('<button>Save changes</button>'), ['Save changes'], 'plain text still works');
+  assert.deepEqual(actionLabels("<a aria-label='Open library' href='#'>x</a>"), ['Open library'], 'single quotes too');
+});
+
+test('adv-action-label-specific — no longer fires on a real icon button from our own panels', () => {
+  const real = readFileSync(new URL('../../../../docs/rounds/screenroom-postercard-r1/panel-cinema-plate.html', import.meta.url), 'utf8');
+  const r = run('adv-action-label-specific', real);
+  assert.equal(r.pass, true, `must read the aria-label, not the glyph: ${r.detail}`);
+  // and it must still catch a genuinely vague label
+  assert.equal(run('adv-action-label-specific', '<button>OK</button><button>Submit</button>').pass, false);
 });
 
 test('all five P1 source rules are registered as {scope, fn}, not as bare functions', () => {

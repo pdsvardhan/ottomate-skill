@@ -1,0 +1,95 @@
+<style>
+  .sr{background:#101216;color:#f4f5f8;padding:20px;font-family:system-ui,sans-serif;
+      --au:#e9b84c;--dim:#9aa1b2;--dim2:#7c8292;--line:#ffffff1a;--card:#161a22;}
+  .sr-row{display:grid;grid-template-columns:repeat(4,208px);gap:18px;align-items:start;}
+  .sr-state{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--dim2);margin-bottom:7px;}
+  .mc{position:relative;border-radius:10px;overflow:hidden;background:var(--card);
+      border:1px solid var(--line);transition:transform 260ms ease,border-color 260ms ease,background-color 260ms ease;box-shadow:0 2px 4px -2px #05070ba6, 0 16px 34px -16px #05070be6;}
+  .mc.s-hover{transform:translateY(-6px);}
+  .mc.s-focus{outline:2px solid var(--au);outline-offset:2px;}
+  .mc.unowned{border-style:dashed;border-color:#ffffff2e;box-shadow:none;}
+  /* P3: motion must be switchable off. Every panel declares transitions; without this block there
+     is no way to turn them off, and floor-reduced-motion fired on all nine published panels. */
+  @media (prefers-reduced-motion: reduce){
+    .mc,.mc *,.acts{transition:none;animation:none;scroll-behavior:auto;}
+  }
+  .mc.s-sel{outline:2px solid var(--au);outline-offset:2px;}
+  .pz{aspect-ratio:16/9;position:relative;overflow:hidden;background:#1a1e28;}
+  .pz img{width:100%;height:100%;object-fit:cover;display:block;}
+  .pills{position:absolute;top:7px;left:7px;display:flex;gap:4px;}
+  
+  .pill{font-size:9px;letter-spacing:.05em;}
+  .pill{border:1px solid #ffffff2e;background:#0b0d11a6;color:#e8eaf0;border-radius:3px;padding:2px 6px;}
+  .own{position:absolute;left:8px;bottom:8px;}
+  .chip{font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid;}
+  .c-full{color:#f4cf7d;border-color:#e9b84c73;background:#12151ccc;}
+  .c-out{color:var(--dim);border-color:#ffffff2e;background:#0b0d11cc;border-style:dashed;}
+  
+  
+  .acts{position:absolute;right:7px;bottom:8px;display:flex;gap:5px;}
+  
+  .acts button{width:22px;height:22px;border-radius:4px;border:1px solid #ffffff2e;background:#0b0d11bf;color:#e8eaf0;font-size:11px;line-height:1;cursor:pointer;}
+  .acts button:focus-visible{outline:2px solid var(--au);outline-offset:2px;}
+  .cap{padding:8px 9px 10px;}
+  .ov{position:absolute;left:0;right:0;bottom:0;padding:16px 9px 8px;background:linear-gradient(#0b0d1100,#0b0d11e6 60%);}
+  .t{display:block;font-size:12.5px;line-height:1.3;color:#f4f5f8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .m1,.m2{display:block;margin-top:3px;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums;}
+  .m2{color:var(--dim2);}
+</style>
+<div class="sr"><div class="sr-row">
+    <div>
+      <div class="sr-state">rest · owned</div>
+      <article class="mc" data-role="media-card">
+        <div class="pz">
+          <img src="{{IMG_1}}" alt="">
+          <div class="pills"><span class="pill">2160p</span><span class="pill">DV</span></div>
+          
+          <span class="own"><span class="chip c-full">Owned</span></span>
+          
+          <div class="acts"><button aria-label="Quick look">i</button><button aria-label="Play film">&#9654;</button></div>
+        </div>
+        <div class="cap"><span class="t" data-role="card-title">{{TITLE_1}}</span><span class="m1" data-role="card-meta">{{META_1}}</span><span class="m2">owned</span></div>
+      </article>
+    </div>
+    <div>
+      <div class="sr-state">hover · owned</div>
+      <article class="mc s-hover" data-role="media-card">
+        <div class="pz">
+          <img src="{{IMG_2}}" alt="">
+          <div class="pills"><span class="pill">2160p</span><span class="pill">DV</span></div>
+          
+          <span class="own"><span class="chip c-full">Owned</span></span>
+          
+          <div class="acts"><button aria-label="Quick look">i</button><button aria-label="Play film">&#9654;</button></div>
+        </div>
+        <div class="cap"><span class="t" data-role="card-title">{{TITLE_2}}</span><span class="m1" data-role="card-meta">{{META_2}}</span><span class="m2">owned</span></div>
+      </article>
+    </div>
+    <div>
+      <div class="sr-state">focus-visible · selected</div>
+      <article class="mc s-focus s-sel" data-role="media-card">
+        <div class="pz">
+          <img src="{{IMG_3}}" alt="">
+          <div class="pills"><span class="pill">2160p</span><span class="pill">DV</span></div>
+          
+          <span class="own"><span class="chip c-full">Owned</span></span>
+          
+          <div class="acts"><button aria-label="Quick look">i</button><button aria-label="Play film">&#9654;</button></div>
+        </div>
+        <div class="cap"><span class="t" data-role="card-title">{{TITLE_3}}</span><span class="m1" data-role="card-meta">{{META_3}}</span><span class="m2">owned</span></div>
+      </article>
+    </div>
+    <div>
+      <div class="sr-state">not ours yet</div>
+      <article class="mc unowned" data-role="media-card">
+        <div class="pz">
+          <img src="{{IMG_4}}" alt="">
+          <div class="pills"><span class="pill">2160p</span><span class="pill">DV</span></div>
+          
+          <span class="own"><span class="chip c-out">Not ours yet</span></span>
+          
+          <div class="acts"><button aria-label="Quick look">i</button><button aria-label="Play film">&#9654;</button></div>
+        </div>
+        <div class="cap"><span class="t" data-role="card-title">{{TITLE_4}}</span><span class="m1" data-role="card-meta">{{META_4}}</span><span class="m2">owned</span></div>
+      </article>
+    </div></div></div>
