@@ -19,6 +19,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { extractAccent } from './theme-extract.mjs';
 import { runGate, formatGate, RUNG_NAMES } from './isolation-gate.mjs';
 import { runCheck, formatCheck, annotationsByVariant } from '../design-check/design-check.mjs';
+import { runComputedPass, blockingFindings, formatComputed } from '../design-check/computed-runner.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const MIME = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
@@ -240,6 +241,19 @@ function main() {
   console.log(`\npreview:  ${outHtml} (${kb} KB, ${panels.length} panels, ${cards.length} shared cards)`);
   console.log(`manifest: ${outManifest}`);
   console.log(`slots:    ${panels.map((p) => `${p.slot}=${p.label}`).join('  ')}`);
+  // ── THE COMPUTED PASS (T2) — inline, after emit, because it needs the rendered page ────────────
+  // It was a separate manual command until 2026-07-27, and a manual step is a step that gets skipped.
+  // It cannot be silently omitted: with no Chromium it reports UNAVAILABLE, never a pass.
+  const computed = runComputedPass(outHtml, { cwd: cfg.computed?.cwd ?? null, profile: cfg.audienceProfile ?? 'P1' });
+  console.log(formatComputed(computed, cfg.audienceProfile ?? 'P1'));
+  if (computed.state === 'ran') {
+    const blocking = blockingFindings(computed.findings, { profile: cfg.audienceProfile ?? 'P1' });
+    if (blocking.length) {
+      console.error('\nThe page was written but MUST NOT be presented — a computed rule blocks it. Fix and rerun.');
+      process.exit(2);
+    }
+  }
+
   // The artifact path was RETIRED 2026-07-27 (owner decision): a round is published into the
   // Ottomate app, where the picks are made against the ledger on the same screen.
   console.log('\nPublish with: node ../generation/publish-round.mjs --manifest <round.json> \\');

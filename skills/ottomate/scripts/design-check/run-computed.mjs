@@ -3,7 +3,18 @@
 // chromium; Windows does not. Run it from inside the ottomate dir (or copy alongside node_modules) so
 // `playwright` resolves. Usage: node run-computed.mjs <out.html> <computed-checks.js> [profile]
 //   node run-computed.mjs ./out.html ./computed-checks.js P2
-import { chromium } from 'playwright';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+// ESM resolves a bare specifier from THE FILE'S OWN location, not from process.cwd() — so spawning
+// this with a cwd where playwright is installed does NOT make `import 'playwright'` work when the
+// script itself lives elsewhere (e.g. a copied skill tree in /tmp). Found while inlining the computed
+// pass, T2. OTTO_PW_ROOT names the install to import from, by absolute path.
+const pwRoot = process.env.OTTO_PW_ROOT;
+const { chromium } = pwRoot
+  ? await import(pathToFileURL(path.join(pwRoot, 'node_modules', 'playwright', 'index.mjs')).href)
+    .catch(() => import(pathToFileURL(path.join(pwRoot, 'node_modules', 'playwright', 'index.js')).href))
+  : await import('playwright');
 const [, , htmlPath, checksPath, profile = 'P2'] = process.argv;
 const browser = await chromium.launch();
 try {

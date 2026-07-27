@@ -10,6 +10,7 @@
 import { rejectedByAxis, frozenByAxis } from './ledger-context.mjs';
 import { priorArtByAxis, applyPriorArt } from './prior-art.mjs';
 import { composeRounds } from './round-composition.mjs';
+import { buildStylePriors } from './style-priors.mjs';
 
 // ── 2. scope × entry routing (owner ruling, docs/plans/2026-07-23-task2-remaining-work.md §3) ─────
 
@@ -88,6 +89,7 @@ export function buildRoundInput({
     frozen,
     rejectedByAxis: rejected,
     priorArt: {},
+    stylePriors: null,
     inheritedControls: {},
     priorArtConflicts: [],
   };
@@ -96,9 +98,16 @@ export function buildRoundInput({
         priorArt: priorArtByAxis(projectDecisions, { targetId, archetype, subDecisions: arche.sub_decisions }) }
     : base;
 
+  // T8: what this OWNER has chosen and ruled out before, across every project. Evidence, never a
+  // rule — see style-priors.mjs. Computed from the project-wide rows when they were supplied.
+  const stylePriors = buildStylePriors(projectDecisions ?? [], {
+    axesInPlay: (withPriorArt.contested ?? []).map((sd) => sd.id),
+    excludeTarget: targetId,
+  });
+
   // Composition is computed LAST, on what is actually still contested — a round's width should be
   // decided after frozen, inherited and rejected axes have already been taken out, not before.
-  return { ...withPriorArt, composition: composeRounds(withPriorArt.contested, { scope, maxAxes }) };
+  return { ...withPriorArt, stylePriors, composition: composeRounds(withPriorArt.contested, { scope, maxAxes }) };
 }
 
 // ── 3. Stage-3 design-lock gate, profile-aware ───────────────────────────────────────────────────
