@@ -1,5 +1,12 @@
 # Task 2 — Iterative UI Design Method (Stage 2 design engine)
 
+> **CANONICAL COPY — this file, in the plugin repo, is the source of truth (owner ruling 2026-07-27).**
+> The former originals under `~/Desktop/Skills CC/Ottomate/` are superseded and now hold a pointer to
+> here. They were outside version control, and on 2026-07-27 that produced its first real consequence:
+> the two copies of the Task-2 spec had silently diverged, and an audit had to be scored twice.
+> Amendments go **here**, dated and signed, and never into a second copy.
+
+
 **Status:** ✅ LOCKED 2026-07-23; **amended 2026-07-23** with lessons from the first real run (retrospective: `~/Desktop/Projects/Personal projects/media manager dashboard/UI-APPROACH-RETROSPECTIVE.md`). Build order: Task 1 → Task 3 → **Task 2**.
 **Author:** design session 2026-07-23. Task 2 of 3.
 **Source:** `Downloads/TASK2-UI-DESIGN-METHOD.md` (method) + the Screenroom `UI-APPROACH-RETROSPECTIVE.md` (first real run's lessons, folded into §5/§7/§8). Owner: *"Task 2 is unique, solving my UI design issues."*

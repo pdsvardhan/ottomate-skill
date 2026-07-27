@@ -70,6 +70,25 @@ ssh pdsv@192.168.1.10 '
   test -d /mnt/storage/websites/<slug> && echo present || echo missing'
 ```
 
+Locally, in the same step, one cheap check (owner ruling 2026-07-27 — **notice, then ask**):
+
+```bash
+ls -t ~/Downloads/<slug>-comments-* 2>/dev/null | head -1
+```
+
+**If that file is newer than the project's newest `source='visual-qa'` report**, add ONE line to the
+load block:
+
+```
+uningested comment batch — <filename> (<age>). Ingest it?
+```
+
+**Never ingest unprompted.** The notice is a notice; the import writes a report, screenshots to the
+asset volume and classified items, and that needs a yes. If the newest export is *older* than the last
+ingest, say nothing — a stale file must not nag. Why this exists: on 2026-07-26 the owner did a comment
+pass, the direct push failed silently (to-do #333), and the session noticed nothing until they asked
+*"thought you autoread them"*.
+
 (When the slug is already known at Step 1, fold the sanity curl into this same invocation.)
 
 Compute three signals:
@@ -89,6 +108,17 @@ Apply the FIRST rule that matches:
 **Rule B — Empty SO1 + repo on disk = Stage 0 catchup (T2P).** Use the T2P (existing-project) branch of `references/stage-0-overview.md`. AskUserQuestion first: "Run catchup now / Open project read-only / Submit a quick bug report instead / Cancel". If the user picks catchup, walk Stage 0's T2P path into Stage 1; each of the 7 SO1 docs hits a lock-in gate.
 
 **Rule C — Empty SO1 + repo missing.** Edge case. Ask user.
+
+**Rule D1 — Visual-QA batch (DOM-commenter). Check this BEFORE Rule D.** Fires when the argument
+matches `*-comments-*` (either extension), **or** the user's message names comments / visual QA / the
+DOM commenter / "the commenter" — e.g. *"here are my comments"*, *"ingest my comments"*, *"I did a
+comment pass"*, *"thought you autoread them"*. Route to `references/stage-4-visual-qa.md` and follow it;
+do **not** treat the text as a Rule-D free-text report, because that would file the comments as one
+blob of `raw_text` and throw away every screenshot, locator and category.
+
+**Match `.json` AND `.zip`.** The spec said `.zip`; measured 2026-07-27, `~/Downloads` holds **38**
+exports — **33 `.json` (v1)** and 2 `.zip` (v2). A zip-only pattern misses nearly all real exports.
+v1 is a bare array without the v2 fields and still ingests.
 
 **Rule D — User typed extra text after slug = Stage 4 intake.** POST `/api/projects/<slug>/reports` with the rest as raw_text. Run classifier prompt at `prompts/classify-text.md`. POST `/api/reports/<id>/classify` with structured items. Tell user: open the lock-in gate at `http://localhost:8110/iterations/<iter_id>`.
 

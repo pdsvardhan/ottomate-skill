@@ -74,15 +74,31 @@ Screenshots are evidence: each `report_comments` row has its shot on the asset v
 browser via the visual-qa screenshot route once the lock-in view enhancement lands). After lock, the
 normal `stage-4-mini-pipeline.md` runs (route → component-pick/taste → mini-build → verifier → integrate → trace).
 
-## Status (2026-07-23) — all shipped
+## Status — corrected 2026-07-27. Read the withdrawn item before relying on it.
 
-Everything below is LIVE + verified:
-- Extension v2 capture (screenshot + category + locator + `data-oid` detect); export **zip** OR
-  **"Send to Ottomate"** direct push (no download; token stored locally, POSTs via the service worker).
+**LIVE and verified against the running app** (report #127, mapsofbharat, 2026-07-26 — 15
+`report_comments` rows, 15 JPEGs on the asset volume):
+- Extension v2 capture (screenshot + category + locator); export **zip** OR **"Send to Ottomate"**
+  direct push (token stored locally, POSTs via the service worker).
 - `POST …/import-visual-qa` + `report_comments` + screenshot storage; classify → 4.3 lock-in.
 - The 4.3 lock-in **view renders screenshot thumbnails** — the batch in the left column, and **per-item**
   on each card via `proposed_change.source_comment_ids`. Shots served by `/api/asset/[...path]`.
 - `DELETE /api/reports/[id]` removes a report + its comments + screenshots (cleanup).
-- **`data-oid` provenance** stamped by codegen on component/section roots
-  (`references/stage-3-codegen.md` → "Provenance stamping") → exact comment→component mapping; also
-  Task 3's stable test selectors.
+
+**⛔ WITHDRAWN 2026-07-27 (owner decision) — `data-oid` provenance stamping.**
+This block previously listed it under "all shipped". It is not shipped on any live project:
+`grep -rc data-oid` over Screenroom's `app/` + `components/` returns **0**, and the owner has chosen
+not to stamp it. `references/stage-3-codegen.md` still carries the *instruction*, but no project
+honours it.
+
+**What that costs, stated plainly:** `target_id` is a **chosen label, not a wire**. The ledger, the
+picker and the emitter all key on the label consistently, which is a supported way to work — but
+renaming a component does **not** invalidate its design decisions, because nothing connects them.
+Task 3's `selectors.ts` (`oid()`) is built on the same withdrawn instrument and has zero call sites;
+that work should assume `getByRole`/`getByTestId`. Stamping remains available later; it is a
+prerequisite for nothing.
+
+**⚠ KNOWN BUG — the direct push fails silently** (to-do #333, mapsofbharat 2026-07-26): no report was
+created, `assets/visual-qa` stayed empty, and the container logs showed zero `import-visual-qa` hits;
+the owner fell back to the zip export. Until that is fixed, **verify a push landed** before telling the
+owner it did — check `GET /api/projects/<slug>/reports` for a `source='visual-qa'` row.

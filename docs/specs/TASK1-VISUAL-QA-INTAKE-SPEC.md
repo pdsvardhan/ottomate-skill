@@ -1,5 +1,12 @@
 # Task 1 — Visual-QA Intake (DOM-Commenter → gated Stage 4)
 
+> **CANONICAL COPY — this file, in the plugin repo, is the source of truth (owner ruling 2026-07-27).**
+> The former originals under `~/Desktop/Skills CC/Ottomate/` are superseded and now hold a pointer to
+> here. They were outside version control, and on 2026-07-27 that produced its first real consequence:
+> the two copies of the Task-2 spec had silently diverged, and an audit had to be scored twice.
+> Amendments go **here**, dated and signed, and never into a second copy.
+
+
 **Status:** ✅ LOCKED 2026-07-23 — §10 defaults applied. Build order: **Task 1** → Task 3 → Task 2.
 **Author:** design session 2026-07-23. **Scope:** Ottomate skill improvement, Task 1 of 3.
 **Related:** Task 2 (UI-design method, LOCKED) + Task 3 (feature verifier, LOCKED); §9 keeps Task 1's evidence intake shared with Task 3.

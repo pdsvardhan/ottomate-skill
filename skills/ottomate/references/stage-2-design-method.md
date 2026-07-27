@@ -32,7 +32,7 @@ axis/level** — both cheap to fix with the rules below (retrospective folded in
 > **Live and proven:** the one-command round (`scripts/generation/design-round.mjs`: gates → build →
 > gate → source policy → constraint checker → computed pass → publish, fail-closed at each step) ·
 > the isolation gate incl. `distinct-source` / `control-held` (36/36) · the **constraint checker**
-> (30 of 91 rules + **5 of 5 contract keys**) · the **computed pass inline** in real Chromium, which
+> (**79 of 79 round-scope rules** + 3 of 5 contract keys) · the **computed pass inline** in real Chromium, which
 > says `UNAVAILABLE` rather than passing where there is no browser · per-panel shadow-DOM isolation ·
 > theme-from-content on real posters · `design_decisions` with lock-earned / unlock-harder as live
 > 422s · **picks → a real tokens file + spec, committed on the project branch, never pushed** ·
@@ -40,17 +40,26 @@ axis/level** — both cheap to fix with the rules below (retrospective folded in
 >
 > **The design surface is the app**, not a Claude Artifact: `/projects/<slug>/design/<target>`.
 >
+> **Corrected 2026-07-27 (A3).** This block previously said *"61 of 91 rules remain `pending`"* and
+> *"the constraint checker (30 of 91)"*. Re-counted directly from `data/design-rules.json`:
+> **91 rules — 79 `enforced`, 11 `pending`, 1 `declared-unenforceable`.** The 11 are the 7
+> `scope:'app'` + 4 `scope:'catalog'` rules, excluded from the round denominator by owner decision D15
+> with a `scope_note` on each — so **round scope is 79 of 79, zero pending**. Suites: design-check
+> 118/119 · pixel 22/22 · generation 247/247 · gate 36/36 (the 1 needs Playwright, which lives only on
+> VAULT7A, where it passes 4/4). *A status block that understates is still a status block that lies* —
+> the same defect class as a rule marked `pending` while it is working, which this programme has now
+> found four times.
+>
 > **STILL NOT TRUE — do not claim these:**
-> - **61 of 91 rules remain `pending`**, reported as *skipped*, never as passing.
 > - **`adv-brand-mark-authentic` can never be mechanically enforced** — it ships declared-unenforceable
 >   with its reason, so 90/91 is the real ceiling.
 > - **The computed divergence metric under-reads.** It measures vocabulary overlap, not visual
->   difference; a pixel diff is the actual answer and is not built.
-> - **No round has been generated in a fresh sub-agent since 2026-07-23** — the rounds live on
->   Screenroom were authored inline.
-> - **The owner has locked nothing yet**, so style priors on real data and the real-repo emit remain
->   proven only on a throwaway project.
-> - **Graduation to `master_components` is unbuilt** (Stage 4).
+>   difference. **Partly addressed 2026-07-27 (P2):** a hand-rolled pixel comparison now measures
+>   rendered difference and is reported *alongside* the Jaccard score — it complements it rather than
+>   replacing it, because a set of values says nothing about how much of the panel each value covers.
+> - **Rungs A and C have never been run.** Every real round is a component-scope B round.
+> - **The asset-fetcher does not exist** — the pipeline reads local files; there is no project-API
+>   fetch, no retry, no proxy handling.
 > - `template.card-wall.html`'s coloured 3px left strip is still there — deferred by the owner — and
 >   `adv-no-slop-tells` now **detects it**, along with an emoji nobody had noticed.
 

@@ -1,5 +1,12 @@
 # Task 3 — Feature Verifier (build-integrated, sibling to the code verifier)
 
+> **CANONICAL COPY — this file, in the plugin repo, is the source of truth (owner ruling 2026-07-27).**
+> The former originals under `~/Desktop/Skills CC/Ottomate/` are superseded and now hold a pointer to
+> here. They were outside version control, and on 2026-07-27 that produced its first real consequence:
+> the two copies of the Task-2 spec had silently diverged, and an audit had to be scored twice.
+> Amendments go **here**, dated and signed, and never into a second copy.
+
+
 **Status:** ✅ LOCKED 2026-07-23. Build order: Task 1 → **Task 3** → Task 2.
 **Author:** design session 2026-07-23. Task 3 of 3.
 **Source:** `Downloads/TASK3-FEATURE-TESTING-METHOD.md` (owner's method) + 2026 market research (this session).

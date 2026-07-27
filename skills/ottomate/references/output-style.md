@@ -278,6 +278,7 @@ These rules govern WHEN a phrase fires:
 | "let me test" / "ready to test" / "I'll review now" | Transition out of build, ready for Stage 4 |
 | "analyze" / "classify" / "process this" | Trigger Stage 4 step 4.2 (classification) |
 | "lock & build" / "approve all" / "looks good, build" | Lock Stage 4 step 4.3 list, kick off build |
+| **"here are my comments" / "ingest my comments" / "here's my visual QA" / "I did a comment pass" / "check the commenter" / "did you read my comments"** | **Visual-QA intake.** Load `references/stage-4-visual-qa.md` and follow it — find the newest `~/Downloads/<slug>-comments-*` (**`.json` or `.zip`**), confirm the project, ingest via `import-visual-qa`, classify, then rejoin the 4.3 lock-in gate. **Do NOT** file it as a Rule-D free-text report: that stores the whole batch as one `raw_text` blob and discards every screenshot, locator and category. Added 2026-07-27 — the trigger was missing, and on 2026-07-26 the owner had to ask *"thought you autoread them"* |
 
 ## Backward / pause transitions
 
