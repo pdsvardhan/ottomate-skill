@@ -204,6 +204,39 @@ pass/fail to `flow_test_runs` via `POST /api/flows/<id>/test` `ran_by:'automated
 (never blocking) for pure-backend/no-UI items. AI Explorer/Judge (Claude, in-session) never gate;
 fail-closed (a skipped/mocked case is never green). The owner reviews the case matrix before the run.
 
+### 4.7b — Graduation offer (Stage 4 S10, 2026-07-27)
+
+After the verifier passes, ask one question of the item: **did it produce something worth graduating
+into `master_components`?** A locked bespoke variant that another project would want is the case.
+
+**It ASKS. It never auto-graduates.** Graduation puts a component in front of every future project, so
+it is the owner's call — the same reasoning as the no-anatomy-approval-gate ruling, which auto-derives
+*within* a round but never auto-decides *across* projects.
+
+```
+node scripts/generation/graduate.mjs   # via the module: graduate(decision, source, provenance, opts)
+```
+
+`graduate()` runs six gates in order and **fails closed at each**, so nothing partial is ever written:
+
+| Gate | Refuses when |
+|---|---|
+| `locked` | the decision is still `proposed` — it has not been chosen |
+| `provenance` | any of the six H1 fields is missing (**`requireAll`**: at graduation we know all six, so accepting fewer would be choosing not to record what we have) |
+| `licence` | the SPDX id is RED — and **unknown is RED**, never AMBER |
+| `tokenised` | any baked-in literal colour. H1: a `#fff` is *a downgrade, not an entry* — and this is the one moment the round's own token names are known |
+| `grade` | the A–F grade is not A or B |
+| `dedupe` | it duplicates an existing component structurally **or** visually |
+
+Without `apply: true` it is a **dry run** that never calls the API. With `apply: true` it also requires
+`backedUp: true` — **`POST /api/backup` is asserted, not assumed**. Duplicates are *reported*: two
+components can look identical and differ in licence or provenance, and choosing the survivor is a
+judgement (`preferSurvivor` prefers the better-provenanced one and says by how much).
+
+Tests: `graduate-write.test.mjs` 19/19 — every gate has a must-fail case asserting the catalog was
+**provably untouched** (the injected `post()` recorded zero calls), not merely that an error was
+raised.
+
 ### 4.8 — Integrate + Trace Report
 
 When all items are verified:

@@ -107,11 +107,16 @@ export function originOf(rec = {}) {
  * refusal and both need the detail.
  *
  * @param {object} rec  a master_components-shaped record
- * @param {{grandfather?:boolean}} [opts]  grandfather=true marks a pre-rule row as debt instead of
- *   quarantining it (owner decision 2026-07-27) — see `provenance_debt`.
+ * @param {{grandfather?:boolean, requireAll?:boolean}} [opts]  grandfather=true marks a pre-rule row
+ *   as debt instead of quarantining it (owner decision 2026-07-27) — see `provenance_debt`.
+ *   requireAll=true demands the full third-party set regardless of origin. Graduation uses it: we
+ *   know all six fields at that moment, so accepting fewer would be choosing not to record what we
+ *   already have. (Passing a sentinel `library` string to force this does NOT work — `originOf` also
+ *   reads `ingestion_method`, and a graduated row is `project-extracted`, which is an authored
+ *   method. Found by the must-fail test for "missing provenance blocks the write".)
  */
 export function validateProvenance(rec = {}, opts = {}) {
-  const origin = originOf(rec);
+  const origin = opts.requireAll === true ? 'third-party' : originOf(rec);
   const required = REQUIRED_BY_ORIGIN[origin];
   const missing = required.filter((f) => normaliseField(rec[f]) === null);
 
