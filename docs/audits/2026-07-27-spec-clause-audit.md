@@ -398,3 +398,55 @@ live smoke.
    (the one-command criterion), the entire `feature-verify` harness, and the DOM-commenter's
    locator/provenance/zip/screenshot paths. Everything in `generation/` and `design-check/` is heavily
    covered by comparison.
+
+---
+
+# ADDENDUM — 2026-07-27, later: UNKNOWN clauses resolved by running the thing
+
+The audit's single biggest hole was "no VAULT7A access", which put **14 of Task 1's 44 clauses** at
+UNKNOWN. Six were resolved by reading live state, and the rest of the intake chain by **executing the
+spec the audit could only read**.
+
+## Resolved by live inspection (report #127, mapsofbharat, 2026-07-26)
+
+| Clause | Was | Now | Evidence |
+|---|---|---|---|
+| T1-13 import endpoint accepts a v2 batch | UNKNOWN | **BUILT+PROVEN** | #127 was created by it |
+| T1-14 one `report`, `raw_text` = comments concatenated | UNKNOWN | **BUILT+PROVEN** | `raw_text` reads `#1 [note] <url> \| <text> \| --- \|` |
+| T1-15 screenshots → asset store | UNKNOWN | **BUILT+PROVEN** | 15 JPEGs at `/mnt/storage/ottomate/assets/visual-qa/127/` |
+| T1-16 evidence carries url/page/locator/provenance/category | UNKNOWN | **BUILT+PROVEN** | all six columns present on `report_comments` |
+| T1-17 linked `report_comments` table, not a column | UNKNOWN | **BUILT+PROVEN** | rows 16–30 |
+| T1-34 asset store, not DB blobs | UNKNOWN | **BUILT+PROVEN** | files on the volume |
+
+## Resolved by RUNNING the spec (A4, VAULT7A, 2026-07-27)
+
+`npx playwright test --config=playwright.feature-verify.config.ts` → **3 passed (569 ms)**:
+
+- *happy: import persists report row + screenshot bytes on disk* — closes T1-15's byte-level half.
+- *data: non-ASCII comment text preserved (NFC, not transliterated)* — the §5B headline case, executed.
+- *data: NFD input preserved but not canonicalised (advisory warn)* — the subtle case, and it correctly
+  produced a **warn**, not a pass.
+
+Wrote `feature_verification_reports` id 4 (3 cases · 2 passed · 1 warned) and deleted its own
+visual-QA reports afterwards — 0 left behind.
+
+**Task 3's T3-25 also moves off UNKNOWN**: `postReport` demonstrably reaches the sink and the endpoint
+accepts the payload.
+
+## What this does NOT resolve
+
+**T3-02 stands.** The run is HTTP-only: zero clicks, zero keystrokes, zero screenshots. Trace, video
+and screenshot remain *configured and never produced*, because an API-only spec creates no browser
+context. The 4.3-panel clauses (T1-20/21/41/42/43) are still UNKNOWN and remain the free win available
+to Task 3's WP1 if the browser leg drives that screen.
+
+## Revised Task-1 scorecard
+
+| | Clauses | BUILT+PROVEN | BUILT | PARTIAL | NOT BUILT | UNKNOWN |
+|---|---:|---:|---:|---:|---:|---:|
+| Task 1 (was) | 44 | 2 | 18 | 5 | 5 | 14 |
+| **Task 1 (now)** | 44 | **8** | 18 | 5 | **3** | **10** |
+
+`NOT BUILT` drops by 2 because **A1 built the routing** the spec named — `command-routing.md` Rule D1
+and the `output-style.md` trigger rows now exist, closing T1-29, T1-30 and therefore acceptance
+criterion 5 (T1-44).
