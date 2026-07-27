@@ -6,8 +6,10 @@
 > *method* that decides each pick — showing **2–4 real interactive variants side by side, tagged by
 > source, picked/mixed by the owner** (fidelity-ladder Step B; **library-first, not library-only** — the
 > catalog is a shortcut, and a bespoke variant is first-class when nothing in it fits) — lives in
-> `stage-2-design-method.md`. The variants are shown as one evolving **Claude Artifact** at a stable
-> URL (`scripts/preview-build/`), not static SpotlightCards, when the slot is taste-driven. The chosen
+> `stage-2-design-method.md`. The variants are shown **in the app** at
+> `/projects/<slug>/design/<target>` (`scripts/preview-build/` builds the page,
+> `scripts/generation/publish-round.mjs` publishes it), not static SpotlightCards, when the slot is
+> taste-driven. ⛔ The Claude-Artifact host was retired 2026-07-27. The chosen
 > variant + rationale is written to the `ui_master_plans.design_ledger` (uncapped) AND to
 > `components.asset_library_ref` / `picked` as today. Honour the **colour-budget rule** and **vary on
 > the open axis** (§6/§7 of the method).

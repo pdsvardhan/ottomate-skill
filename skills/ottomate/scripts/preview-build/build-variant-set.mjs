@@ -210,7 +210,11 @@ function main() {
   console.log(`\npreview:  ${outHtml} (${kb} KB, ${panels.length} panels, ${cards.length} shared cards)`);
   console.log(`manifest: ${outManifest}`);
   console.log(`slots:    ${panels.map((p) => `${p.slot}=${p.label}`).join('  ')}`);
-  console.log('\nPublish with the Artifact tool using the SAME file_path every round (stable URL).');
+  // The artifact path was RETIRED 2026-07-27 (owner decision): a round is published into the
+  // Ottomate app, where the picks are made against the ledger on the same screen.
+  console.log('\nPublish with: node ../generation/publish-round.mjs --manifest <round.json> \\');
+  console.log('                --previews-dir /mnt/storage/ottomate/assets/previews \\');
+  console.log('                --api http://127.0.0.1:8110 --token-file /opt/homeserver/ottomate/.token');
 }
 
 // Run as a CLI only. Importing the module (e.g. from the test) must NOT execute main().

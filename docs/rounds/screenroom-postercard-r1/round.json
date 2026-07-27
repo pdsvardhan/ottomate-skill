@@ -1,0 +1,41 @@
+{
+  "project_slug": "screenroom",
+  "target_id": "screenroom.poster-card",
+  "target_kind": "component",
+  "archetype": "media-card",
+  "round": 1,
+  "profile": "P1",
+  "html": "/tmp/otto-round/screenroom-postercard-r1.html",
+  "session_id": "2026-07-27-design-surface",
+  "constraints": {
+    "animation_vocab": ["transform", "opacity"],
+    "forbidden": ["parallax", "bounce", "gradient-text"],
+    "note": "adr-032 gold-on-charcoal glass is the LOCKED direction for Screenroom — this is a component round inside it, not a direction round. Glassmorphism is deliberately NOT forbidden here: it is the project's own design language."
+  },
+  "variants_shown": {
+    "A": {
+      "corner-radius": "4px",
+      "elevation": "flat-hairline",
+      "hover-motion": "none-edge-tint",
+      "accent-usage": "ownership-chip-only",
+      "badge-style": "hairline-outline",
+      "meta-density": "2-line"
+    },
+    "B": {
+      "corner-radius": "20px",
+      "elevation": "surface-lightness",
+      "hover-motion": "lift-6px",
+      "accent-usage": "chip-and-meter",
+      "badge-style": "pill-solid",
+      "meta-density": "3-line"
+    },
+    "C": {
+      "corner-radius": "12px",
+      "elevation": "dual-layer-shadow",
+      "hover-motion": "scale-1.02",
+      "accent-usage": "edge-on-hover",
+      "badge-style": "corner-ribbon",
+      "meta-density": "1-line"
+    }
+  }
+}

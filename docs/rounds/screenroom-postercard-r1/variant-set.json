@@ -1,0 +1,76 @@
+{
+  "title": "Screenroom — poster card, round 1",
+  "subtitle": "Four states pinned open per option: rest · hover · focus-visible · not-ours-yet. Content, poster plates, typeface and the gold token are identical in every option — only the six named parameters move.",
+  "audienceProfile": "P1",
+  "axis": {
+    "name": "poster-card resting weight and response",
+    "parameter": "corner-radius · elevation · hover-motion · accent-usage · badge-style · meta-density",
+    "rung": 3,
+    "kind": "stylistic",
+    "params": [
+      "corner-radius",
+      "elevation",
+      "hover-motion",
+      "accent-usage",
+      "badge-style",
+      "meta-density"
+    ]
+  },
+  "control": {
+    "typeface": "system-ui stack (Sora substituted at build)",
+    "canvas": "#101216",
+    "gold-token": "#e9b84c",
+    "poster-aspect": "2/3",
+    "card-width": "168px",
+    "content": "same 4 titles, years, sizes and ownership states in every option",
+    "focus-ring": "2px solid gold, outline + outline-offset (never box-shadow-only)"
+  },
+  "contract": {
+    "animation_vocab": ["transform", "opacity"],
+    "forbidden": ["parallax", "bounce", "gradient-text"]
+  },
+  "variants": [
+    {
+      "label": "quiet-edge",
+      "caption": "sharp corners, no lift; the card answers by tightening its edge",
+      "panelTemplate": "panel-quiet-edge.html",
+      "axis_values": {
+        "corner-radius": "4px",
+        "elevation": "flat-hairline",
+        "hover-motion": "none-edge-tint",
+        "accent-usage": "ownership-chip-only",
+        "badge-style": "hairline-outline",
+        "meta-density": "2-line"
+      }
+    },
+    {
+      "label": "raised-warm",
+      "caption": "soft corners, lifts on hover; elevation carried by surface lightness, not shadow",
+      "panelTemplate": "panel-raised-warm.html",
+      "axis_values": {
+        "corner-radius": "20px",
+        "elevation": "surface-lightness",
+        "hover-motion": "lift-6px",
+        "accent-usage": "chip-and-meter",
+        "badge-style": "pill-solid",
+        "meta-density": "3-line"
+      }
+    },
+    {
+      "label": "cinema-plate",
+      "caption": "dual-layer shadow, scales on hover; meta rides a scrim on the poster",
+      "panelTemplate": "panel-cinema-plate.html",
+      "axis_values": {
+        "corner-radius": "12px",
+        "elevation": "dual-layer-shadow",
+        "hover-motion": "scale-1.02",
+        "accent-usage": "edge-on-hover",
+        "badge-style": "corner-ribbon",
+        "meta-density": "1-line"
+      }
+    }
+  ],
+  "shuffleSeed": 20260727,
+  "output": "screenroom-postercard-r1.html",
+  "manifest": "screenroom-postercard-r1.manifest.json"
+}

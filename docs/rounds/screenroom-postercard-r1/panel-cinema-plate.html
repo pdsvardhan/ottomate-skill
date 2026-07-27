@@ -1,0 +1,105 @@
+<style>
+  .sr { background: #101216; color: #f4f5f8; padding: 20px; font-family: system-ui, sans-serif;
+        --au: #e9b84c; --dim: #9aa1b2; --dim2: #5f6575; --line: #ffffff1a; --card: #161a22; }
+  .sr-row { display: grid; grid-template-columns: repeat(4, 168px); gap: 18px; align-items: start; }
+  .sr-state { font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--dim2);
+              margin-bottom: 7px; }
+
+  /* dual-layer tinted shadow: a tight contact layer + a wide ambient layer (A4 120-121) */
+  .mc { position: relative; border-radius: 12px; overflow: hidden; background: var(--card);
+        border: 1px solid var(--line);
+        box-shadow: 0 2px 4px -2px #05070ba6, 0 16px 34px -16px #05070be6;
+        transition: transform 280ms ease, border-color 280ms ease; }
+  .mc.s-hover { transform: scale(1.02); border-color: #e9b84c73; }
+  .mc.s-focus { outline: 2px solid var(--au); outline-offset: 2px; }
+  .mc.unowned { border-style: dashed; border-color: #ffffff2e; box-shadow: none; }
+
+  .pz { aspect-ratio: 2/3; position: relative; overflow: hidden; background: #1a1e28; }
+  .pf { width: 100%; height: 100%; display: grid; place-items: center; font-size: 30px; font-weight: 700;
+        letter-spacing: .04em; color: #ffffff8c; }
+  .p1 { background: linear-gradient(155deg, #2b3346, #141922); }
+  .p2 { background: linear-gradient(155deg, #3a2b2b, #191316); }
+  .p3 { background: linear-gradient(155deg, #23342f, #121a18); }
+  .p4 { background: linear-gradient(155deg, #302b3d, #16131c); }
+
+  /* corner ribbon instead of a floating pill */
+  .ribbon { position: absolute; top: 0; left: 0; padding: 3px 10px 4px 8px; font-size: 9px;
+            letter-spacing: .06em; font-weight: 700; color: #0d1015; background: #dfe3ec;
+            border-bottom-right-radius: 8px; }
+  .ribbon.hdr { top: 22px; background: var(--au); color: #191002; }
+  .own { position: absolute; left: 8px; bottom: 26px; }
+  .chip { font-size: 10px; padding: 3px 8px; border-radius: 4px; border: 1px solid; }
+  .c-full { color: #f4cf7d; border-color: #e9b84c73; background: #12151ccc; }
+  .c-out { color: var(--dim); border-color: #ffffff2e; background: #0b0d11cc; border-style: dashed; }
+
+  /* meta rides the poster on a scrim strip, so the caption stays one line */
+  .strip { position: absolute; left: 0; right: 0; bottom: 0; padding: 5px 8px 6px;
+           background: linear-gradient(#0b0d1100, #0b0d11e6 55%); display: flex;
+           justify-content: space-between; font-size: 10px; color: #c9cedb;
+           font-variant-numeric: tabular-nums; }
+
+  .info { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 4px;
+          border: 1px solid #ffffff2e; background: #0b0d11bf; color: #e8eaf0; font-size: 11px;
+          line-height: 1; cursor: pointer; }
+  .info:focus-visible { outline: 2px solid var(--au); outline-offset: 2px; }
+
+  .cap { padding: 8px 9px 10px; }
+  .t { display: block; font-size: 12.5px; line-height: 1.3; color: #f4f5f8;
+       overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+</style>
+
+<div class="sr">
+  <div class="sr-row">
+    <div>
+      <div class="sr-state">rest · owned</div>
+      <article class="mc" data-role="media-card">
+        <div class="pz"><div class="pf p1">AR</div>
+          <span class="ribbon">2160p</span><span class="ribbon hdr">DV</span>
+          <span class="own"><span class="chip c-full">Owned</span></span>
+          <div class="strip" data-role="card-meta"><span>2016</span><span>14.2 GB</span></div>
+        </div>
+        <button class="info" aria-label="Quick look">i</button>
+        <div class="cap"><span class="t" data-role="card-title">Arrival</span></div>
+      </article>
+    </div>
+
+    <div>
+      <div class="sr-state">hover · owned</div>
+      <article class="mc s-hover" data-role="media-card">
+        <div class="pz"><div class="pf p2">DU</div>
+          <span class="ribbon">1080p</span><span class="ribbon hdr">HDR</span>
+          <span class="own"><span class="chip c-full">Owned</span></span>
+          <div class="strip" data-role="card-meta"><span>2024</span><span>21.8 GB</span></div>
+        </div>
+        <button class="info" aria-label="Quick look">i</button>
+        <div class="cap"><span class="t" data-role="card-title">Dune: Part Two</span></div>
+      </article>
+    </div>
+
+    <div>
+      <div class="sr-state">focus-visible</div>
+      <article class="mc s-focus" data-role="media-card">
+        <div class="pz"><div class="pf p3">SE</div>
+          <span class="ribbon">2160p</span>
+          <span class="own"><span class="chip c-full">Owned</span></span>
+          <div class="strip" data-role="card-meta"><span>2022</span><span>38.0 GB</span></div>
+        </div>
+        <button class="info" aria-label="Quick look">i</button>
+        <div class="cap"><span class="t" data-role="card-title">Severance</span></div>
+      </article>
+    </div>
+
+    <div>
+      <div class="sr-state">not ours yet</div>
+      <article class="mc unowned" data-role="media-card">
+        <div class="pz"><div class="pf p4">PO</div>
+          <span class="ribbon">—</span>
+          <span class="own"><span class="chip c-out">Not ours yet</span></span>
+          <div class="strip" data-role="card-meta"><span>2023</span><span>request</span></div>
+        </div>
+        <button class="info" aria-label="Quick look">i</button>
+        <div class="cap"><span class="t" data-role="card-title">Poor Things</span></div>
+      </article>
+    </div>
+  </div>
+</div>

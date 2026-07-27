@@ -3,7 +3,13 @@
 > The engine that turns vague intent into a locked, distinctive, **owned** design by **extracting
 > taste through selection, not description.** Owns the *method*; `stage-2-ui-master-plan.md` and
 > `stage-2-components.md` own the *state* (what's persisted). This file is loaded whenever Stage 2
-> reaches the visual work, and again at the Stage-4.4.6 taste gate. Preview host = **Claude Artifacts**.
+> reaches the visual work, and again at the Stage-4.4.6 taste gate.
+>
+> **Preview host = the Ottomate app itself** — `/projects/<slug>/design/<target>` (owner decision,
+> 2026-07-27). ⛔ The Claude-Artifact host is **retired**: a round's self-contained page is written to
+> the previews volume and served by `/api/previews`, and the per-sub-decision picks are made on the
+> same screen, writing straight to the `design_decisions` ledger. Publish with
+> `scripts/generation/publish-round.mjs`.
 
 ## Why this exists
 
@@ -62,7 +68,8 @@ axis/level** — both cheap to fix with the rules below (retrospective folded in
 1. **Show, don't tell** — build a small real thing and let them look; never "here's a description, ok?".
 2. **Options, not one answer** — 2–4 genuinely different; the owner **picks or mixes** ("1A's meta + 2C's button").
 3. **Real + interactive** — real content, real hover/motion (they are often choosing the *interaction*); respect `prefers-reduced-motion`.
-4. **One evolving preview** — republish to the **same Artifact URL** each round (not a tab graveyard).
+4. **One evolving preview** — every round lands at its own stable in-app URL,
+   `/projects/<slug>/design/<target>?round=N` (not a tab graveyard; earlier rounds stay addressable).
 5. **Precise reaction → precise rebuild** — restate what you understood (anti-gaslight), change exactly that, keep what they liked.
 6. **Lock explicitly** — mark approved items locked; carry them forward untouched; never silently revisit.
 
@@ -121,8 +128,10 @@ inject → publish-to-same-URL into **one command** (`scripts/preview-build/`):
 - **B theme-extractor** — content → tokens (ImageMagick dominant-colour; pluggable). See §6.
 - **C template + injector** — fill `{{IMG_x}}` / `{{token}}` with **embedded assets (data: URIs)** +
   tokens; **verify NO placeholder is left unfilled** before emitting.
-- **D artifact-publisher** — self-contained page → **stable Artifact URL**, fast in-place update
-  (the skill calls the Artifact tool with the same `file_path`/`url` each round).
+- **D round-publisher** — self-contained page → the **previews volume**, served at
+  `/api/previews/design-rounds/<slug>/<target>/r<N>/index.html` and framed by the app's design route.
+  `scripts/generation/publish-round.mjs` copies the file **and** POSTs one `proposed` decision per
+  sub-decision (backup-first, ONE DOOR). ⛔ *Was:* the Claude Artifact tool — retired 2026-07-27.
 - **E decision-ledger** — component → chosen variant + rationale; **store FULL decisions, no char cap**
   (a 300-char tracker limit truncated decisions twice — that limit is on todo titles; the ledger lives
   as JSON on `ui_master_plans.design_ledger`, never as a todo). Survives long sessions. **Reload is NOT automatic** — the session-start path does not fetch the plan, so explicitly `GET /api/projects/<slug>/ui-master-plan` when resuming design work.

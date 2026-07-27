@@ -44,6 +44,12 @@ cramped.** Doctrine rule 83, the P1 profile row and the register all carry the m
 
 ## 3. Do this next, in this order
 
+> ⛔ **SUPERSEDED 2026-07-27 by `2026-07-27-PROGRAM-REPLAN.md`.** The owner changed *where* a round is
+> shown (the design surface is now a route in the Ottomate app; the Claude-Artifact path is retired)
+> and named two method gaps that were not on any list — **round composition** and **prior-art/reuse**.
+> §3a below has been **done**: a real round is published to Screenroom's live ledger. Read the re-plan
+> for the current order. §3b/3c/3d survive unchanged as phases E/F/G there.
+
 **Phases 1, 2, 3a (source), 3b (3 computed rules) and 4 (wiring) are all BUILT.** The parts work and
 two throwaway rounds were run end-to-end. What is NOT yet done is a real session on a real project, and
 the remaining implementation tail. Nothing below is blocked on research or a decision — the research

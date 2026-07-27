@@ -96,11 +96,29 @@ checker before emitting. On a BLOCK (exit 2, nothing written): a feasibility/own
 set → **fix and regenerate**, never present. Advisories annotate the panels; a *Rebuild* band triggers
 one auto-regeneration.
 
-### 6. Present + record per-item picks
-Publish the artifact (stable URL). The owner picks a **value per sub-decision** — a mix is normal. Feed
-the pick vector through `scripts/generation/picks-to-ledger.mjs` → one `design_decisions` row per
-sub-decision (`chosen_value`, `mixed_from`, `rejected[]`, `profile_at_decision`). The rejected values
-become the next round's `rejected[]` input (step 6 above).
+### 6. Publish INTO THE APP + record per-item picks
+⛔ *Was: publish a Claude Artifact.* **Retired 2026-07-27** (owner decision) — the design surface is
+`/projects/<slug>/design/<target>`.
+
+Write a round manifest (`project_slug`, `target_id`, `archetype`, `round`, `profile`, `constraints`,
+`html`, and `variants_shown` keyed by the harness's **slot letters** so the pick UI matches the panel
+headers) and run:
+
+```
+node scripts/generation/publish-round.mjs --manifest round.json \
+     --previews-dir /mnt/storage/ottomate/assets/previews \
+     --api http://127.0.0.1:8110 --token-file /opt/homeserver/ottomate/.token
+```
+
+It copies the page onto the previews volume, **POSTs `/api/backup` before the first write**, refuses to
+double-publish a `(target, round)` without `--replace`, and creates one **`proposed`** row per
+sub-decision carrying `variants_shown` + `preview_url`. Runs **on VAULT7A** (the API is localhost-bound
+and the previews volume is a host path).
+
+The owner then picks a **value per sub-decision** on that page — a mix is normal — and the page PATCHes
+`chosen_value` / `mixed_from` / `rejected[]` / `status:'in-review'` onto those same rows. The rejected
+values become the next round's `rejected[]` input (input #6 above). `picks-to-ledger.mjs` remains the
+**pure** bundle→payload mapper and the shape both paths agree on.
 
 ### 6½. Post-render computed pass (Phase 3b)
 After the harness emits and the page renders, run the **computed checker** on the rendered output —
