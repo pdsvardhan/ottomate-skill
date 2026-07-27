@@ -135,58 +135,84 @@ test('guards report a clean repo as safe', () => {
   assert.deepEqual(repoGuards(repo()), []);
 });
 
-// ── C1 step 1 — an unresolved LOCKED decision must BLOCK the emit, not be logged and skipped ─────
+// ── C1 — resolving an unregistered locked decision (2026-07-28), or failing loudly ────────────────
+// Live state: all 13 locked screenroom decisions are target_kind:"page", novel-question, enum-valued.
+// The resolution has three outcomes, never blurred: token · structural · unresolved.
 
-test('MUST FAIL — a locked decision the registry cannot resolve refuses the write, naming the axis', () => {
+// A novel question with a CSS-shaped value on a component target — the ONLY case that could tempt a
+// fabricated token, and the one that must STOP without corroborating source.
+const novelToken = (o = {}) => ({ id: 9, status: 'locked', axis: 'card.glow-spread', chosen_value: '8px', target_id: 'x.card', ...o });
+
+test('MUST PASS — a page-scope novel decision resolves to a STRUCTURAL spec entry, the emit goes green', () => {
+  // The exact row that was silently dropped before C1: library-list.surface-strategy = reuse-browse-surface.
   const r = repo();
-  const decisions = [
-    { id: 1, status: 'locked', axis: 'library-list.surface-strategy', chosen_value: 'reuse-browse-surface', target_id: 'screenroom.library-lists' },
-  ];
-  const artifacts = buildArtifacts(decisions, { project: 'screenroom' });
-  assert.equal(artifacts.skipped.length, 1, 'precondition: this axis is not in the registry');
+  const decisions = [{ id: 40, status: 'locked', axis: 'library-list.surface-strategy', chosen_value: 'reuse-browse-surface', target_id: 'screenroom.library-lists', target_kind: 'page' }];
+  const a = buildArtifacts(decisions, { project: 'screenroom' });
+  assert.equal(a.skipped.length, 0, 'a page-scope structural decision must not block the emit');
+  assert.equal(a.structural.length, 1);
+  assert.equal(a.structural[0].derived, true, 'it is resolved outside the registry, so it is labelled derived');
+  assert.match(a.structural[0].evidence.why, /not in the universal registry/);
+  assert.equal(a.spec.decisions[0].value, 'reuse-browse-surface', 'recorded verbatim into the spec');
+  assert.equal(a.spec.decisions[0].derived, true);
+  assert.match(a.css, /surface-strategy = reuse-browse-surface.*\[derived/, 'echoed in the CSS, marked derived');
+  assert.equal(emitToRepo(r, a, { project: 'screenroom', dryRun: true }).ok, true);
+});
 
-  const res = emitToRepo(r, artifacts, { project: 'screenroom' });
-  assert.equal(res.ok, false, 'a locked decision must never be dropped silently');
-  assert.equal(res.unresolved.length, 1);
-  assert.match(res.refused.join('\n'), /library-list\.surface-strategy/);
-  assert.match(res.refused.join('\n'), /never be dropped silently/);
+test('MUST FAIL — a novel CSS-shaped decision with NO corroborating source is UNRESOLVED and blocks, writing nothing', () => {
+  const r = repo();
+  const a = buildArtifacts([novelToken()], { project: 'p' }); // no sourceLoader
+  assert.equal(a.skipped.length, 1, 'precondition: nothing can corroborate an invented token');
+  assert.equal(a.tokens.length, 0, 'a fabricated custom property is exactly what must NOT happen');
+  const res = emitToRepo(r, a, { project: 'p' });
+  assert.equal(res.ok, false);
+  assert.match(res.refused.join('\n'), /card\.glow-spread/);
+  assert.match(res.refused.join('\n'), /invent a custom property/);
   assert.equal(existsSync(path.join(r, 'design')), false, 'nothing was written');
+});
+
+test('MUST PASS — the SAME novel axis mints a token when the target source corroborates it, namespaced by target', () => {
+  const sourceLoader = (t) => t === 'x.card' ? { source: '<div className="card"/>', css: '.card{ --glow-spread: 4px }' } : null;
+  const a = buildArtifacts([novelToken()], { project: 'p', sourceLoader });
+  assert.equal(a.skipped.length, 0);
+  assert.equal(a.tokens.length, 1);
+  assert.equal(a.tokens[0].token, '--card-glow-spread', 'deterministic, namespaced by the target leaf');
+  assert.equal(a.tokens[0].derived, true);
+  assert.equal(a.tokens[0].evidence.how, 'source-corroborated');
+});
+
+test('MUST FAIL — corroboration refuses when the source does NOT contain the axis (the invention guard survives the wiring)', () => {
+  const sourceLoader = () => ({ source: '<div className="card"/>', css: '.card{ color:#fff }' }); // no glow-spread anywhere
+  const a = buildArtifacts([novelToken()], { project: 'p', sourceLoader });
+  assert.equal(a.tokens.length, 0, 'a token must never be minted from a source that does not support it');
+  assert.equal(a.skipped.length, 1);
+  assert.match(a.skipped[0].why, /nothing in the target's source matches/);
 });
 
 test('MUST FAIL — the refusal fires even when OTHER decisions resolve cleanly (a partial emit is the trap)', () => {
   const r = repo();
   const decisions = [
     { id: 1, status: 'locked', axis: 'media-card.corner-radius', chosen_value: '12px', target_id: 'x.card' },
-    { id: 2, status: 'locked', axis: 'library-list.surface-strategy', chosen_value: 'reuse', target_id: 'x.list' },
+    novelToken({ id: 2, target_id: 'x.list' }),
   ];
-  const artifacts = buildArtifacts(decisions, { project: 'p' });
-  assert.ok(artifacts.tokens.length >= 1, 'precondition: one axis DOES resolve');
-  const res = emitToRepo(r, artifacts, { project: 'p' });
-  assert.equal(res.ok, false, 'a green run that quietly omits one locked decision is exactly the failure');
+  const a = buildArtifacts(decisions, { project: 'p' }); // no sourceLoader → the novel one is unresolved
+  assert.ok(a.tokens.length >= 1, 'precondition: one axis DOES resolve');
+  assert.equal(a.skipped.length, 1);
+  assert.equal(emitToRepo(r, a, { project: 'p' }).ok, false, 'a green run that quietly omits one locked decision is exactly the failure');
 });
 
 test('MUST PASS — --allow-skipped emits anyway, because dropping them is then said out loud', () => {
   const r = repo();
-  const decisions = [
-    { id: 1, status: 'locked', axis: 'media-card.corner-radius', chosen_value: '12px', target_id: 'x.card' },
-    { id: 2, status: 'locked', axis: 'library-list.surface-strategy', chosen_value: 'reuse', target_id: 'x.list' },
-  ];
-  const artifacts = buildArtifacts(decisions, { project: 'p' });
-  const res = emitToRepo(r, artifacts, { project: 'p', allowSkipped: true, dryRun: true });
-  assert.equal(res.ok, true);
+  const a = buildArtifacts([{ id: 1, status: 'locked', axis: 'media-card.corner-radius', chosen_value: '12px', target_id: 'x.card' }, novelToken({ id: 2, target_id: 'x.list' })], { project: 'p' });
+  assert.equal(emitToRepo(r, a, { project: 'p', allowSkipped: true, dryRun: true }).ok, true);
 });
 
 test('MUST PASS — a fully resolvable set is unaffected by the new guard', () => {
   const r = repo();
-  const decisions = [{ id: 1, status: 'locked', axis: 'media-card.corner-radius', chosen_value: '12px', target_id: 'x.card' }];
-  const artifacts = buildArtifacts(decisions, { project: 'p' });
-  assert.equal(artifacts.skipped.length, 0);
-  assert.equal(emitToRepo(r, artifacts, { project: 'p', dryRun: true }).ok, true);
+  const a = buildArtifacts([{ id: 1, status: 'locked', axis: 'media-card.corner-radius', chosen_value: '12px', target_id: 'x.card' }], { project: 'p' });
+  assert.equal(a.skipped.length, 0);
+  assert.equal(emitToRepo(r, a, { project: 'p', dryRun: true }).ok, true);
 });
 
 test('the report calls it UNRESOLVED and says it blocks — "SKIPPED" read like a note', () => {
-  const artifacts = buildArtifacts(
-    [{ id: 1, status: 'locked', axis: 'library-list.surface-strategy', chosen_value: 'r', target_id: 't' }], { project: 'p' },
-  );
-  assert.match(formatEmit(artifacts), /UNRESOLVED \(blocks emit\)/);
+  assert.match(formatEmit(buildArtifacts([novelToken()], { project: 'p' })), /UNRESOLVED \(blocks emit\)/);
 });

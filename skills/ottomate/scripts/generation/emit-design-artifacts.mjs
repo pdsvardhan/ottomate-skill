@@ -19,6 +19,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { questionRegistry } from './anatomy.mjs';
+import { collectEvidence } from './anatomy-derive.mjs';
 
 // A DEDICATED subdirectory, not `design/` itself. Found by the first dry run against a real repo
 // (2026-07-27): Screenroom's `design/` already holds 159 tracked files — prototypes, data, templates,
@@ -39,6 +40,99 @@ export function tokenName(template, targetId) {
   return String(template).replace('{t}', leaf);
 }
 
+/** A deterministic, target-namespaced token name for a DERIVED axis (one the registry never defined). */
+export function derivedTokenName(question, targetId) {
+  return tokenName('--{t}-' + slugForToken(question), targetId);
+}
+
+function slugForToken(question) {
+  return String(question).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Is this a value CSS could actually hold as a token — a length/time/angle/number, a colour, or a
+ * function? Deliberately TIGHT: an enum slug like `reuse-browse-surface` or `two-racks-one-page` must
+ * read as NOT-a-token, because the whole point is to keep a novel structural choice out of the CSS
+ * token path where it would either be garbage or tempt a fabricated custom property.
+ */
+export function looksLikeCssValue(v) {
+  const s = String(v ?? '').trim();
+  if (!s) return false;
+  if (/^#[0-9a-fA-F]{3,8}$/.test(s)) return true;
+  if (/^(rgb|rgba|hsl|hsla|oklch|oklab|lab|lch|color|calc|var|clamp|min|max|linear-gradient|radial-gradient)\(/i.test(s)) return true;
+  const tok = /^-?\d*\.?\d+(px|rem|em|%|vh|vw|vmin|vmax|ms|s|deg|rad|turn|fr|ch|ex|pt|cm|mm|in)?$/;
+  return s.split(/\s+/).every((t) => tok.test(t)); // "0 2px 4px" is one value, "nav-only" is not
+}
+
+/**
+ * The invention guard. A novel question with a CSS-shaped value on a component target is the ONE case
+ * that could produce a fabricated `--{t}-{question}`. Mint it ONLY if the target's real source
+ * corroborates the axis — otherwise STOP and ask. Weak by design and openly so: it only has to refuse
+ * a token nothing in the source supports, not to classify the component.
+ * @param {(targetId:string)=>({source?:string,css?:string}|null)} sourceLoader
+ * @param {Map} cache  per-run evidence cache, keyed by target_id
+ */
+function corroborate(d, question, { sourceLoader, cache }) {
+  if (typeof sourceLoader !== 'function') return { ok: false, why: 'no source available to corroborate against' };
+  const key = String(d.target_id);
+  let ev = cache.get(key);
+  if (ev === undefined) {
+    const src = sourceLoader(d.target_id);
+    ev = src ? collectEvidence(src.source ?? '', src.css ?? '') : null;
+    cache.set(key, ev);
+  }
+  if (!ev) return { ok: false, why: `no source found for target "${d.target_id}"` };
+  const slug = slugForToken(question);
+  const hay = [...(ev.cssProps ?? []), ...(ev.classNames ?? []), ...(ev.dataRoles ?? [])].map((s) => String(s).toLowerCase());
+  const matched = hay.find((h) => h.includes(slug) || slug.includes(h));
+  if (matched) return { ok: true, evidence: { how: 'source-corroborated', matched, slug } };
+  return { ok: false, why: `nothing in the target's source matches "${slug}"` };
+}
+
+/**
+ * Resolve ONE locked decision to exactly one of: token · structural · unresolved. The three are never
+ * blurred — an unresolved decision blocks the emit rather than being dropped (C1 step 1).
+ */
+export function resolveDecision(d, { registry = questionRegistry(), sourceLoader, cache = new Map() } = {}) {
+  const { question } = axisParts(d.axis);
+  const base = { id: d.id, axis: d.axis, target_id: d.target_id, question, value: String(d.chosen_value), round: d.round ?? null };
+  const q = registry[question];
+
+  // 1. Registry HIT — the ordinary path, unchanged.
+  if (q) {
+    const row = { ...base, channel: q.channel, scope_hint: q.scope_hint, derived: false };
+    return q.token ? { kind: 'token', row: { ...row, token: tokenName(q.token, d.target_id) } } : { kind: 'structural', row };
+  }
+
+  // 2. Registry MISS on a page-scope OR non-CSS-shaped decision → verbatim STRUCTURAL record.
+  const pageScope = d.target_kind === 'page';
+  if (pageScope || !looksLikeCssValue(d.chosen_value)) {
+    return {
+      kind: 'structural',
+      row: {
+        ...base, channel: null, scope_hint: pageScope ? 'page' : 'local', derived: true,
+        evidence: {
+          how: 'novel-question-structural',
+          why: `"${question}" is not in the universal registry; ${pageScope ? 'target_kind=page' : `value "${d.chosen_value}" is not CSS-shaped`} — recorded verbatim as a structural decision, never a token`,
+        },
+      },
+    };
+  }
+
+  // 3. Registry MISS, CSS-shaped value, component-scope → mint a token ONLY if the source corroborates.
+  const corr = corroborate(d, question, { sourceLoader, cache });
+  if (corr.ok) {
+    return { kind: 'token', row: { ...base, channel: null, scope_hint: 'local', derived: true, token: derivedTokenName(question, d.target_id), evidence: corr.evidence } };
+  }
+  return {
+    kind: 'unresolved',
+    row: {
+      axis: d.axis,
+      why: `novel question "${question}" is not in the registry and its token-shaped value "${d.chosen_value}" could not be corroborated from the target's source (${corr.why}) — refusing to invent a custom property (doctrine rule 40). Add "${question}" to the registry, or supply the target's source.`,
+    },
+  };
+}
+
 /**
  * PURE. Locked decisions → the two artifacts' CONTENT. No fs, no git — so the shape is unit-testable
  * without a repo.
@@ -46,22 +140,18 @@ export function tokenName(template, targetId) {
  * @param {object} [opts]
  * @returns {{css:string, spec:object, tokens:Array, structural:Array, skipped:Array}}
  */
-export function buildArtifacts(decisions, { project = '', registry = questionRegistry(), now = new Date() } = {}) {
+export function buildArtifacts(decisions, { project = '', registry = questionRegistry(), sourceLoader, now = new Date() } = {}) {
   const locked = (decisions ?? []).filter((d) => d && d.status === 'locked' && d.chosen_value);
   const tokens = [];
   const structural = [];
   const skipped = [];
+  const cache = new Map(); // one derivation per target per run (C1: a derived entry is cached)
 
   for (const d of locked) {
-    const { question } = axisParts(d.axis);
-    const q = registry[question];
-    if (!q) { skipped.push({ axis: d.axis, why: 'question not in the registry' }); continue; }
-    const row = {
-      id: d.id, axis: d.axis, target_id: d.target_id, question,
-      value: String(d.chosen_value), round: d.round ?? null, channel: q.channel, scope_hint: q.scope_hint,
-    };
-    if (q.token) tokens.push({ ...row, token: tokenName(q.token, d.target_id) });
-    else structural.push(row);
+    const { kind, row } = resolveDecision(d, { registry, sourceLoader, cache });
+    if (kind === 'token') tokens.push(row);
+    else if (kind === 'structural') structural.push(row);
+    else skipped.push(row); // unresolved — blocks the emit (C1 step 1), never silently dropped
   }
 
   const stamp = now.toISOString();
@@ -76,20 +166,21 @@ export function buildArtifacts(decisions, { project = '', registry = questionReg
     ' */',
   ];
   // Structural picks are echoed here even though CSS cannot express them — a decision that is
-  // invisible from the code is a decision that gets quietly violated (D12).
+  // invisible from the code is a decision that gets quietly violated (D12). A `derived` decision (one
+  // resolved outside the universal registry, C1) is marked so a reader can tell it from a registry hit.
   const echo = structural.length
     ? ['', '/* Structural decisions — NOT expressible as custom properties.', ' * They live in ' + SPEC_FILE + ' and are applied when the component is built.',
-      ...structural.map((s) => ` *   ${s.axis} = ${s.value}`), ' */']
+      ...structural.map((s) => ` *   ${s.axis} = ${s.value}${s.derived ? '   [derived: not in the universal registry]' : ''}`), ' */']
     : [];
   const body = tokens.length
-    ? [':root {', ...tokens.map((t) => `  ${t.token}: ${t.value};  /* ${t.axis} */`), '}']
+    ? [':root {', ...tokens.map((t) => `  ${t.token}: ${t.value};  /* ${t.axis}${t.derived ? ' [derived]' : ''} */`), '}']
     : ['/* no token-shaped decisions are locked yet */'];
 
   const css = [...head, ...echo, '', ...body, ''].join('\n');
   const spec = {
     $comment: 'Structural design decisions the build stage applies when writing the component. Generated; do not edit by hand.',
     project, emitted: stamp,
-    decisions: structural.map(({ id, axis, target_id, question, value, round }) => ({ id, axis, target_id, question, value, round })),
+    decisions: structural.map(({ id, axis, target_id, question, value, round, derived, evidence }) => ({ id, axis, target_id, question, value, round, ...(derived ? { derived, evidence } : {}) })),
   };
   return { css, spec, tokens, structural, skipped };
 }
@@ -170,9 +261,9 @@ export function emitToRepo(repo, artifacts, { project, round, dryRun = false, al
 
 export function formatEmit(artifacts, result) {
   const l = [];
-  l.push(`tokens: ${artifacts.tokens.length}   structural: ${artifacts.structural.length}   skipped: ${artifacts.skipped.length}`);
-  for (const t of artifacts.tokens) l.push(`  ${t.token.padEnd(30)} ${t.value}   (${t.axis})`);
-  for (const s of artifacts.structural) l.push(`  [spec] ${s.axis} = ${s.value}`);
+  l.push(`tokens: ${artifacts.tokens.length}   structural: ${artifacts.structural.length}   unresolved: ${artifacts.skipped.length}`);
+  for (const t of artifacts.tokens) l.push(`  ${t.token.padEnd(30)} ${t.value}   (${t.axis})${t.derived ? '  [derived]' : ''}`);
+  for (const s of artifacts.structural) l.push(`  [spec] ${s.axis} = ${s.value}${s.derived ? '  [derived]' : ''}`);
   // Not "SKIPPED" — that read like a note. An unresolved LOCKED decision is a blocker.
   for (const s of artifacts.skipped) l.push(`  UNRESOLVED (blocks emit) ${s.axis} — ${s.why}`);
   if (!result) return l.join('\n');
