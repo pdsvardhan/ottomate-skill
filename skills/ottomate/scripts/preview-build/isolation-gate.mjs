@@ -241,6 +241,29 @@ export function runGate(set, rendered = null) {
     }
   }
 
+  // ── 6b. control-held (T1) — the TWIN of axis-realised, on the other side of the set ───────────
+  // `control-diff` above only checks that a key is not declared as BOTH control and axis. Nothing
+  // verified that the panels actually HOLD the controls constant — so "everything else is frozen" was
+  // an unverified claim, exactly the class of hole reproduced in axis-realised on 2026-07-27.
+  // Only LITERAL control values are checkable from source; a prose control ("system-ui stack") is
+  // reported as unchecked rather than quietly counted as verified.
+  if (rendered && variants.length > 1) {
+    const problems = [], notes = [], unchecked = [];
+    for (const [key, val] of Object.entries(control)) {
+      if (!isLiteralValue(val)) { unchecked.push(key); continue; }
+      const lit = String(val);
+      const have = variants.filter((v) => String(rendered[v.label] ?? '').includes(lit)).map((v) => v.label);
+      if (have.length === 0) continue;                       // nobody uses it — not a broken control
+      if (have.length !== variants.length) {
+        const missing = variants.map((v) => v.label).filter((l) => !have.includes(l));
+        problems.push(`control "${key}" (${lit}) is present in ${have.join(', ')} but MISSING from ${missing.join(', ')} — it is not being held constant`);
+      } else notes.push(`${key}=${lit} in all ${variants.length}`);
+    }
+    if (unchecked.length) notes.push(`not source-checkable: ${unchecked.join(', ')}`);
+    add('control-held', problems.length === 0,
+      problems.length ? problems.join('; ') : (notes.join(' · ') || 'no literal controls declared'));
+  }
+
   // ── 7. axis-realised (markup mode, EVERY axis kind) ──────────────────────────
   // The hole this closes, found 2026-07-27 and reproduced before it was fixed: every check above
   // reads `axis_values`, which is a DECLARATION. Nothing read the artifact. Three BYTE-IDENTICAL

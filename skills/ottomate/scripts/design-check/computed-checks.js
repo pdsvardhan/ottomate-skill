@@ -134,21 +134,48 @@
       for (const p of VECTOR_PROPS) sig[p] = new Set(styled.map((el) => getComputedStyle(el)[p] || ''));
       return sig;
     }
-    function sigDistance(s1, s2) {
+    // WHICH PROPERTIES ARE ACTUALLY IN PLAY. Diagnosed 2026-07-27 on the first inline run: averaging
+    // Jaccard distance over all 12 properties DILUTES the score with control. A panel carrying four
+    // real posters plus their shared pills, chips and buttons has ~9 of 12 properties identical by
+    // design, each contributing exactly 0 — so two genuinely different designs scored 0.06 while a
+    // sparser placeholder round scored 0.39. The metric was measuring how much shared chrome a panel
+    // had, not how far the axis moved.
+    // Fix: average over the properties that MOVE SOMEWHERE in the set. A property identical in every
+    // panel is control, and control must not drag the number down. `rawDistance` is kept and reported
+    // so the change is visible rather than a silent retune.
+    function inPlayProps(sigs) {
+      return VECTOR_PROPS.filter((p) => {
+        const union = new Set();
+        for (const s of sigs) for (const v of s.sig[p]) union.add(v);
+        return union.size > 1;
+      });
+    }
+    function jaccard(a, b) {
+      const union = new Set([...a, ...b]);
+      let inter = 0; for (const v of a) if (b.has(v)) inter += 1;
+      return union.size ? (union.size - inter) / union.size : 0;
+    }
+    function sigDistance(s1, s2, props) {
+      if (!props.length) return 0;   // nothing moved anywhere — identical, and that must FAIL
       let total = 0;
-      for (const p of VECTOR_PROPS) {
-        const a = s1[p], b = s2[p];
-        const union = new Set([...a, ...b]);
-        let inter = 0; for (const v of a) if (b.has(v)) inter += 1;
-        total += union.size ? (union.size - inter) / union.size : 0; // Jaccard distance
-      }
-      return total / VECTOR_PROPS.length;
+      for (const p of props) total += jaccard(s1[p], s2[p]);
+      return total / props.length;
     }
     if (scopes.length >= 2) {
       const sigs = scopes.map(({ label, sr }) => ({ label, sig: panelSignature(sr) }));
+      const props = inPlayProps(sigs);
+      findings.meta.divergenceProps = props;
+      findings.meta.divergencePropsTotal = VECTOR_PROPS.length;
       for (let i = 0; i < sigs.length; i++) for (let j = i + 1; j < sigs.length; j++) {
-        const d = sigDistance(sigs[i].sig, sigs[j].sig);
-        findings.divergence.push({ pair: [sigs[i].label, sigs[j].label], distance: Math.round(d * 100) / 100, differ: d >= divergenceFloor });
+        const d = sigDistance(sigs[i].sig, sigs[j].sig, props);
+        const raw = sigDistance(sigs[i].sig, sigs[j].sig, VECTOR_PROPS);
+        findings.divergence.push({
+          pair: [sigs[i].label, sigs[j].label],
+          distance: Math.round(d * 100) / 100,
+          rawDistance: Math.round(raw * 100) / 100,
+          propsInPlay: props.length,
+          differ: d >= divergenceFloor,
+        });
       }
     }
     return findings;

@@ -184,5 +184,44 @@ t('  ...and it is named in the advisory', /tight\.radius="4px"/.test(checkOf(rU,
 t('token mode (no markup) skips the realised checks entirely',
   runGate(fake).checks.some((c) => c.name === 'distinct-source'), false);
 
+
+// ── control-held (T1): the twin of axis-realised, on the control side ──────────────────────────
+// `control-diff` only ever checked that a key was not declared as BOTH control and axis. Nothing
+// verified the panels actually HELD the controls constant, so "everything else is frozen" was an
+// unverified claim — the same class of hole as the declaration-vs-artifact one.
+const heldSet = (a, b, c) => ({
+  axis: { name: 'radius', parameter: 'corner radius', rung: 2, kind: 'stylistic', params: ['radius'] },
+  control: { canvas: '#101216', gutter: '18px', typeface: 'system-ui stack (prose - not checkable)' },
+  variants: [
+    { label: 'tight', axis_values: { radius: '4px' } },
+    { label: 'mid',   axis_values: { radius: '12px' } },
+    { label: 'loose', axis_values: { radius: '20px' } },
+  ],
+  _rendered: { tight: a, mid: b, loose: c },
+});
+const heldOk = heldSet(
+  '<style>.c{background:#101216;gap:18px;border-radius:4px}</style><div class="c">a</div>',
+  '<style>.c{background:#101216;gap:18px;border-radius:12px}</style><div class="c">b</div>',
+  '<style>.c{background:#101216;gap:18px;border-radius:20px}</style><div class="c">c</div>',
+);
+const rOk = runGate(heldOk, heldOk._rendered);
+t('a set that really holds its controls PASSES control-held', checkOf(rOk, 'control-held').pass, true);
+t('  ...and a prose control is reported unchecked, never counted as verified',
+  /not source-checkable: typeface/.test(checkOf(rOk, 'control-held').detail), true);
+
+const heldBad = heldSet(
+  '<style>.c{background:#101216;gap:18px;border-radius:4px}</style><div class="c">a</div>',
+  '<style>.c{background:#000000;gap:18px;border-radius:12px}</style><div class="c">b</div>',
+  '<style>.c{background:#101216;gap:18px;border-radius:20px}</style><div class="c">c</div>',
+);
+const rBad = runGate(heldBad, heldBad._rendered);
+t('MUST FAIL - a control that is NOT held constant is caught', rBad.pass, false);
+t('  ...and control-held names the panel that dropped it',
+  /control "canvas".*MISSING from mid/.test(checkOf(rBad, 'control-held').detail), true);
+
+const unusedC = heldSet('<div>a</div>', '<div>b</div>', '<div>c</div>');
+t('a control no panel references at all is not reported as broken',
+  checkOf(runGate(unusedC, unusedC._rendered), 'control-held').pass, true);
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -110,7 +110,15 @@ function main() {
 
   const axis = cfg.axis ?? {};
   const variants = cfg.variants ?? [];
-  const control = cfg.control ?? {};
+  // T6: `buildRoundInput` works out which axes are INHERITED from prior art (same archetype, locked
+  // on another target) and used to hand them back only for a human to copy into the config by hand —
+  // so an inherited value was a note, not a frozen control. Merged here, with the config winning on a
+  // genuine conflict so a deliberate override is still possible.
+  const inherited = cfg.inheritedControls ?? {};
+  const control = { ...Object.fromEntries(Object.entries(inherited).map(([k, v]) => [k, v?.value ?? v])), ...(cfg.control ?? {}) };
+  if (Object.keys(inherited).length) {
+    console.log(`inherited controls: ${Object.keys(inherited).join(', ')} (from prior art)`);
+  }
   const assetRoot = cfg.assetRoot ?? '';
 
   // ── shared content: built ONCE, identical in every panel (this IS the control set) ──────────
