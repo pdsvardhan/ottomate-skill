@@ -37,6 +37,19 @@ panel files + config and returns its 6→3 rationale; the main session runs the 
    turned down for this target (empty on gen-1) — **never re-offer a rejected value**; and
    `frozenByAxis(decisions)` = every **locked** sub-decision — a locked axis is a **frozen control**
    (doctrine 39), **excluded from the round's contested axes**, never re-offered as a variant.
+7. **Prior art — what this project already decided ELSEWHERE** (`scripts/generation/prior-art.mjs`).
+   Pass `projectDecisions` (the whole project's rows, no `target_id` filter) + `targetId` to
+   `buildRoundInput` and it also answers *"is this already solved in another part of the project?"*:
+   - **reuse** — same archetype, different target, **locked** → `verdict:'inherit'`. The axis leaves
+     the contested set and becomes an inherited control. Two instances of the same component answering
+     the same question differently is drift, not design. Pass `diverge:['axis-id']` to re-open it on
+     purpose (ruling 3 — a preset, never a straitjacket).
+   - **coherence** — *different* archetype, same question (`button.corner-radius` vs
+     `media-card.corner-radius`) → **advisory only, never inherited.** The radius ladder and concentric
+     nesting mean a nested element's radius *should* differ from its container's (doctrine 116).
+   - **conflict** — two different locked values for the same question on the same archetype → reported,
+     **never silently resolved.** The round is where the project settles a disagreement it already has.
+   A `proposed` decision elsewhere is context, never an inheritance: a proposal is not an answer.
 
 ## The steps
 

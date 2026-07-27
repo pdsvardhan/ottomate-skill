@@ -8,6 +8,7 @@
 // Pure. The doc side (spawn recipe, stage-3 wiring, HARD-list registration) lives in the references.
 
 import { rejectedByAxis, frozenByAxis } from './ledger-context.mjs';
+import { priorArtByAxis, applyPriorArt } from './prior-art.mjs';
 
 // ── 2. scope × entry routing (owner ruling, docs/plans/2026-07-23-task2-remaining-work.md §3) ─────
 
@@ -55,17 +56,26 @@ export const DEFERRAL = {
 /**
  * Assemble the self-contained packet a FRESH generation sub-agent receives. The ledger is the memory;
  * the packet carries everything a clean context needs and nothing else.
- * - contested axes = the archetype's sub-decisions MINUS any that are LOCKED (frozen controls).
+ * - contested axes = the archetype's sub-decisions MINUS any that are LOCKED (frozen controls)
+ *   MINUS any the PRIOR-ART pass says this project already settled on another target.
  * - rejectedByAxis  = values already turned down; the agent must never re-offer them.
- * @returns {{archetype,tier,direction,profile,contract,requiredStates,renderSurface,contested:Array,frozen:object,rejectedByAxis:object}}
+ *
+ * `decisions` is this TARGET's rows. `projectDecisions` (optional) is the whole project's — pass it
+ * and the round also learns what the project already decided ELSEWHERE (prior-art.mjs). Without it the
+ * behaviour is exactly as before, so every existing caller is unaffected.
+ *
+ * @returns {{archetype,tier,direction,profile,contract,requiredStates,renderSurface,contested:Array,frozen:object,rejectedByAxis:object,priorArt:object,inheritedControls:object,priorArtConflicts:Array}}
  */
-export function buildRoundInput({ anatomy, archetype, contract = {}, profile = 'P1', direction = null, decisions = [] }) {
+export function buildRoundInput({
+  anatomy, archetype, contract = {}, profile = 'P1', direction = null, decisions = [],
+  projectDecisions = null, targetId = null, diverge = [],
+}) {
   const arche = anatomy.archetypes?.[archetype];
   if (!arche) throw new Error(`unknown archetype "${archetype}"`);
   const frozen = frozenByAxis(decisions);          // { 'archetype.id': value }
   const rejected = rejectedByAxis(decisions);      // { 'archetype.id': [{value,why}] }
   const contested = arche.sub_decisions.filter((sd) => !(`${archetype}.${sd.id}` in frozen));
-  return {
+  const base = {
     archetype,
     tier: arche.tier,
     direction,
@@ -76,7 +86,14 @@ export function buildRoundInput({ anatomy, archetype, contract = {}, profile = '
     contested,
     frozen,
     rejectedByAxis: rejected,
+    priorArt: {},
+    inheritedControls: {},
+    priorArtConflicts: [],
   };
+  if (!projectDecisions || !targetId) return base;
+
+  const priorArt = priorArtByAxis(projectDecisions, { targetId, archetype, subDecisions: arche.sub_decisions });
+  return { ...applyPriorArt(base, priorArt, { diverge }), priorArt };
 }
 
 // ── 3. Stage-3 design-lock gate, profile-aware ───────────────────────────────────────────────────
