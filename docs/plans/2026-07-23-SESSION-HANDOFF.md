@@ -164,7 +164,13 @@ wiring, reload-on-resume, snapshot regression gate (`ledger-context.mjs`, demons
 fresh-context rounds as the default, scope×entry routing, profile-aware Stage-3 gate, design gates in
 the HARD list, and a graduation **protocol + non-writing hook** (`method-routing.mjs`, `graduate.mjs`) —
 **round 2 demonstrated the ledger being respected** (fresh agent fed the live ledger → no rejected value
-re-offered, frozen axis omitted; mechanically verified + rendered). **Remaining: Phase 3b** (16 computed
-rules + the mechanical rubric scorer + the computed rendered-appearance check) and **the graduation
-ingest SUBSYSTEM** (a migration for the provenance/grade columns + grade runner + dedupe + NOTICES).
-Task 2 is **`ITERATE`**, not `APPROVE`, against the locked spec's §12 — but materially closer.
+re-offered, frozen axis omitted; mechanically verified + rendered). **Phase 3b STARTED** — the computed checker exists
+(`computed-checks.js`, runs in Node for the math + real Chromium for the DOM): `floor-contrast`,
+`adv-cross-component-coherence`, and the new `computed-axis-divergence` backstop are built, tested
+(6/6 math + 4/4 browser on the server) and demonstrated on real round-2 output. **Remaining: the
+other ~12 computed rules** (shadow/glass/type-optical/scale/…) against the same architecture,
+**auto-inlining the computed pass** into the harness (it's a post-render step today, run via
+`run-computed.mjs` on the server or claude-in-chrome), and the **graduation ingest SUBSYSTEM** (a
+migration for provenance/grade columns + grade runner + dedupe + NOTICES). Enforced: **29 of 90**
+(26 source + 3 computed); 61 pending, reported as *skipped*. Task 2 is **`ITERATE`**, not `APPROVE`,
+against the locked spec's §12 — but materially closer.
