@@ -236,6 +236,50 @@ function contractForbidden(src, rule, contract) {
   return found.length ? no(`forbidden technique(s) present — ${found.join('; ')}`) : ok(`none of [${banned.join(', ')}] present`);
 }
 
+// ── C8: anti-slop tells (F2's templated tax) ────────────────────────────────────────────────────
+// The signatures F2 identifies as the most reliable "this was generated" tells. ADVISORY, never
+// blocking: each is legitimate somewhere, and a hard block would turn a taste heuristic into a law.
+// But they must be SEEN — the entire failure mode is that nobody notices. Our own card-wall template
+// still carries the coloured left strip (a logged defect the owner deferred), which is precisely why
+// this is worth detecting rather than trusting ourselves not to do it.
+function advNoSlopTells(src) {
+  const s = stripComments(src);
+  const tells = [];
+
+  // 1. the coloured 2-4px left strip on a stat or card — F2's single most reliable tell
+  if (/border-left\s*:\s*[234]px\s+solid/i.test(s)
+      || /::before[^{]*\{[^}]*width\s*:\s*[234]px/i.test(s)) {
+    tells.push('coloured 2-4px left strip on a surface');
+  }
+
+  // 2. an emoji doing an icon's job
+  if (/[\u{1F300}-\u{1FAFF}]|[\u{2600}-\u{27BF}]/u.test(s)) {
+    tells.push('emoji used as UI iconography');
+  }
+
+  // 3. everything centred — what you get when no layout decision was made
+  const centred = (s.match(/text-align\s*:\s*center/gi) || []).length;
+  if (centred >= 4) {
+    tells.push('text-align:center x' + centred + ' — centring everything is the no-decision default');
+  }
+
+  // 4. a rainbow gradient standing in for a palette
+  if (/linear-gradient\([^)]*#[0-9a-f]{3,8}[^)]*#[0-9a-f]{3,8}[^)]*#[0-9a-f]{3,8}/i.test(s)) {
+    tells.push('3+ stop rainbow gradient');
+  }
+
+  // 5. one radius on everything — no ladder, no concentric nesting (A4 116)
+  const radiusDecls = s.match(/border-radius\s*:\s*[\d.]+(?:px|rem)/gi) || [];
+  const distinctRadii = new Set(radiusDecls.map((m) => m.split(':')[1].trim()));
+  if (radiusDecls.length >= 5 && distinctRadii.size === 1) {
+    tells.push('one radius (' + [...distinctRadii][0] + ') on ' + radiusDecls.length + ' elements — no ladder');
+  }
+
+  return tells.length
+    ? no('anti-slop tells present: ' + tells.join('; '))
+    : ok('no templated-tax tells detected');
+}
+
 // ── advisory detectors ──────────────────────────────────────────────────────────────────────────
 
 function advNoFontSmoothing(src, rule) {
@@ -482,6 +526,7 @@ function advNoImageDistortion(src, rule) {
 // as skipped — never as a pass. That distinction is the whole point of the register's Enforced? field.
 
 export const DETECTORS = {
+  'adv-no-slop-tells': { scope: 'variant', fn: advNoSlopTells },
   'feas-no-eval': { scope: 'variant', fn: feasNoEval },
   'feas-no-wasm': { scope: 'variant', fn: feasNoWasm },
   'feas-no-network': { scope: 'variant', fn: feasNoNetwork },

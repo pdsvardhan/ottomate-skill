@@ -20,6 +20,7 @@ import { extractAccent } from './theme-extract.mjs';
 import { runGate, formatGate, RUNG_NAMES } from './isolation-gate.mjs';
 import { runCheck, formatCheck, annotationsByVariant } from '../design-check/design-check.mjs';
 import { runComputedPass, blockingFindings, formatComputed } from '../design-check/computed-runner.mjs';
+import { checkSourcePolicy, formatSource } from '../generation/catalog-source.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const MIME = { '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
@@ -180,6 +181,21 @@ function main() {
     }
   } else {
     console.log('constraint check: SKIPPED — token mode has no per-variant source (see design-check.mjs header)');
+  }
+
+  // ── C2: source policy — was the catalog even CONSIDERED? ───────────────────────────────────
+  // 179 components exist and the method never looked at them. library-first (the default) allows a
+  // bespoke variant freely, but requires it to say what the catalog could not do.
+  {
+    const sp = checkSourcePolicy(variants, {
+      policy: cfg.contract?.source_policy ?? 'library-first',
+      candidates: cfg.catalogCandidates ?? [],
+    });
+    console.log(formatSource(sp, cfg.catalogCandidates ?? []));
+    if (!sp.pass) {
+      console.error('\nNOTHING WRITTEN. A set that never considered the catalog is not a library-first set.');
+      process.exit(2);
+    }
   }
 
   // ── presentation: randomise slot order, keep the mapping in the manifest ────────────────────

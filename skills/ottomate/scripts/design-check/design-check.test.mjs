@@ -294,6 +294,27 @@ test('every implemented detector id exists in design-rules.json (no drift)', asy
   }
 });
 
+test('adv-no-slop-tells FIRES on the templated-tax signatures', () => {
+  const { DETECTORS } = D;
+  const fn = DETECTORS['adv-no-slop-tells'].fn;
+  const strip = fn('.stat{border-left:3px solid #e9b84c}');
+  assert.equal(strip.pass, false, 'the coloured left strip is the most reliable tell F2 names');
+  assert.match(strip.detail, /left strip/);
+  const centred = fn('.a{text-align:center}.b{text-align:center}.c{text-align:center}.d{text-align:center}');
+  assert.equal(centred.pass, false, 'centring everything is the no-decision default');
+  const oneRadius = fn('.a{border-radius:8px}.b{border-radius:8px}.c{border-radius:8px}.d{border-radius:8px}.e{border-radius:8px}');
+  assert.equal(oneRadius.pass, false, 'one radius on everything means no ladder');
+});
+
+test('adv-no-slop-tells PASSES honest source — it must not fire on a real design', () => {
+  const { DETECTORS } = D;
+  const fn = DETECTORS['adv-no-slop-tells'].fn;
+  const honest = '.card{border-radius:12px}.chip{border-radius:999px}.badge{border-radius:3px}'
+    + '.t{text-align:left}.n{text-align:right}';
+  const r = fn(honest);
+  assert.equal(r.pass, true, r.detail);
+});
+
 test('every enforced rule names a test AND either has a detector or is gate-enforced', () => {
   for (const rule of RULES.rules) {
     if (rule.status !== 'enforced') continue;
@@ -304,4 +325,5 @@ test('every enforced rule names a test AND either has a detector or is gate-enfo
     assert.ok(DETECTOR_IDS.has(rule.id) || elsewhereEnforced, `rule "${rule.id}" claims enforced but has no detector and is not gate/computed-enforced`);
   }
 });
-const DETECTOR_IDS = new Set(Object.keys((await import('./checks.mjs')).DETECTORS));
+const D = await import('./checks.mjs');
+const DETECTOR_IDS = new Set(Object.keys(D.DETECTORS));

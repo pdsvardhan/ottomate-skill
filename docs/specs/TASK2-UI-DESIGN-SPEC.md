@@ -90,6 +90,21 @@ Pull real assets (e.g. movie posters via Radarr/TMDB) and **derive per-item toke
 - Never regress a locked design item while changing an unlocked one.
 - Primary decisions are asked with options, never silently picked.
 
+## 11b. Amendment — what "interactive" means (owner ruling, 2026-07-27)
+
+Criteria 3 and 4 require previews to be **interactive**. Panels are isolated from one another by
+**declarative shadow DOM**, which is what stops one option's CSS bleeding into another — and the cost
+is that `<template>` content is inert, so **JavaScript inside a panel does not run**.
+
+**Owner ruling: accept CSS-only, and say so rather than implying more.** Hover, focus-visible, active,
+transitions and state changes all work, and those cover every axis the method actually varies — shape,
+colour, density, motion. **JS-driven variants are out of scope for a design round.** If one is ever
+genuinely needed, the option is a per-panel iframe, which was considered and rejected here as
+re-introducing the per-panel height and scrollbar problems for a case that has not arisen.
+
+"Interactive" in criteria 3 and 4 therefore means **CSS-interactive**, and a variant that depends on
+scripting to be judged is a signal the round is at the wrong rung.
+
 ## 12. Acceptance criteria (Phase 1)
 
 1. Context gate captured before any visual.

@@ -28,7 +28,6 @@
     "measurement_note": "C2 §3.10 CHANGES HOW THE CHECKER MUST WORK: coherence and token-adherence rules are RUNTIME checks (render, then getComputedStyle), not source-text greps. A source grep cannot see cascade resolution, so it cannot tell whether the same semantic role resolves to the same value across two components. Rules below carry `method`: 'source' (static grep over the variant text) or 'computed' (needs a browser). The block_feasibility rules are all 'source', which is why they are the cheapest to implement first.",
     "owner_override": "An explicit owner instruction outranks every tier (doctrine rule 22: an explicit request IS a decision). Overridden rules are recorded in the ledger with rationale and exempted from the templated tax."
   },
-
   "audience_profiles": {
     "$comment": "Owner ruling 2026-07-23: a rule is not universally true, it is true for an audience on a device. Research states rules against an implied general-public/all-devices reader; most of this owner's projects are not that. The project's profile is a first-class REVISABLE ledger field and it selects which floor rules bind. block_owner rules NEVER vary by profile.",
     "field": "ledger.context.audience_profile",
@@ -88,7 +87,6 @@
     },
     "status": "pending"
   },
-
   "hover_only_content": {
     "id": "hover-only-content",
     "tier": "block_floor",
@@ -100,12 +98,14 @@
     "profile_dependent": true,
     "status": "pending"
   },
-
   "constraint_contract_schema": {
     "$comment": "The owner's per-project contract, stored in the ledger and injected into EVERY round. These are tier block_owner.",
     "must_use": {
       "type": "string[]",
-      "example": ["mc-shine-border", "mc-border-beam"],
+      "example": [
+        "mc-shine-border",
+        "mc-border-beam"
+      ],
       "check": "source_contains_mc_id",
       "semantics": "Every listed master_components id must appear in the variant source, tagged.",
       "status": "enforced",
@@ -113,7 +113,10 @@
     },
     "animation_vocab": {
       "type": "string[]",
-      "example": ["fade-up", "border-draw"],
+      "example": [
+        "fade-up",
+        "border-draw"
+      ],
       "check": "animation_names_subset_of",
       "semantics": "Parse every @keyframes name, animation-name, and transition-property in the variant. ONLY the listed vocabulary may appear. Anything outside fails.",
       "status": "enforced",
@@ -121,7 +124,11 @@
     },
     "forbidden": {
       "type": "string[]",
-      "example": ["glassmorphism", "parallax", "bounce"],
+      "example": [
+        "glassmorphism",
+        "parallax",
+        "bounce"
+      ],
       "check": "forbidden_technique_absent",
       "detectors": {
         "glassmorphism": "backdrop-filter present, or filter:blur() on a translucent surface",
@@ -135,20 +142,32 @@
     },
     "source_policy": {
       "type": "enum",
-      "values": ["library-first", "library-only", "bespoke-ok"],
+      "values": [
+        "library-first",
+        "library-only",
+        "bespoke-ok"
+      ],
       "check": "source_policy_honoured",
       "semantics": "library-first (DEFAULT, owner ruling 2026-07-23) = check master_components first, use a catalog entry where it genuinely fits, author bespoke freely when it does not; every variant must declare source as an mc-id or 'bespoke'. library-only = every component traces to an mc-id. bespoke-ok = no constraint, tagging still required.",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "catalog-source.mjs checkSourcePolicy, wired into build-variant-set.mjs; stage3-gates.test.mjs (7 cases incl. 3 must-fail). C2 2026-07-27: the missing tagging convention now exists - variant.source = {kind:\"catalog\", mc_id} | {kind:\"bespoke\", why}."
     },
     "colour_budget": {
       "type": "object",
-      "example": { "accent_surfaces": ["poster-edge", "primary-cta"], "max_accent_surfaces": 3 },
+      "example": {
+        "accent_surfaces": [
+          "poster-edge",
+          "primary-cta"
+        ],
+        "max_accent_surfaces": 3
+      },
       "check": "accent_surface_count_within_budget",
       "semantics": "Count distinct rendered surfaces carrying the derived accent. Over budget = fail. Under-use is NOT a pass: a fully monochrome result fails the 'restraint is not monochrome' half of the rule.",
-      "status": "pending"
+      "status": "enforced",
+      "method": "computed",
+      "enforced_by": "computed-checks.js colourBudget; surfaced as a BLOCK by computed-runner.mjs blockingFindings. C4 2026-07-27. Monochrome is REPORTED, not blocked - a deliberately monochrome design is a legitimate owner choice."
     }
   },
-
   "rules": [
     {
       "id": "iso-axis-diff",
@@ -156,7 +175,9 @@
       "source": "G1 §4.3 step 4a",
       "statement": "The named axis parameter provably differs across every pair in the set.",
       "check": "axis_diff",
-      "params": { "min_structural_diff_ratio": 0.15 },
+      "params": {
+        "min_structural_diff_ratio": 0.15
+      },
       "params_note": "0.15 is a [REASONED] engineering default, not a measured constant (G1 §8). Tune per axis against real 'felt identical' reports.",
       "remedy": "regenerate_set",
       "status": "enforced",
@@ -190,7 +211,34 @@
       "source": "G1 §4.4, G3 §3.2",
       "statement": "Option count fits the rung: 3 default; 2 for binary axis or late confirm; 4-5 only at rung 0-1 on a foundational axis; never 6+; never 1.",
       "check": "option_count_for_rung",
-      "params": { "by_rung": { "0": [3, 5], "1": [3, 4], "2": [3, 3], "3": [2, 3], "4": [2, 2], "5": [2, 2] } },
+      "params": {
+        "by_rung": {
+          "0": [
+            3,
+            5
+          ],
+          "1": [
+            3,
+            4
+          ],
+          "2": [
+            3,
+            3
+          ],
+          "3": [
+            2,
+            3
+          ],
+          "4": [
+            2,
+            2
+          ],
+          "5": [
+            2,
+            2
+          ]
+        }
+      },
       "remedy": "adjust_count",
       "status": "enforced",
       "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › 6 options is REJECTED even at rung 0 / 3 options at rung 4 (page) is REJECTED"
@@ -201,7 +249,9 @@
       "source": "G1 §3.8 [CITED Tohidi & Buxton 2006]",
       "statement": "Never present a single option for approval.",
       "check": "option_count_min",
-      "params": { "min": 2 },
+      "params": {
+        "min": 2
+      },
       "remedy": "regenerate_set",
       "status": "enforced",
       "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › a single option is REJECTED"
@@ -213,7 +263,17 @@
       "statement": "Before locking an axis, every parent axis it depends on is already locked.",
       "check": "axis_dag_parents_locked",
       "params": {
-        "dag_order": ["direction", "layout", "density", "type", "colour", "component-pattern", "component-styling", "motion", "copy"]
+        "dag_order": [
+          "direction",
+          "layout",
+          "density",
+          "type",
+          "colour",
+          "component-pattern",
+          "component-styling",
+          "motion",
+          "copy"
+        ]
       },
       "params_note": "[REASONED]. The RULE (parents before children) is invariant; this specific order is a default a brand-led product may legitimately reorder.",
       "remedy": "block_lock",
@@ -250,7 +310,6 @@
       "status": "enforced",
       "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › evaluative labels are REJECTED"
     },
-
     {
       "id": "floor-contrast",
       "tier": "block_floor",
@@ -258,9 +317,23 @@
       "statement": "Text contrast >= 4.5:1 normal, >= 3:1 large (>=18.66px bold or >=24px). Non-text UI >= 3:1 against adjacent colour.",
       "check": "contrast_ratio",
       "method": "computed",
-      "params": { "normal": 4.5, "large": 3.0, "non_text": 3.0, "large_px_bold": 18.66, "large_px_regular": 24 },
+      "params": {
+        "normal": 4.5,
+        "large": 3.0,
+        "non_text": 3.0,
+        "large_px_bold": 18.66,
+        "large_px_regular": 24
+      },
       "remedy": "regenerate_variant",
-      "advisory_companion": { "check": "apca_lc", "params": { "body": 75, "large": 45, "non_text": 30 }, "note": "APCA is DRAFT with an unconfirmed embedding licence — computed and shown, never gates. Revisit if it lands in WCAG 3." },
+      "advisory_companion": {
+        "check": "apca_lc",
+        "params": {
+          "body": 75,
+          "large": 45,
+          "non_text": 30
+        },
+        "note": "APCA is DRAFT with an unconfirmed embedding licence — computed and shown, never gates. Revisit if it lands in WCAG 3."
+      },
       "impl_note": "computed-checks.js: resolved text colour vs the nearest opaque ancestor background → WCAG ratio. Text over an image/gradient is reported 'review', never silently passed. Profile-filtered (advise P1, block P2/P3).",
       "status": "enforced",
       "enforced_by": "scripts/design-check/computed-checks.test.mjs (math) + computed-checks.browser.test.mjs › CATCH: low contrast is flagged (DOM, real Chromium)"
@@ -280,7 +353,9 @@
       "source": "CHATGPT (WCAG 2.5.8) + A5 pending",
       "statement": "Interactive targets are >= 24x24 CSS px.",
       "check": "min_target_size",
-      "params": { "min_px": 24 },
+      "params": {
+        "min_px": 24
+      },
       "remedy": "regenerate_variant",
       "status": "pending"
     },
@@ -294,14 +369,15 @@
       "note": "Also the method's own 'state reads via form, not only colour' rule.",
       "status": "pending"
     },
-
     {
       "id": "adv-flash-limit",
       "tier": "advise",
       "source": "CHATGPT (WCAG 2.3.1)",
       "statement": "No more than 3 flashes per second.",
       "check": "flash_rate",
-      "params": { "max_per_second": 3 },
+      "params": {
+        "max_per_second": 3
+      },
       "status": "pending"
     },
     {
@@ -310,7 +386,12 @@
       "source": "A5 §3.5 (WCAG 2.4.7 / 2.4.13)",
       "statement": "Visible focus indicator: >=2px thick, >=3:1 against BOTH the component and the surface behind it, drawn with outline + outline-offset (NOT box-shadow alone), via :focus-visible.",
       "check": "focus_ring_spec",
-      "params": { "min_px": 2, "min_contrast": 3.0, "require_outline": true, "require_focus_visible": true },
+      "params": {
+        "min_px": 2,
+        "min_contrast": 3.0,
+        "require_outline": true,
+        "require_focus_visible": true
+      },
       "why_not_box_shadow": "forced-colors: active deletes box-shadow entirely, so a box-shadow-only ring vanishes for Windows High Contrast users.",
       "remedy": "regenerate_variant",
       "profile_dependent": true,
@@ -323,14 +404,35 @@
       "statement": "Duration by ROLE, not one range. Exits run 20-30% shorter than entrances. Duration scales with distance/size (+50-100ms per size step).",
       "check": "animation_duration_by_role",
       "params": {
-        "micro_feedback": [100, 150],
-        "small_enter_exit": [150, 200],
-        "standard_component": [250, 300],
-        "large_surface": [350, 500],
-        "full_page": [500, 600],
+        "micro_feedback": [
+          100,
+          150
+        ],
+        "small_enter_exit": [
+          150,
+          200
+        ],
+        "standard_component": [
+          250,
+          300
+        ],
+        "large_surface": [
+          350,
+          500
+        ],
+        "full_page": [
+          500,
+          600
+        ],
         "needs_justification_over_ms": 600,
-        "exit_shorter_pct": [20, 30],
-        "size_step_ms": [50, 100]
+        "exit_shorter_pct": [
+          20,
+          30
+        ],
+        "size_step_ms": [
+          50,
+          100
+        ]
       },
       "status": "pending"
     },
@@ -340,7 +442,16 @@
       "source": "B1 §3.3, §3.4",
       "statement": "Enter decelerates (ease-out), exit accelerates (ease-in), move-within-view is symmetric. NEVER linear for positional motion — linear is only for continuous motion (spinners, marquees, real progress) and opacity cross-fades.",
       "check": "easing_direction",
-      "params": { "forbid_linear_on": ["transform", "translate", "scale", "rotate", "top", "left"] },
+      "params": {
+        "forbid_linear_on": [
+          "transform",
+          "translate",
+          "scale",
+          "rotate",
+          "top",
+          "left"
+        ]
+      },
       "status": "pending"
     },
     {
@@ -349,7 +460,27 @@
       "source": "B1 §3.6, §3.7",
       "statement": "Animate only transform and opacity. width/height/top/left/margin/padding trigger layout; box-shadow/filter/background/color/border-radius trigger paint. Frame budget ~10ms at 60Hz.",
       "check": "animated_properties",
-      "params": { "allowed": ["transform", "opacity"], "layout_triggering": ["width", "height", "top", "left", "margin", "padding"], "paint_triggering": ["box-shadow", "filter", "background", "color", "border-radius"] },
+      "params": {
+        "allowed": [
+          "transform",
+          "opacity"
+        ],
+        "layout_triggering": [
+          "width",
+          "height",
+          "top",
+          "left",
+          "margin",
+          "padding"
+        ],
+        "paint_triggering": [
+          "box-shadow",
+          "filter",
+          "background",
+          "color",
+          "border-radius"
+        ]
+      },
       "status": "pending"
     },
     {
@@ -358,7 +489,14 @@
       "source": "B1 §3.12",
       "statement": "Stagger 20-60ms per item; cap the total sequence at 300-500ms. Past ~8-10 items animate only what is in the viewport.",
       "check": "stagger_budget",
-      "params": { "per_item_ms": [20, 60], "total_max_ms": 500, "viewport_only_after_items": 10 },
+      "params": {
+        "per_item_ms": [
+          20,
+          60
+        ],
+        "total_max_ms": 500,
+        "viewport_only_after_items": 10
+      },
       "status": "pending"
     },
     {
@@ -375,7 +513,12 @@
       "source": "A1 §3.3 (60/30/10)",
       "statement": "Saturated accent covers ~10% of pixels: ~60% dominant neutral, ~30% secondary surface/text, ~10% accent earned by a RANKED list of surfaces. Accent everywhere reads cheap; accent nowhere reads dead.",
       "check": "accent_pixel_share",
-      "params": { "accent_pct": 10, "tolerance_pct": 5, "dominant_pct": 60, "secondary_pct": 30 },
+      "params": {
+        "accent_pct": 10,
+        "tolerance_pct": 5,
+        "dominant_pct": 60,
+        "secondary_pct": 30
+      },
       "note": "The numeric form of the owner's colour-budget rule. Both must pass — this counts pixels, colour_budget counts surfaces.",
       "status": "pending"
     },
@@ -393,7 +536,16 @@
       "source": "A1 §3.6, §3.7, §3.8",
       "statement": "Never pure black in dark mode — base surface at OKLCH L ~= 0.18 (#121212). Elevation on dark is +lightness (~+0.03 L per step), not shadow. Cut accent chroma 10-30% on dark; avoid pure-white text (L ~= 0.90 / #E6E6E6).",
       "check": "dark_surface_spec",
-      "params": { "min_surface_L": 0.16, "target_surface_L": 0.18, "elevation_step_L": 0.03, "max_text_L": 0.92, "dark_chroma_cut_pct": [10, 30] },
+      "params": {
+        "min_surface_L": 0.16,
+        "target_surface_L": 0.18,
+        "elevation_step_L": 0.03,
+        "max_text_L": 0.92,
+        "dark_chroma_cut_pct": [
+          10,
+          30
+        ]
+      },
       "status": "pending"
     },
     {
@@ -402,7 +554,11 @@
       "source": "A1 §3.4",
       "statement": "Neutrals are hue-tinted, never pure grey, but leashed: OKLCH chroma 0.004-0.02. Below reads as flat computer-grey; above ~0.03 the greys visibly turn blue/beige.",
       "check": "neutral_chroma_range",
-      "params": { "min_chroma": 0.004, "max_chroma": 0.02, "hard_max_chroma": 0.03 },
+      "params": {
+        "min_chroma": 0.004,
+        "max_chroma": 0.02,
+        "hard_max_chroma": 0.03
+      },
       "status": "pending"
     },
     {
@@ -411,7 +567,16 @@
       "source": "A1 §3.9",
       "statement": "State deltas are direction-aware lightness moves, not a second hardcoded hex. Hover ~= dL +/-0.04-0.06, press ~= +/-0.08-0.10, so one rule darkens in light and lightens in dark.",
       "check": "state_delta_relative",
-      "params": { "hover_dL": [0.04, 0.06], "press_dL": [0.08, 0.10] },
+      "params": {
+        "hover_dL": [
+          0.04,
+          0.06
+        ],
+        "press_dL": [
+          0.08,
+          0.1
+        ]
+      },
       "status": "pending"
     },
     {
@@ -429,7 +594,13 @@
       "source": "A3 §3.5 (Baymard, Butterick), G2 §4.6 dim 3",
       "statement": "Body measure 45-75ch, 65 default, hard outer bound 80 (40 for CJK) — REGARDLESS of viewport, including on a 3840px panel. Route extra width to a second pane, never a longer line.",
       "check": "chars_per_line",
-      "params": { "min": 45, "default": 65, "ideal_max": 75, "hard_max": 80, "cjk_max": 40 },
+      "params": {
+        "min": 45,
+        "default": 65,
+        "ideal_max": 75,
+        "hard_max": 80,
+        "cjk_max": 40
+      },
       "status": "pending"
     },
     {
@@ -438,7 +609,17 @@
       "source": "A3 §3.6, §3.7",
       "statement": "On large displays add STRUCTURE, not width: one stacked pane -> 50/50 -> 70/30, never one stretched column. And a 27-inch 4K panel is NOT 3840 CSS px — OSes default it to ~150% scaling, giving a logical viewport around 2560x1440.",
       "check": "large_display_layout",
-      "params": { "logical_viewport_27in_4k": [2560, 1440], "splits": ["100", "50/50", "70/30"] },
+      "params": {
+        "logical_viewport_27in_4k": [
+          2560,
+          1440
+        ],
+        "splits": [
+          "100",
+          "50/50",
+          "70/30"
+        ]
+      },
       "corrects": "The method's 'primary-screen-tuned, 4K-first' instruction assumed the marketing resolution.",
       "status": "pending"
     },
@@ -448,7 +629,17 @@
       "source": "A3 §3.11, §3.12 (Carbon-verified)",
       "statement": "Data-dense surfaces get their own 4px density scale, decoupled from the 8pt layout grid, once a grid shows >15-20 rows. Row heights: comfortable 48-64, standard 40, compact 32, extra-compact 24. Under ~32px needs a target-size review.",
       "check": "density_row_heights",
-      "params": { "comfortable": [48, 64], "standard": 40, "compact": 32, "extra_compact": 24, "step_px": 4, "target_review_below": 32 },
+      "params": {
+        "comfortable": [
+          48,
+          64
+        ],
+        "standard": 40,
+        "compact": 32,
+        "extra_compact": 24,
+        "step_px": 4,
+        "target_review_below": 32
+      },
       "status": "pending"
     },
     {
@@ -457,7 +648,13 @@
       "source": "A3 §3.13",
       "statement": "Z-index is a tiered token ladder with gaps >=100, never a raw integer and never 9999. For anything that must always win, prefer the browser top layer (<dialog>, [popover]).",
       "check": "zindex_tokens",
-      "params": { "min_gap": 100, "forbid_values": [9999, 99999] },
+      "params": {
+        "min_gap": 100,
+        "forbid_values": [
+          9999,
+          99999
+        ]
+      },
       "status": "pending"
     },
     {
@@ -466,7 +663,12 @@
       "source": "A3 §3.14",
       "statement": "Whitespace is the FIRST hierarchy tool. A section heading carries 1.5-2x more space above than below — that asymmetry says 'this heading belongs to what follows' at zero colour cost.",
       "check": "heading_space_asymmetry",
-      "params": { "above_below_ratio": [1.5, 2.0] },
+      "params": {
+        "above_below_ratio": [
+          1.5,
+          2.0
+        ]
+      },
       "status": "pending"
     },
     {
@@ -475,7 +677,12 @@
       "source": "G2 §4.6 dim 3, CHATGPT",
       "statement": "Body text >= ~14-16px equivalent with 1.4-1.6x line-height.",
       "check": "body_type_metrics",
-      "params": { "min_px": 14, "preferred_px": 16, "line_height_min": 1.4, "line_height_max": 1.6 },
+      "params": {
+        "min_px": 14,
+        "preferred_px": 16,
+        "line_height_min": 1.4,
+        "line_height_max": 1.6
+      },
       "status": "pending"
     },
     {
@@ -485,7 +692,11 @@
       "statement": "Spacing values fall on one declared scale; no more than ~6-8 distinct values on a screen; every value a multiple of the base unit.",
       "check": "spacing_scale_adherence",
       "method": "computed",
-      "params": { "max_distinct": 8, "geometry_tolerance_px": 1.0, "geometry_tolerance_px_strict": 0.5 },
+      "params": {
+        "max_distinct": 8,
+        "geometry_tolerance_px": 1.0,
+        "geometry_tolerance_px_strict": 0.5
+      },
       "params_note": "C2 §3.10 supplies the tolerance the G2 statement lacked: a computed value is 'on-ramp' if it is within ±0.5-1px of a ramp entry. Sub-pixel drift from percentage/flex layout is expected and must not be reported as scale debt.",
       "status": "pending"
     },
@@ -496,7 +707,10 @@
       "statement": "No more than ~5-7 distinct font-size steps, all from the declared scale.",
       "check": "type_scale_adherence",
       "method": "computed",
-      "params": { "max_distinct": 7, "geometry_tolerance_px": 0.5 },
+      "params": {
+        "max_distinct": 7,
+        "geometry_tolerance_px": 0.5
+      },
       "status": "pending"
     },
     {
@@ -506,7 +720,11 @@
       "statement": "Every colour value traces to the declared token set — no one-off hex outside it.",
       "check": "colour_token_adherence",
       "method": "computed",
-      "params": { "delta_e_pass": 1, "delta_e_warn": 2, "delta_e_metric": "CIEDE2000" },
+      "params": {
+        "delta_e_pass": 1,
+        "delta_e_warn": 2,
+        "delta_e_metric": "CIEDE2000"
+      },
       "params_note": "C2 §3.10 supplies the tolerance the G2 statement lacked. ΔE2000 <=1 pass, <=2 warn, >2 fail. Compare the COMPUTED colour against the resolved token value, not the source text — a source grep cannot see cascade resolution or color-mix()/oklch() output.",
       "status": "pending"
     },
@@ -517,7 +735,9 @@
       "statement": "Tokens flow primitive -> semantic -> component and never skip or reverse a layer; primitives are named by value, semantics by role, components by part; alias depth <= 3 hops.",
       "check": "token_layer_direction",
       "method": "source",
-      "params": { "max_alias_hops": 3 },
+      "params": {
+        "max_alias_hops": 3
+      },
       "params_note": "Detectable statically: parse every `--x: var(--y)` edge into a graph. Defects = a component token referencing a primitive directly, a cycle, a chain > 3, a primitive whose name carries a role word (primary/action/danger/surface), or a semantic whose name carries a colour word (blue/red/grey).",
       "remedy": "annotate",
       "status": "enforced",
@@ -543,7 +763,17 @@
       "check": "semantic_role_consistency",
       "method": "computed",
       "params": {
-        "state_vocabulary": ["rest", "hover", "focus-visible", "active", "selected", "disabled", "loading", "invalid", "read-only"],
+        "state_vocabulary": [
+          "rest",
+          "hover",
+          "focus-visible",
+          "active",
+          "selected",
+          "disabled",
+          "loading",
+          "invalid",
+          "read-only"
+        ],
         "delta_e_pass": 1,
         "delta_e_warn": 2,
         "geometry_tolerance_px": 1.0
@@ -560,7 +790,23 @@
       "statement": "Across the N rendered panels, each pair's RESOLVED-style signature differs by at least a floor — the panels actually look different, not just differ in source.",
       "check": "rendered_appearance_divergence",
       "method": "computed",
-      "params": { "divergence_floor": 0.25, "vector_props": ["borderRadius", "boxShadow", "backgroundColor", "color", "padding", "borderWidth", "borderStyle", "fontFamily", "fontSize", "fontWeight", "letterSpacing", "textTransform"] },
+      "params": {
+        "divergence_floor": 0.25,
+        "vector_props": [
+          "borderRadius",
+          "boxShadow",
+          "backgroundColor",
+          "color",
+          "padding",
+          "borderWidth",
+          "borderStyle",
+          "fontFamily",
+          "fontSize",
+          "fontWeight",
+          "letterSpacing",
+          "textTransform"
+        ]
+      },
       "params_note": "THE PROPER BACKSTOP FOR A STYLISTIC BUNDLE. The gate's source structural check counts tag/class/property NAMES and is BLIND to CSS-value differences, so it reported ~2% for three visibly-different round-1 cards (a false reject). This reads getComputedStyle, so it sees radius 0 vs 14, flat vs shadowed, coral vs amber. Per panel: the SET of resolved values across all styled elements (a holistic look signature); distance = mean Jaccard across props. Advise, not block, because it complements — not replaces — the source gate. Verified on real round-2 output: A/B 0.39, A/C 0.41, B/C 0.57 (all differ); a near-identical pair scored 0.06 (flagged).",
       "remedy": "annotate",
       "status": "enforced",
@@ -573,7 +819,15 @@
       "statement": "The variant source contains no eval, new Function, string-argument setTimeout/setInterval, or javascript: URI.",
       "check": "no_dynamic_code",
       "method": "source",
-      "params": { "patterns": ["\\beval\\s*\\(", "new\\s+Function\\s*\\(", "setTimeout\\s*\\(\\s*[\"']", "setInterval\\s*\\(\\s*[\"']", "javascript:"] },
+      "params": {
+        "patterns": [
+          "\\beval\\s*\\(",
+          "new\\s+Function\\s*\\(",
+          "setTimeout\\s*\\(\\s*[\"']",
+          "setInterval\\s*\\(\\s*[\"']",
+          "javascript:"
+        ]
+      },
       "params_note": "Applies to INLINED LIBRARY SOURCE too, not just hand-written code — H2 §3.15: verify the pinned version's actual text, because popular libraries have shipped eval in avoidable paths (Chart.js pre-v3 string templates).",
       "remedy": "regenerate_variant",
       "status": "enforced",
@@ -586,7 +840,19 @@
       "statement": "No WebAssembly. 'wasm-unsafe-eval' is a SEPARATE CSP keyword from 'unsafe-eval' and is not granted, so WebAssembly.instantiate/compile refuse in every engine.",
       "check": "no_wasm",
       "method": "source",
-      "params": { "patterns": ["WebAssembly\\s*\\.", "\\.wasm\\b", "wasm-unsafe-eval"], "known_blocked": ["rive-runtime", "@rive-app", "DRACOLoader", "KTX2Loader"] },
+      "params": {
+        "patterns": [
+          "WebAssembly\\s*\\.",
+          "\\.wasm\\b",
+          "wasm-unsafe-eval"
+        ],
+        "known_blocked": [
+          "rive-runtime",
+          "@rive-app",
+          "DRACOLoader",
+          "KTX2Loader"
+        ]
+      },
       "params_note": "Rive's web runtime is UNAVAILABLE, always — not conditionally. Lottie (lottie-web, MIT) is plain JS with no eval and DOES work inlined; prefer SVG+CSS/WAAPI first.",
       "remedy": "regenerate_variant",
       "status": "enforced",
@@ -600,8 +866,30 @@
       "check": "no_network_reference",
       "method": "source",
       "params": {
-        "patterns": ["(src|href)\\s*=\\s*[\"']https?://", "@import\\s+(url\\()?[\"']?https?://", "\\bfetch\\s*\\(", "XMLHttpRequest", "new\\s+WebSocket", "new\\s+EventSource", "fonts\\.googleapis\\.com", "cdn\\.tailwindcss\\.com"],
-        "known_placeholder_services": ["placehold.co", "placeholder.com", "via.placeholder", "placekitten", "picsum.photos", "gravatar.com", "api.dicebear.com", "ui-avatars.com", "unsplash.it", "source.unsplash.com", "loremflickr", "robohash.org"]
+        "patterns": [
+          "(src|href)\\s*=\\s*[\"']https?://",
+          "@import\\s+(url\\()?[\"']?https?://",
+          "\\bfetch\\s*\\(",
+          "XMLHttpRequest",
+          "new\\s+WebSocket",
+          "new\\s+EventSource",
+          "fonts\\.googleapis\\.com",
+          "cdn\\.tailwindcss\\.com"
+        ],
+        "known_placeholder_services": [
+          "placehold.co",
+          "placeholder.com",
+          "via.placeholder",
+          "placekitten",
+          "picsum.photos",
+          "gravatar.com",
+          "api.dicebear.com",
+          "ui-avatars.com",
+          "unsplash.it",
+          "source.unsplash.com",
+          "loremflickr",
+          "robohash.org"
+        ]
       },
       "params_note": "'Single-file' and 'no-network' are TWO SEPARATE CHECKS (H2 §3.10) — a technique can be trivially single-file and still fetch at runtime. Tailwind must be compiled to a static stylesheet OFFLINE; the Play CDN is a runtime network call and fails here. known_placeholder_services (D2 §3.9) is called out separately because it is the SPECIFIC failure a generator produces when art is missing: reach for placehold.co or DiceBear's HTTP API. The correct answer is a deterministic seeded inline SVG (doctrine 153) or an initials avatar at the L=0.179 crossover (doctrine 154) — both offline and both stable across rebuilds, which a remote service is not.",
       "remedy": "regenerate_variant",
@@ -615,7 +903,11 @@
       "statement": "No inline event-handler attributes (onclick=, onload=, ...). Wire every listener through addEventListener inside the one covered <script> block.",
       "check": "no_inline_handlers",
       "method": "source",
-      "params": { "patterns": ["\\son[a-z]+\\s*=\\s*[\"']"] },
+      "params": {
+        "patterns": [
+          "\\son[a-z]+\\s*=\\s*[\"']"
+        ]
+      },
       "params_note": "A hash/nonce-based strict script-src does not cover onclick= by default — only 'unsafe-inline' or the narrower 'unsafe-hashes' does. Separately (E2 §3.7) inline style=\"\" attributes are governed by style-src-attr and are dropped under a hash-based policy; that is adv-inline-style-attr, not this rule.",
       "remedy": "regenerate_variant",
       "status": "enforced",
@@ -629,8 +921,24 @@
       "check": "non_widely_feature_gated",
       "method": "source",
       "params": {
-        "limited_availability_2026_07": ["anchor-name", "position-anchor", "animation-timeline", "scroll-timeline", "view-timeline", "text-wrap: pretty", "field-sizing", "corner-shape"],
-        "cascade_fallback_exempt": ["color", "background-color", "border-color", "fill", "stroke", "outline-color"]
+        "limited_availability_2026_07": [
+          "anchor-name",
+          "position-anchor",
+          "animation-timeline",
+          "scroll-timeline",
+          "view-timeline",
+          "text-wrap: pretty",
+          "field-sizing",
+          "corner-shape"
+        ],
+        "cascade_fallback_exempt": [
+          "color",
+          "background-color",
+          "border-color",
+          "fill",
+          "stroke",
+          "outline-color"
+        ]
       },
       "params_note": "E2 §3.3: for COLOUR VALUES the cascade is itself the fallback (`color:#a33; color:oklch(...)`) so no @supports is required — hence cascade_fallback_exempt. The gate applies to PROPERTIES that change layout or need a companion rule. Content must remain complete and usable when a gated feature no-ops.",
       "remedy": "regenerate_variant",
@@ -665,7 +973,13 @@
       "statement": "No -webkit-font-smoothing / -moz-osx-font-smoothing.",
       "check": "no_font_smoothing",
       "method": "source",
-      "params": { "patterns": ["-webkit-font-smoothing", "-moz-osx-font-smoothing", "font-smooth"] },
+      "params": {
+        "patterns": [
+          "-webkit-font-smoothing",
+          "-moz-osx-font-smoothing",
+          "font-smooth"
+        ]
+      },
       "params_note": "Non-standard and macOS-only: a no-op on Windows/Android, but on Mac it forces grayscale AA that renders text lighter, so a design tuned on Windows looks different on Mac. Text is heavier on Windows (DirectWrite) and lighter on macOS (CoreText) by default; design for both. Found in and removed from both of our own preview templates 2026-07-23.",
       "remedy": "annotate",
       "status": "enforced",
@@ -678,7 +992,18 @@
       "statement": "backdrop-filter is preceded by -webkit-backdrop-filter; mask/mask-composite is preceded by -webkit-mask-* using the WebKit keywords (source-over/source-in, not add/intersect).",
       "check": "webkit_prefix_present",
       "method": "source",
-      "params": { "pairs": { "backdrop-filter": "-webkit-backdrop-filter", "mask-composite": "-webkit-mask-composite" }, "keyword_map": { "add": "source-over", "intersect": "source-in", "exclude": "xor", "subtract": "source-out" } },
+      "params": {
+        "pairs": {
+          "backdrop-filter": "-webkit-backdrop-filter",
+          "mask-composite": "-webkit-mask-composite"
+        },
+        "keyword_map": {
+          "add": "source-over",
+          "intersect": "source-in",
+          "exclude": "xor",
+          "subtract": "source-out"
+        }
+      },
       "params_note": "Safari < 18 needs the backdrop-filter prefix. The mask keywords genuinely DIFFER between prefixed and standard — copying the standard keyword into the prefixed line is a silent no-op. The map is per-operation: E2 §3.9 supplied add/intersect, A4 §3.12 supplied exclude->xor (the one the gradient-border trick actually needs). Neither track states the full map; it came from cross-checking them.",
       "remedy": "annotate",
       "status": "enforced",
@@ -691,7 +1016,9 @@
       "statement": "Prefer one <style> block plus classes over inline style=\"\" attributes.",
       "check": "inline_style_attr_count",
       "method": "source",
-      "params": { "max_inline_style_attrs": 0 },
+      "params": {
+        "max_inline_style_attrs": 0
+      },
       "params_note": "Governed by style-src-attr, SEPARATELY from style-src; under a strict hash-based policy inline style attributes are dropped and the page silently un-styles. AI-generated markup leans on them heavily, which is exactly why this is worth counting. ADVISE not block, because our observed Artifact sandbox does allow them (see the doctrine's arbitrated-conflicts register) — the risk is portability, not current breakage. Exempt: a style attribute carrying only a CSS custom property used as a per-instance parameter.",
       "remedy": "annotate",
       "status": "enforced",
@@ -704,7 +1031,11 @@
       "statement": "No meaning (state, contrast, category) depends on wide-gamut P3 saturation; P3 is declared after an sRGB value so the cascade degrades it.",
       "check": "p3_degrades",
       "method": "source",
-      "params": { "patterns": ["color\\(display-p3"] },
+      "params": {
+        "patterns": [
+          "color\\(display-p3"
+        ]
+      },
       "params_note": "P3 only SHOWS on a P3 display and is gamut-mapped elsewhere, so extra saturation can never be the carrier of meaning. Pairs with floor-not-colour-alone.",
       "remedy": "annotate",
       "status": "pending"
@@ -716,8 +1047,15 @@
       "statement": "When N variants share one document, no two may declare the same SVG id, CSS class, @keyframes name, or :root custom property.",
       "check": "cross_variant_namespace_collision",
       "method": "source",
-      "params": { "namespaces": ["svg_id", "css_class", "keyframes_name", "root_custom_property"] },
-      "params_note": "DOWNGRADED block_owner -> advise 2026-07-23: markup panels now render in isolated declarative shadow roots (commit 4813ffa), so a cross-variant id/class/keyframes/:root collision is HARMLESS — url(#id) resolves within the panel\u2019s own shadow root. Kept as an advisory because namespacing is still good hygiene; blocking would reject legitimate isolated sets. Historical rationale: url(#id) and <use href=\"#id\"> resolve to the FIRST match in document order, and a later <style> block wins for equal specificity, so variant B silently renders with variant A's gradient/filter/rules. The gate then passes a set whose SOURCE differs while the DISPLAY is identical — which is precisely the failure the gate exists to prevent. Only applies to the harness's markup mode (variant.panelTemplate); token mode is structurally immune because it varies only inline custom properties. See the register's defect entry for the three candidate fixes.",
+      "params": {
+        "namespaces": [
+          "svg_id",
+          "css_class",
+          "keyframes_name",
+          "root_custom_property"
+        ]
+      },
+      "params_note": "DOWNGRADED block_owner -> advise 2026-07-23: markup panels now render in isolated declarative shadow roots (commit 4813ffa), so a cross-variant id/class/keyframes/:root collision is HARMLESS — url(#id) resolves within the panel’s own shadow root. Kept as an advisory because namespacing is still good hygiene; blocking would reject legitimate isolated sets. Historical rationale: url(#id) and <use href=\"#id\"> resolve to the FIRST match in document order, and a later <style> block wins for equal specificity, so variant B silently renders with variant A's gradient/filter/rules. The gate then passes a set whose SOURCE differs while the DISPLAY is identical — which is precisely the failure the gate exists to prevent. Only applies to the harness's markup mode (variant.panelTemplate); token mode is structurally immune because it varies only inline custom properties. See the register's defect entry for the three candidate fixes.",
       "remedy": "annotate",
       "status": "enforced",
       "enforced_by": "scripts/design-check/design-check.test.mjs › block-svg-id-collision still DETECTS shared ids/classes/keyframes/:root, now as advisory"
@@ -729,7 +1067,24 @@
       "statement": "Radii come from one role ladder; at most two unrelated radius families (a tight and a loose) appear on a screen.",
       "check": "radius_scale_adherence",
       "method": "computed",
-      "params": { "ladder_px": [0, 2, 4, 6, 8, 10, 12, 16, 20, 24, 28, 9999], "max_distinct_families": 2, "small_element_px": 16 },
+      "params": {
+        "ladder_px": [
+          0,
+          2,
+          4,
+          6,
+          8,
+          10,
+          12,
+          16,
+          20,
+          24,
+          28,
+          9999
+        ],
+        "max_distinct_families": 2,
+        "small_element_px": 16
+      },
       "params_note": "Also flag a radius >= ~40% of the element's smaller dimension on elements under 16px (A4 §3.3: a 12px radius on a 16px chip eats the chip), and any non-zero radius on a full-bleed edge-touching element (leaves a sliver).",
       "remedy": "annotate",
       "status": "pending"
@@ -741,7 +1096,9 @@
       "statement": "A rounded element inside a rounded container uses inner = max(0, outer - gap), not the outer radius.",
       "check": "concentric_radius",
       "method": "computed",
-      "params": { "tolerance_px": 1 },
+      "params": {
+        "tolerance_px": 1
+      },
       "params_note": "Measurable at runtime: for each nested rounded pair, compare the child's computed border-radius against max(0, parentRadius - parentPadding). Off by more than 1px = corners run un-parallel and the gap visibly pinches.",
       "remedy": "annotate",
       "status": "pending"
@@ -753,7 +1110,11 @@
       "statement": "Every shadow on the page shares one light source: horizontal offset ~0, vertical offset positive, and vertical ~2x horizontal where horizontal is non-zero.",
       "check": "shadow_light_source_consistent",
       "method": "computed",
-      "params": { "max_horizontal_px": 2, "vertical_to_horizontal_ratio": 2, "elevation_levels": 6 },
+      "params": {
+        "max_horizontal_px": 2,
+        "vertical_to_horizontal_ratio": 2,
+        "elevation_levels": 6
+      },
       "params_note": "Inset shadows are exempt (they are edge highlights, rule 127, not elevation). As elevation rises, offset and blur must increase together while per-layer opacity falls.",
       "remedy": "annotate",
       "status": "pending"
@@ -765,7 +1126,14 @@
       "statement": "Elevation shadows are multi-layer and tinted toward the surface hue, never a single pure-black blur.",
       "check": "shadow_layering_and_tint",
       "method": "computed",
-      "params": { "min_layers": 2, "light_mode_alpha_min": 0.06, "light_mode_alpha_max": 0.14, "dark_mode_alpha_min": 0.4, "dark_mode_alpha_max": 0.7, "forbid_pure_black": true },
+      "params": {
+        "min_layers": 2,
+        "light_mode_alpha_min": 0.06,
+        "light_mode_alpha_max": 0.14,
+        "dark_mode_alpha_min": 0.4,
+        "dark_mode_alpha_max": 0.7,
+        "forbid_pure_black": true
+      },
       "params_note": "Pure black (hue-less, chroma 0) reads muddy and dead. In DARK MODE this rule mostly should not fire at all: shadows barely read on a near-black surface, so the correct answer is surface-tint + hairline + optional glow (doctrine 121, corroborating A1 rule 65). If a dark variant leans on cast shadows for elevation, that is the finding.",
       "remedy": "annotate",
       "status": "pending"
@@ -777,7 +1145,14 @@
       "statement": "Text over a backdrop-filtered or translucent surface still meets 4.5:1 (large/UI 3:1); the surface is @supports-gated with an opaque fallback, ships -webkit-backdrop-filter, and honours prefers-reduced-transparency.",
       "check": "glass_text_contrast",
       "method": "computed",
-      "params": { "text_ratio": 4.5, "large_text_ratio": 3, "blur_min_px": 8, "blur_max_px": 20, "saturate_min_pct": 120, "saturate_max_pct": 180 },
+      "params": {
+        "text_ratio": 4.5,
+        "large_text_ratio": 3,
+        "blur_min_px": 8,
+        "blur_max_px": 20,
+        "saturate_min_pct": 120,
+        "saturate_max_pct": 180
+      },
       "params_note": "MEASUREMENT CAVEAT, stated honestly: the effective background behind glass is the BLURRED COMPOSITE, which getComputedStyle cannot report. A credible implementation screenshots the region and samples actual pixels behind the text — otherwise this rule can only check that the guard rails (fallback, prefix, reduced-transparency) exist, not that contrast is met. Do not claim the contrast half is enforced until pixel sampling exists.",
       "remedy": "annotate",
       "status": "pending"
@@ -789,7 +1164,13 @@
       "statement": "Any translucent or backdrop-filtered surface has a prefers-reduced-transparency: reduce branch that makes it opaque.",
       "check": "reduced_transparency_honoured",
       "method": "source",
-      "params": { "triggers": ["backdrop-filter", "-webkit-backdrop-filter"], "required_query": "prefers-reduced-transparency" },
+      "params": {
+        "triggers": [
+          "backdrop-filter",
+          "-webkit-backdrop-filter"
+        ],
+        "required_query": "prefers-reduced-transparency"
+      },
       "params_note": "This is the FOURTH preference query (doctrine 58); A5 listed only three and A4 supplied it. Deliberately filed as advise rather than block_floor: the owner's ruling named exactly four floor rules and expanding a profile-filtered floor is the owner's call, not mine. CANDIDATE FOR PROMOTION to block_floor at P2/P3 alongside floor-reduced-motion — flagged for owner decision.",
       "remedy": "annotate",
       "status": "pending"
@@ -801,7 +1182,14 @@
       "statement": "The focus indicator is outline-based; a box-shadow ring may accompany it but must never be the only focus affordance.",
       "check": "focus_indicator_outline_based",
       "method": "source",
-      "params": { "forbidden_sole_indicator": ["box-shadow"], "required": ["outline"] },
+      "params": {
+        "forbidden_sole_indicator": [
+          "box-shadow"
+        ],
+        "required": [
+          "outline"
+        ]
+      },
       "params_note": "ARBITRATED CONFLICT, see doctrine §6. A4 §3.13 is right that box-shadow: 0 0 0 1px draws a ring without shifting layout, and it is the better tool for dividers and hairlines. But forced-colors mode deletes box-shadow entirely, leaving a Windows High Contrast user with NO visible focus. A5 is the conformance authority (doctrine 54) and wins for focus specifically. Overlaps floor-focus-ring, which owns the >=2px / >=3:1 geometry; this rule owns the mechanism.",
       "remedy": "annotate",
       "status": "pending"
@@ -813,7 +1201,22 @@
       "statement": "Line-height is set per role: body 1.4-1.6, display 1.05-1.25, small print 1.5-1.7.",
       "check": "leading_by_role",
       "method": "computed",
-      "params": { "body": [1.4, 1.6], "display": [1.05, 1.25], "small_print": [1.5, 1.7], "display_min_px": 28, "small_print_max_px": 13 },
+      "params": {
+        "body": [
+          1.4,
+          1.6
+        ],
+        "display": [
+          1.05,
+          1.25
+        ],
+        "small_print": [
+          1.5,
+          1.7
+        ],
+        "display_min_px": 28,
+        "small_print_max_px": 13
+      },
       "params_note": "The missing half of adv-line-length, which specified the measure but not the leading. Leading rises with measure and falls with size, so a single global line-height across a 12->48px range is the defect this catches.",
       "remedy": "annotate",
       "status": "pending"
@@ -825,7 +1228,10 @@
       "statement": "At most two font families; a third needs a written reason. Two families from the same class (e.g. two neutral sans) is a defect, not a system.",
       "check": "font_family_count_and_contrast",
       "method": "computed",
-      "params": { "max_families": 2, "warn_same_class": true },
+      "params": {
+        "max_families": 2,
+        "warn_same_class": true
+      },
       "params_note": "A2 §3.3: 'subtle differences look like accidents, clear differences look like design.' Two near-identical neutral sans read as a mistake. Detecting 'same class' from a family name alone is unreliable — flag for human judgement rather than asserting it.",
       "remedy": "annotate",
       "status": "pending"
@@ -837,7 +1243,16 @@
       "statement": "Numerics that are columnar or that update in place use font-variant-numeric: tabular-nums.",
       "check": "tabular_nums_on_columnar",
       "method": "computed",
-      "params": { "triggers": ["table cell", "dashboard stat", "timer", "price", "counter"], "code_context_wants": "slashed-zero" },
+      "params": {
+        "triggers": [
+          "table cell",
+          "dashboard stat",
+          "timer",
+          "price",
+          "counter"
+        ],
+        "code_context_wants": "slashed-zero"
+      },
       "params_note": "The proportional-lining default makes a live timer or a stat tile JITTER as digits change width — a defect the owner would feel without being able to name it. Detect: numeric text inside a table column, or any element whose textContent changes and matches /^[\\d.,:%$-]+$/.",
       "remedy": "annotate",
       "status": "pending"
@@ -849,7 +1264,16 @@
       "statement": "On dark backgrounds type drops ~10-15% in weight (or lowers a GRAD axis) and opens tracking +0.01-0.02em.",
       "check": "dark_mode_type_adjustment",
       "method": "computed",
-      "params": { "weight_reduction_pct": [10, 15], "tracking_increase_em": [0.01, 0.02] },
+      "params": {
+        "weight_reduction_pct": [
+          10,
+          15
+        ],
+        "tracking_increase_em": [
+          0.01,
+          0.02
+        ]
+      },
       "params_note": "The OPTICAL half of the dark-mode adjustment; A1 rule 66 owns the CHROMATIC half (cut accent chroma, avoid pure white). Light-on-dark blooms, so identical weight and tracking in both modes means one of them is wrong. Prefer a GRAD axis change where the face has one: it re-weights without reflow.",
       "remedy": "annotate",
       "status": "pending"
@@ -871,7 +1295,18 @@
       "statement": "Inter is not used as an unexamined default.",
       "check": "default_typeface_tell",
       "method": "source",
-      "params": { "flagged": ["Inter"], "suggested_alternatives": ["Public Sans", "Libre Franklin", "IBM Plex Sans", "Source Sans 3", "Hanken Grotesk"] },
+      "params": {
+        "flagged": [
+          "Inter"
+        ],
+        "suggested_alternatives": [
+          "Public Sans",
+          "Libre Franklin",
+          "IBM Plex Sans",
+          "Source Sans 3",
+          "Hanken Grotesk"
+        ]
+      },
       "params_note": "An F2 tell in typographic form: Inter is excellent and EVERYWHERE, so reaching for it reflexively costs distinctiveness. Not a prohibition — an explicit owner choice of Inter is a decision (doctrine 22) and exempt. This fires only when no typeface rationale was recorded.",
       "remedy": "annotate",
       "status": "enforced",
@@ -884,7 +1319,14 @@
       "statement": "All icons come from one family, on one grid, at one stroke weight.",
       "check": "icon_set_consistency",
       "method": "source",
-      "params": { "baseline_grid": 24, "baseline_stroke_px": [1.5, 2], "live_area": 20 },
+      "params": {
+        "baseline_grid": 24,
+        "baseline_stroke_px": [
+          1.5,
+          2
+        ],
+        "live_area": 20
+      },
       "params_note": "Detect by clustering inline SVG icons on viewBox dimensions and stroke-width. Mixed grids or stroke weights read as visual noise even when nobody can name why — D2 calls this the most common iconography defect.",
       "remedy": "annotate",
       "status": "enforced",
@@ -897,7 +1339,14 @@
       "statement": "Icons are delivered as inline SVG with currentColor, never as an icon font or an <img>.",
       "check": "icon_delivery_mechanism",
       "method": "source",
-      "params": { "forbidden": ["icon font @font-face", "<img> for an icon", "background-image for an icon"], "sprite_ok": "inline <symbol> + <use>" },
+      "params": {
+        "forbidden": [
+          "icon font @font-face",
+          "<img> for an icon",
+          "background-image for an icon"
+        ],
+        "sprite_ok": "inline <symbol> + <use>"
+      },
       "params_note": "Distinct from feas-no-network: an icon font embedded as a data: URI passes the network check but is still a11y-hostile and monochrome-only. Advise rather than block because the failure is quality, not rendering.",
       "remedy": "annotate",
       "status": "pending"
@@ -909,7 +1358,10 @@
       "statement": "Missing art is a deterministic seeded inline SVG; initials avatars pick text colour at the L=0.179 luminance crossover.",
       "check": "placeholder_is_deterministic",
       "method": "source",
-      "params": { "luminance_crossover": 0.179, "guaranteed_min_ratio": 4.58 },
+      "params": {
+        "luminance_crossover": 0.179,
+        "guaranteed_min_ratio": 4.58
+      },
       "params_note": "The network half is enforced by feas-no-network's known_placeholder_services. This rule owns the positive requirement: same seed => same image forever, so a rebuild does not silently change the design. The 0.179 crossover is the genuinely provable part — choosing black above / white below it floors contrast at ~4.58:1 against ANY solid background, which beats guessing.",
       "remedy": "annotate",
       "status": "pending"
@@ -921,7 +1373,18 @@
       "statement": "Images use a fixed aspect-ratio vocabulary and object-fit: cover with a focal object-position; object-fit: fill never appears.",
       "check": "image_aspect_and_fit",
       "method": "source",
-      "params": { "vocabulary": ["1/1", "4/3", "3/2", "16/9", "21/9"], "forbidden_fit": ["fill"] },
+      "params": {
+        "vocabulary": [
+          "1/1",
+          "4/3",
+          "3/2",
+          "16/9",
+          "21/9"
+        ],
+        "forbidden_fit": [
+          "fill"
+        ]
+      },
       "params_note": "Distorted faces and products are an instant credibility hit. Also flag a raw width+height pair that implies a ratio outside the vocabulary.",
       "remedy": "annotate",
       "status": "enforced",
@@ -945,7 +1408,10 @@
       "statement": "Any control revealed on :hover is also revealed on :focus-within, and has a >=24x24 hit area.",
       "check": "hover_revealed_control_keyboard_reachable",
       "method": "source",
-      "params": { "min_target_px": 24, "comfortable_touch_px": 44 },
+      "params": {
+        "min_target_px": 24,
+        "comfortable_touch_px": 44
+      },
       "params_note": "DISTINCT FROM hover_only_content, which is the profile-filtered discoverability rule. This is OPERABILITY (WCAG 2.1.1): a control that appears only on :hover is unreachable by anyone who tabbed to the row, INCLUDING the solo owner at P1. Detect: a selector containing :hover that sets display/visibility/opacity on a descendant containing a button/a/input, with no sibling :focus-within rule. The fix is one extra selector, which is why this is advised even at P1 rather than skipped.",
       "remedy": "annotate",
       "status": "enforced",
@@ -968,7 +1434,10 @@
       "statement": "Bar and column charts start at zero. A line chart may use a non-zero baseline only when it is visually flagged.",
       "check": "chart_baseline",
       "method": "source",
-      "params": { "bar_baseline_required": 0, "line_nonzero_requires_flag": true },
+      "params": {
+        "bar_baseline_required": 0,
+        "line_nonzero_requires_flag": true
+      },
       "params_note": "A non-zero bar baseline distorts LENGTH-encoded comparison: C3 cites a 13% real increase reading as a 460% increase. Line charts encode by position/slope, so a non-zero baseline is defensible when zero is arbitrary (temperature) or would hide a critical change — but it must carry an axis-break mark or annotated range, never be silent.",
       "remedy": "annotate",
       "status": "pending"
@@ -980,7 +1449,11 @@
       "statement": "Charts carry at most 5-7 series, prefer direct labels to a legend, and switch to small multiples past ~7.",
       "check": "series_count_and_labelling",
       "method": "source",
-      "params": { "series_warn": 5, "series_fail": 7, "categorical_hue_cap": 8 },
+      "params": {
+        "series_warn": 5,
+        "series_fail": 7,
+        "categorical_hue_cap": 8
+      },
       "params_note": "Pairs with adv-encoding-channel. A legend costs a memorise-then-cross-reference step; direct labels at the endpoint or peak remove it. The 8-hue cap is the same number A1 rule 69 reached for CVD-safe categorical sets, from a different direction (Munzner: categorical hue distinguishability drops past ~8).",
       "remedy": "annotate",
       "status": "pending"
@@ -992,7 +1465,20 @@
       "statement": "The most important quantitative comparison uses the highest-accuracy perceptual channel available.",
       "check": "encoding_channel_rank",
       "method": "source",
-      "params": { "ranking": ["position", "length", "angle", "slope", "area", "volume", "colour-saturation", "colour-luminance", "colour-hue", "texture"] },
+      "params": {
+        "ranking": [
+          "position",
+          "length",
+          "angle",
+          "slope",
+          "area",
+          "volume",
+          "colour-saturation",
+          "colour-luminance",
+          "colour-hue",
+          "texture"
+        ]
+      },
       "params_note": "Cleveland & McGill, extended by Mackinlay. Precise numeric comparison -> position or length (bar/dot/line). Rough magnitude or a third dimension -> area (bubble). Category identity, NOT magnitude -> hue. Encoding a precise comparison in area or hue is the finding.",
       "remedy": "annotate",
       "status": "pending"
@@ -1004,7 +1490,25 @@
       "statement": "Loading, empty and error look different from each other and from genuinely-zero; and the three empty states (nothing-yet / cleared / no-results) have distinct copy and actions.",
       "check": "data_states_distinct",
       "method": "source",
-      "params": { "states": ["loading", "empty_nothing_yet", "empty_cleared", "empty_no_results", "error", "zero_rows"], "skeleton_threshold_ms": [300, 500], "empty_state_anatomy": ["headline", "one_line_body", "one_primary_action"] },
+      "params": {
+        "states": [
+          "loading",
+          "empty_nothing_yet",
+          "empty_cleared",
+          "empty_no_results",
+          "error",
+          "zero_rows"
+        ],
+        "skeleton_threshold_ms": [
+          300,
+          500
+        ],
+        "empty_state_anatomy": [
+          "headline",
+          "one_line_body",
+          "one_primary_action"
+        ]
+      },
       "params_note": "Extends adv-nonhappy-states, which only asked that empty/loading/error EXIST. C3 §3.15 adds that they must be mutually distinguishable — a table that just goes blank reads as broken. D1 §3.7 adds that reusing one generic empty string for create-vs-restore-vs-adjust-filters is a common avoidable failure. One primary CTA only.",
       "remedy": "annotate",
       "status": "pending"
@@ -1016,7 +1520,15 @@
       "statement": "Navigation item counts sit in the convention band for their surface, and no desktop sidebar is hidden behind a hamburger.",
       "check": "nav_item_count_band",
       "method": "source",
-      "params": { "mobile_bottom_nav": [3, 5], "mobile_bottom_nav_max": 6, "desktop_global_nav_max": 9, "hide_desktop_nav": false },
+      "params": {
+        "mobile_bottom_nav": [
+          3,
+          5
+        ],
+        "mobile_bottom_nav_max": 6,
+        "desktop_global_nav_max": 9,
+        "hide_desktop_nav": false
+      },
       "params_note": "HONESTY FLAG: '7+-2' is FOLKLORE for menus — NN/g is explicit that menu size is 'not 7, despite a common myth'. These bands come from observed convention (mobile bottom nav, iOS tab bars, desktop global nav), not from a memory limit, and are soft. What IS measured is the cost of HIDING nav: hamburger-only was used in 27% of desktop sessions vs 48-50% visible, discoverability fell >20%, task difficulty rose 21%, completion was >=39% slower on desktop. Fire hard on a hidden desktop sidebar; fire softly on counts.",
       "remedy": "annotate",
       "status": "pending"
@@ -1028,7 +1540,16 @@
       "statement": "At least two redundant location cues are present at all times (page title/H1, nav highlight, breadcrumb, URL).",
       "check": "location_cue_redundancy",
       "method": "source",
-      "params": { "min_cues": 2, "cues": ["h1", "nav_active_state", "breadcrumb", "url_path", "document_title"] },
+      "params": {
+        "min_cues": 2,
+        "cues": [
+          "h1",
+          "nav_active_state",
+          "breadcrumb",
+          "url_path",
+          "document_title"
+        ]
+      },
       "params_note": "A conformance floor, not polish: WCAG 2.4.5 Multiple Ways (AA). Process-step pages are exempt.",
       "remedy": "annotate",
       "status": "pending"
@@ -1040,7 +1561,14 @@
       "statement": "Shareable and restorable state lives in the URL: active tab, filters, sort, selection, query, page, wizard step.",
       "check": "url_state_serialisation",
       "method": "source",
-      "params": { "pushState_for": ["navigational move"], "replaceState_for": ["refining state within the same step"] },
+      "params": {
+        "pushState_for": [
+          "navigational move"
+        ],
+        "replaceState_for": [
+          "refining state within the same step"
+        ]
+      },
       "params_note": "The pushState/replaceState split is the part that gets missed: using pushState for every filter tweak means Back needs thirty presses to escape a filter session.",
       "remedy": "annotate",
       "status": "pending"
@@ -1052,7 +1580,9 @@
       "statement": "Progressive disclosure never exceeds two levels.",
       "check": "disclosure_depth",
       "method": "source",
-      "params": { "max_levels": 2 },
+      "params": {
+        "max_levels": 2
+      },
       "params_note": "A third disclosure level is a documented usability failure pattern, not a judgement call.",
       "remedy": "annotate",
       "status": "pending"
@@ -1064,7 +1594,23 @@
       "statement": "Action labels are verb + object, 2-4 words, sentence case; no bare generic labels where a specific verb-object pair exists.",
       "check": "action_label_quality",
       "method": "source",
-      "params": { "banned_bare": ["Submit", "OK", "Yes", "No", "Continue", "Learn more", "Click here", "Go", "Done"], "word_count": [2, 4] },
+      "params": {
+        "banned_bare": [
+          "Submit",
+          "OK",
+          "Yes",
+          "No",
+          "Continue",
+          "Learn more",
+          "Click here",
+          "Go",
+          "Done"
+        ],
+        "word_count": [
+          2,
+          4
+        ]
+      },
       "params_note": "One of the cheapest and highest-signal source checks in the whole set: a literal wordlist over button/link text. 'Yes'/'No' are additionally banned as confirmation-dialog labels by D1 §3.8, which wants the verb outcome ('Delete file' / 'Keep file').",
       "remedy": "annotate",
       "status": "enforced",
@@ -1077,7 +1623,23 @@
       "statement": "Error copy states what happened, why (only if it helps), and how to fix; it never blames the user and never exposes a raw code in the primary message.",
       "check": "error_copy_quality",
       "method": "source",
-      "params": { "banned_words": ["invalid", "illegal", "forbidden", "error occurred", "sorry", "please"], "banned_in_primary": ["stack trace", "raw status code", "internal status string"], "empty_field_wants": "instruction", "violated_constraint_wants": "description" },
+      "params": {
+        "banned_words": [
+          "invalid",
+          "illegal",
+          "forbidden",
+          "error occurred",
+          "sorry",
+          "please"
+        ],
+        "banned_in_primary": [
+          "stack trace",
+          "raw status code",
+          "internal status string"
+        ],
+        "empty_field_wants": "instruction",
+        "violated_constraint_wants": "description"
+      },
       "params_note": "D1 §3.4's split is the part that is usually missed: an EMPTY field needs an instruction ('Enter your first name'), a VIOLATED CONSTRAINT needs a description ('First name must be 35 characters or fewer'). Codes go behind a collapsed 'Show technical details'.",
       "remedy": "annotate",
       "status": "enforced",
@@ -1090,7 +1652,18 @@
       "statement": "No implementation vocabulary appears in user-facing copy.",
       "check": "implementation_vocabulary_leak",
       "method": "source",
-      "params": { "patterns": ["\\bnull\\b", "\\bundefined\\b", "\\bNaN\\b", "\\b[45][0-9]{2}\\b(?=\\s|$)", "\\bAPI\\b", "\\bis[A-Z][a-z]+\\b", "\\b[A-Z]+_[A-Z_]+\\b", "\\b(GET|POST|PUT|PATCH|DELETE)\\b"] },
+      "params": {
+        "patterns": [
+          "\\bnull\\b",
+          "\\bundefined\\b",
+          "\\bNaN\\b",
+          "\\b[45][0-9]{2}\\b(?=\\s|$)",
+          "\\bAPI\\b",
+          "\\bis[A-Z][a-z]+\\b",
+          "\\b[A-Z]+_[A-Z_]+\\b",
+          "\\b(GET|POST|PUT|PATCH|DELETE)\\b"
+        ]
+      },
       "params_note": "Highly checkable and a reliable tell. Also covers D1 §3.11's synonym drift in spirit: one concept, one word. Scope to user-visible text nodes and attribute values (aria-label, placeholder, title, alt), NOT to code or class names — otherwise it fires on everything.",
       "remedy": "annotate",
       "status": "enforced",
@@ -1103,7 +1676,26 @@
       "statement": "Copy holds plain-language defaults, truncates on a budget, and is written to survive translation.",
       "check": "copy_readability",
       "method": "source",
-      "params": { "reading_grade": [6, 8], "expert_tool_grade_max": 12, "sentence_words_target": [15, 20], "sentence_words_flag": 25, "paragraph_sentences_max": 5, "truncate_min_meaningful_chars": 4, "tooltip_full_string_max_chars": 150, "i18n_length_budget_pct": [30, 40], "i18n_worst_case_multiplier": 2 },
+      "params": {
+        "reading_grade": [
+          6,
+          8
+        ],
+        "expert_tool_grade_max": 12,
+        "sentence_words_target": [
+          15,
+          20
+        ],
+        "sentence_words_flag": 25,
+        "paragraph_sentences_max": 5,
+        "truncate_min_meaningful_chars": 4,
+        "tooltip_full_string_max_chars": 150,
+        "i18n_length_budget_pct": [
+          30,
+          40
+        ],
+        "i18n_worst_case_multiplier": 2
+      },
       "params_note": "The i18n clause is structural, not stylistic, and is the one a generator breaks by default: NEVER assemble a sentence from fragments concatenated around a variable — one full sentence per parameterised string, with real ICU plural categories. A button sized to the English verb will not fit German or Finnish. Never truncate an identifier, price, date or nav label — those are exactly what a user distinguishes items by.",
       "remedy": "annotate",
       "status": "pending"
@@ -1115,7 +1707,15 @@
       "statement": "A single-file variant stays within budget: <=1MB snappy, <=2MB acceptable, >2MB is a budget event; no single base64 raster exceeds ~150-200KB encoded.",
       "check": "single_file_weight",
       "method": "source",
-      "params": { "snappy_kb": 1024, "acceptable_kb": 2048, "budget_event_kb": 2048, "single_raster_kb": 200, "base64_overhead": 0.3333, "lighthouse_flag_kib": 5000, "lighthouse_target_kib": 1600 },
+      "params": {
+        "snappy_kb": 1024,
+        "acceptable_kb": 2048,
+        "budget_event_kb": 2048,
+        "single_raster_kb": 200,
+        "base64_overhead": 0.3333,
+        "lighthouse_flag_kib": 5000,
+        "lighthouse_target_kib": 1600
+      },
       "params_note": "Offline there is no 'link it instead' escape, so weight is a hard design input rather than a delivery concern. base64 costs exactly +1/3; over HTTP with Brotli that shrinks to ~2.5-5% on the wire, but from file:// it is paid in full and the decode cost is ALWAYS paid. Encode photographs before embedding (AVIF ~50% smaller than JPEG, WebP 25-35%) — but prefer WebP where decode latency matters, because AVIF decodes slower and can cost INP even with zero network.",
       "remedy": "annotate",
       "status": "enforced",
@@ -1128,7 +1728,19 @@
       "statement": "CSS is organised with @layer in the order reset -> base -> tokens -> layout -> components -> utilities; no ID selectors and no !important are used for styling.",
       "check": "css_architecture",
       "method": "source",
-      "params": { "layer_order": ["reset", "base", "tokens", "layout", "components", "utilities"], "forbid_id_selectors": true, "forbid_important": true, "reset_selector": ":where()" },
+      "params": {
+        "layer_order": [
+          "reset",
+          "base",
+          "tokens",
+          "layout",
+          "components",
+          "utilities"
+        ],
+        "forbid_id_selectors": true,
+        "forbid_important": true,
+        "reset_selector": ":where()"
+      },
       "params_note": "A later layer wins REGARDLESS of specificity, which is the mechanism that keeps specificity flat at scale. !important is doubly bad here because it REVERSES layer order. :where() has specificity (0,0,0); :is()/:has()/:not() take their most specific argument. Pairs with C2 rule 89: C2 orders the VALUES (primitive->semantic->component), E1 orders the CASCADE.",
       "remedy": "annotate",
       "status": "enforced",
@@ -1141,7 +1753,14 @@
       "statement": "Embedded fonts are subset once to the glyphs used and output as WOFF2; a variable font is used only at >=3 weights; the face is not split into multiple unicode-range subsets.",
       "check": "font_embedding_strategy",
       "method": "source",
-      "params": { "variable_breakeven_weights": 3, "tight_latin_subset_kb": [10, 30], "forbid_multiple_unicode_range_subsets": true },
+      "params": {
+        "variable_breakeven_weights": 3,
+        "tight_latin_subset_kb": [
+          10,
+          30
+        ],
+        "forbid_multiple_unicode_range_subsets": true
+      },
       "params_note": "CORRECTS a naive application of doctrine rule 141: unicode-range and font-display exist to manage per-range lazy download and FOIT/FOUT, and OFFLINE THERE IS NEITHER — splitting a face into many subsets saves nothing and adds parse blocks. Subset once, embed once. The >=3 weight break-even independently confirms A2 §3.6 from a byte-measurement direction (Inter: 12 statics ~321KB vs 1 variable ~95KB, but Regular+Bold alone ~53KB static).",
       "remedy": "annotate",
       "status": "pending"
@@ -1154,11 +1773,42 @@
       "check": "asset_provenance_and_licence",
       "method": "source",
       "params": {
-        "required_fields": ["source_url", "author", "spdx_id", "licence_url", "attribution", "retrieved_at"],
-        "green": ["CC0-1.0", "MIT", "ISC", "BSD-2-Clause", "BSD-3-Clause", "Apache-2.0", "OFL-1.1"],
-        "amber": ["CC-BY-4.0", "CC-BY-SA-4.0", "unDraw-custom", "Lottie-Simple", "RemixIcon-1.0"],
-        "red_patterns": ["-NC", "-ND", "CC BY-NC-SA", "unknown", "unverified"],
-        "named_exclusions": { "Shadertoy": "CC BY-NC-SA 3.0 — non-commercial AND viral, do not ingest", "Rive": "WebAssembly, blocked by no-eval CSP", "unDraw": "per-image use only; licence forbids repackaging in packs, scraping, and AI-training use" }
+        "required_fields": [
+          "source_url",
+          "author",
+          "spdx_id",
+          "licence_url",
+          "attribution",
+          "retrieved_at"
+        ],
+        "green": [
+          "CC0-1.0",
+          "MIT",
+          "ISC",
+          "BSD-2-Clause",
+          "BSD-3-Clause",
+          "Apache-2.0",
+          "OFL-1.1"
+        ],
+        "amber": [
+          "CC-BY-4.0",
+          "CC-BY-SA-4.0",
+          "unDraw-custom",
+          "Lottie-Simple",
+          "RemixIcon-1.0"
+        ],
+        "red_patterns": [
+          "-NC",
+          "-ND",
+          "CC BY-NC-SA",
+          "unknown",
+          "unverified"
+        ],
+        "named_exclusions": {
+          "Shadertoy": "CC BY-NC-SA 3.0 — non-commercial AND viral, do not ingest",
+          "Rive": "WebAssembly, blocked by no-eval CSP",
+          "unDraw": "per-image use only; licence forbids repackaging in packs, scraping, and AI-training use"
+        }
       },
       "params_note": "No provenance => QUARANTINE, do not ship. Re-deriving a licence weeks later from a stripped SVG is impossible, which is why this is an ingest-time rule rather than an audit-time one. Brand marks need an extra 'trademark, not licensed' flag: CC0 on the path data waives COPYRIGHT, not TRADEMARK (H1 §3.5 independently confirming D2 §3.7).",
       "remedy": "annotate",
@@ -1171,7 +1821,25 @@
       "statement": "An ingested entry is framework-free, tokenised (no baked-in literals), ships a dark path, grades A or B, and is not a near-duplicate of an existing entry.",
       "check": "ingest_quality_gate",
       "method": "source",
-      "params": { "ship_grades": ["A", "B"], "repair_grade": "C", "reject_grade": "F", "dedupe": ["normalised_dom_hash", "perceptual_screenshot_hash"], "prefer_css_only": ["details/summary", "popover", ":has()", "checkbox-hack", ":target"] },
+      "params": {
+        "ship_grades": [
+          "A",
+          "B"
+        ],
+        "repair_grade": "C",
+        "reject_grade": "F",
+        "dedupe": [
+          "normalised_dom_hash",
+          "perceptual_screenshot_hash"
+        ],
+        "prefer_css_only": [
+          "details/summary",
+          "popover",
+          ":has()",
+          "checkbox-hack",
+          ":target"
+        ]
+      },
       "params_note": "H1 §3.12 is blunt and worth quoting: a snippet with baked-in #fff backgrounds is a DOWNGRADE, not a finished entry. This is the ingestion-time instance of doctrine rule 92. Dedupe must be BOTH structural and visual — a normalised DOM hash alone misses two entries that render identically from different markup.",
       "remedy": "annotate",
       "status": "pending"
@@ -1191,38 +1859,174 @@
       "statement": "Empty, loading and error states exist and are styled to the primary state's standard.",
       "check": "nonhappy_states_present",
       "status": "pending"
+    },
+    {
+      "id": "adv-no-slop-tells",
+      "tier": "advise",
+      "source": "F2 §7 (templated tax)",
+      "statement": "A variant carries none of the reliable generated-UI tells: a coloured 2-4px left strip, emoji as iconography, everything centred, a rainbow gradient, or a single radius on every element.",
+      "check": "no_slop_tells",
+      "method": "source",
+      "params_note": "ADVISORY by construction. Each tell is legitimate somewhere, so blocking would turn a taste heuristic into a law - but they must be SEEN, because the failure mode is that nobody notices. Our own card-wall template carries the left strip (deferred by owner), which is why self-trust is not sufficient.",
+      "status": "enforced",
+      "enforced_by": "checks.mjs advNoSlopTells; design-check.test.mjs"
     }
   ],
-
   "templated_tax": {
     "$comment": "F2 §7 — the objective 'does this look templated?' scorecard. 18 binary rows, each readable off DOM/CSS or a screenshot without opinion. Score 1 = the machine chose the default. ADVISORY tier: computed and shown, never blocks. Owner-requested tells are exempt (doctrine rule 22).",
     "source": "F2 §7.1",
     "status": "pending",
     "rows": [
-      { "n": 1, "dimension": "accent-hue", "signal_if": "accent hue in 240-280deg OR equals #6366F1 / #8B5CF6 / #A855F7", "check": "accent_hue_band", "high_signal": true },
-      { "n": 2, "dimension": "accent-provenance", "signal_if": "accent is not justifiable from content (no derivation, no brand source)", "check": "accent_has_provenance", "high_signal": true, "note": "theme-from-content scores 0 here by construction — the pipeline records the source poster + extracted hex." },
-      { "n": 3, "dimension": "gradient", "signal_if": "purple/indigo -> blue/cyan gradient on hero, CTA or numbers", "check": "cliche_gradient" },
-      { "n": 4, "dimension": "palette-shape", "signal_if": "no dominant hue (evenly weighted) OR pure #fff / #000 ground", "check": "palette_shape" },
-      { "n": 5, "dimension": "headline-font", "signal_if": "headline is Inter / Roboto / Open Sans / Geist / Poppins / Space Grotesk", "check": "headline_font_default", "high_signal": true },
-      { "n": 6, "dimension": "type-pairing", "signal_if": "no display+body pairing — one sans for everything", "check": "type_pairing_absent" },
-      { "n": 7, "dimension": "weight-hierarchy", "signal_if": "gradual weight steps (400/500/600), no strong contrast", "check": "weight_contrast_gradual" },
-      { "n": 8, "dimension": "hero-layout", "signal_if": "centered single column + badge-above-H1 + one CTA", "check": "cliche_hero", "high_signal": true },
-      { "n": 9, "dimension": "feature-grid", "signal_if": "exactly three (or six) equal cards OR default bento", "check": "equal_card_grid", "high_signal": true },
-      { "n": 10, "dimension": "card-material", "signal_if": "rounded-2xl + shadow-lg + 0.1-opacity shadow, untouched", "check": "default_card_material" },
-      { "n": 11, "dimension": "separation", "signal_if": "flat 1px grey border on cards OR coloured 3-4px left strip as decoration", "check": "cliche_separation" },
-      { "n": 12, "dimension": "effect", "signal_if": "glassmorphism OR neon glow OR purple orbs/blobs behind hero", "check": "cliche_effect" },
-      { "n": 13, "dimension": "iconography", "signal_if": "centered thin-line (Lucide/Heroicons) icon above each heading", "check": "cliche_icons" },
-      { "n": 14, "dimension": "imagery", "signal_if": "floating 3D blobs / plastic 3D illustration / generic stock", "check": "cliche_imagery" },
-      { "n": 15, "dimension": "copy", "signal_if": "weightless triad / 'It's Not X, It's Y' / vapid opener / emoji-led bullets", "check": "cliche_copy" },
-      { "n": 16, "dimension": "mode", "signal_if": "dark mode shipped as the reflexive default rather than a chosen direction", "check": "reflexive_dark_default" },
-      { "n": 17, "dimension": "states", "signal_if": "missing focus states / undesigned empty + error states", "check": "nonhappy_states_present", "owned_by": "A5/G2" },
-      { "n": 18, "dimension": "motion", "signal_if": "identical fade-ins on everything / bounce on every hover / snap transitions", "check": "cliche_motion", "owned_by": "B1" }
+      {
+        "n": 1,
+        "dimension": "accent-hue",
+        "signal_if": "accent hue in 240-280deg OR equals #6366F1 / #8B5CF6 / #A855F7",
+        "check": "accent_hue_band",
+        "high_signal": true
+      },
+      {
+        "n": 2,
+        "dimension": "accent-provenance",
+        "signal_if": "accent is not justifiable from content (no derivation, no brand source)",
+        "check": "accent_has_provenance",
+        "high_signal": true,
+        "note": "theme-from-content scores 0 here by construction — the pipeline records the source poster + extracted hex."
+      },
+      {
+        "n": 3,
+        "dimension": "gradient",
+        "signal_if": "purple/indigo -> blue/cyan gradient on hero, CTA or numbers",
+        "check": "cliche_gradient"
+      },
+      {
+        "n": 4,
+        "dimension": "palette-shape",
+        "signal_if": "no dominant hue (evenly weighted) OR pure #fff / #000 ground",
+        "check": "palette_shape"
+      },
+      {
+        "n": 5,
+        "dimension": "headline-font",
+        "signal_if": "headline is Inter / Roboto / Open Sans / Geist / Poppins / Space Grotesk",
+        "check": "headline_font_default",
+        "high_signal": true
+      },
+      {
+        "n": 6,
+        "dimension": "type-pairing",
+        "signal_if": "no display+body pairing — one sans for everything",
+        "check": "type_pairing_absent"
+      },
+      {
+        "n": 7,
+        "dimension": "weight-hierarchy",
+        "signal_if": "gradual weight steps (400/500/600), no strong contrast",
+        "check": "weight_contrast_gradual"
+      },
+      {
+        "n": 8,
+        "dimension": "hero-layout",
+        "signal_if": "centered single column + badge-above-H1 + one CTA",
+        "check": "cliche_hero",
+        "high_signal": true
+      },
+      {
+        "n": 9,
+        "dimension": "feature-grid",
+        "signal_if": "exactly three (or six) equal cards OR default bento",
+        "check": "equal_card_grid",
+        "high_signal": true
+      },
+      {
+        "n": 10,
+        "dimension": "card-material",
+        "signal_if": "rounded-2xl + shadow-lg + 0.1-opacity shadow, untouched",
+        "check": "default_card_material"
+      },
+      {
+        "n": 11,
+        "dimension": "separation",
+        "signal_if": "flat 1px grey border on cards OR coloured 3-4px left strip as decoration",
+        "check": "cliche_separation"
+      },
+      {
+        "n": 12,
+        "dimension": "effect",
+        "signal_if": "glassmorphism OR neon glow OR purple orbs/blobs behind hero",
+        "check": "cliche_effect"
+      },
+      {
+        "n": 13,
+        "dimension": "iconography",
+        "signal_if": "centered thin-line (Lucide/Heroicons) icon above each heading",
+        "check": "cliche_icons"
+      },
+      {
+        "n": 14,
+        "dimension": "imagery",
+        "signal_if": "floating 3D blobs / plastic 3D illustration / generic stock",
+        "check": "cliche_imagery"
+      },
+      {
+        "n": 15,
+        "dimension": "copy",
+        "signal_if": "weightless triad / 'It's Not X, It's Y' / vapid opener / emoji-led bullets",
+        "check": "cliche_copy"
+      },
+      {
+        "n": 16,
+        "dimension": "mode",
+        "signal_if": "dark mode shipped as the reflexive default rather than a chosen direction",
+        "check": "reflexive_dark_default"
+      },
+      {
+        "n": 17,
+        "dimension": "states",
+        "signal_if": "missing focus states / undesigned empty + error states",
+        "check": "nonhappy_states_present",
+        "owned_by": "A5/G2"
+      },
+      {
+        "n": 18,
+        "dimension": "motion",
+        "signal_if": "identical fade-ins on everything / bounce on every hover / snap transitions",
+        "check": "cliche_motion",
+        "owned_by": "B1"
+      }
     ],
     "bands": [
-      { "range": [0, 2], "verdict": "distinctive-and-deliberate", "action": "ship pending G2 critique + a11y" },
-      { "range": [3, 5], "verdict": "mostly-bespoke", "action": "fix the flagged rows, re-score" },
-      { "range": [6, 9], "verdict": "reads-templated", "action": "apply escape moves to the top-scoring dimensions, re-score" },
-      { "range": [10, 18], "verdict": "ai-slop", "action": "no aesthetic decision was made — go back and commit a direction" }
+      {
+        "range": [
+          0,
+          2
+        ],
+        "verdict": "distinctive-and-deliberate",
+        "action": "ship pending G2 critique + a11y"
+      },
+      {
+        "range": [
+          3,
+          5
+        ],
+        "verdict": "mostly-bespoke",
+        "action": "fix the flagged rows, re-score"
+      },
+      {
+        "range": [
+          6,
+          9
+        ],
+        "verdict": "reads-templated",
+        "action": "apply escape moves to the top-scoring dimensions, re-score"
+      },
+      {
+        "range": [
+          10,
+          18
+        ],
+        "verdict": "ai-slop",
+        "action": "no aesthetic decision was made — go back and commit a direction"
+      }
     ],
     "override_rule": "If any THREE of the five high-signal rows (1, 2, 5, 8, 9) score 1, treat as templated regardless of total. [taste-flagged in F2 §7.2]"
   }

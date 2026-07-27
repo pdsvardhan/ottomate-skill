@@ -69,6 +69,13 @@ export function blockingFindings(findings, { profile = 'P1' } = {}) {
       out.push({ rule: 'computed-axis-divergence', detail: `${(d.pair ?? []).join(' / ')}: resolved-style distance ${d.distance} — these render nearly identically` });
     }
   }
+  // C4: over budget BLOCKS; monochrome is reported but never blocked (restraint is not absence, and
+  // a deliberately monochrome design is a legitimate choice the owner may have made on purpose).
+  for (const c of f.colourBudget ?? []) {
+    if (c.withinBudget === false) {
+      out.push({ rule: 'colour_budget', detail: `${c.label}: ${c.distinctAccents} distinct accent colours across ${c.surfaces} surfaces, budget ${c.budget} — ${c.colours.slice(0, 4).join(', ')}` });
+    }
+  }
   for (const c of f.coherence ?? []) {
     if (c.coherent === false) out.push({ rule: 'adv-cross-component-coherence', detail: c.detail ?? JSON.stringify(c).slice(0, 160) });
   }
@@ -84,6 +91,8 @@ export function summariseFindings(findings) {
     divergencePairs: (f.divergence ?? []).length,
     divergenceFails: (f.divergence ?? []).filter((d) => d.differ === false).length,
     coherence: (f.coherence ?? []).length,
+    colourOverBudget: (f.colourBudget ?? []).filter((c) => c.withinBudget === false).length,
+    monochromePanels: (f.colourBudget ?? []).filter((c) => c.monochrome).length,
   };
 }
 
@@ -92,7 +101,7 @@ export function formatComputed(result, profile = 'P1') {
   if (result.state === 'failed') return `computed pass: FAILED TO RUN — ${result.why}`;
   const sum = summariseFindings(result.findings);
   const blocking = blockingFindings(result.findings, { profile });
-  const lines = [`computed pass: ran — contrast ${sum.contrastFails}/${sum.contrast} below floor · divergence ${sum.divergenceFails}/${sum.divergencePairs} pairs too alike · ${blocking.length} blocking`];
+  const lines = [`computed pass: ran — contrast ${sum.contrastFails}/${sum.contrast} below floor · divergence ${sum.divergenceFails}/${sum.divergencePairs} pairs too alike · colour ${sum.colourOverBudget} over budget${sum.monochromePanels ? ` (${sum.monochromePanels} monochrome — reported, not blocked)` : ''} · ${blocking.length} blocking`];
   for (const f of blocking) lines.push(`  BLOCK ${f.rule ?? f.id ?? '?'}: ${f.detail ?? f.message ?? ''}`);
   return lines.join('\n');
 }

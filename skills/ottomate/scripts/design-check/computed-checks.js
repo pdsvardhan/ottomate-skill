@@ -178,6 +178,38 @@
         });
       }
     }
+    // 4. COLOUR BUDGET (C4) — the accent belongs on a few surfaces, neutral everywhere else, but NOT
+    // monochrome (doctrine: restraint is not absence). Counting RESOLVED colour on rendered elements,
+    // because the budget is about what the eye sees, not how many times a token was typed.
+    findings.colourBudget = [];
+    const budget = opts.colourBudget != null ? opts.colourBudget : 4;
+    for (const { label, sr } of scopes) {
+      const els = [...sr.querySelectorAll('*')];
+      const accentish = new Map();
+      for (const el of els) {
+        const cs = getComputedStyle(el);
+        for (const prop of ['backgroundColor', 'borderTopColor', 'color']) {
+          const v = cs[prop];
+          if (!v || v === 'rgba(0, 0, 0, 0)' || v === 'transparent') continue;
+          const m = v.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+          if (!m) continue;
+          const [r, g, b] = [+m[1], +m[2], +m[3]];
+          const max = Math.max(r, g, b), min = Math.min(r, g, b);
+          const sat = max === 0 ? 0 : (max - min) / max;
+          // A neutral is not part of the budget; a saturated colour is.
+          if (sat < 0.25 || max < 40) continue;
+          accentish.set(v, (accentish.get(v) || 0) + 1);
+        }
+      }
+      const distinct = [...accentish.keys()];
+      findings.colourBudget.push({
+        label, distinctAccents: distinct.length, budget,
+        surfaces: [...accentish.entries()].reduce((a, [, n]) => a + n, 0),
+        withinBudget: distinct.length <= budget,
+        monochrome: distinct.length === 0,
+        colours: distinct.slice(0, 8),
+      });
+    }
     return findings;
   }
 

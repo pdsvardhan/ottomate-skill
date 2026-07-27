@@ -67,7 +67,11 @@ axis/level** — both cheap to fix with the rules below (retrospective folded in
 
 1. **Show, don't tell** — build a small real thing and let them look; never "here's a description, ok?".
 2. **Options, not one answer** — 2–4 genuinely different; the owner **picks or mixes** ("1A's meta + 2C's button").
-3. **Real + interactive** — real content, real hover/motion (they are often choosing the *interaction*); respect `prefers-reduced-motion`.
+3. **Real + CSS-interactive** *(bound clarified 2026-07-27, spec §11b)* — hover, focus-visible, active
+   and transitions all work; **JavaScript inside a panel does NOT run** (declarative shadow DOM content
+   is inert, which is the same property that keeps panels isolated). A variant that needs scripting to
+   be judged is a signal the round is at the wrong rung.
+3b. **Real + interactive** — real content, real hover/motion (they are often choosing the *interaction*); respect `prefers-reduced-motion`.
 4. **One evolving preview** — every round lands at its own stable in-app URL,
    `/projects/<slug>/design/<target>?round=N` (not a tab graveyard; earlier rounds stay addressable).
 5. **Precise reaction → precise rebuild** — restate what you understood (anti-gaslight), change exactly that, keep what they liked.
