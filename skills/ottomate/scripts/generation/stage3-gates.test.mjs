@@ -13,11 +13,40 @@ test('a complete context passes', () => {
   assert.equal(contextGate({ ledger: FULL }).verdict, 'pass');
 });
 
-test('MUST STOP — a missing answer blocks at P3 and advises at P1', () => {
+test('MUST STOP — a missing answer blocks at EVERY profile, P1 included (N1, owner ruling 2026-07-27)', () => {
   const partial = { context: { ...FULL.context, primary_screen: '' } };
   assert.equal(contextGate({ ledger: partial, profile: 'P3' }).verdict, 'block');
-  assert.equal(contextGate({ ledger: partial, profile: 'P1' }).verdict, 'advise');
+  // Was 'advise' at P1, on the reasoning that the owner alone pays for their own wrong round. But P1
+  // is the profile actually in use, so the locked spec's "do not proceed to visuals without it" was
+  // soft exactly where it mattered. The cost is bounded by the answers persisting — see below.
+  assert.equal(contextGate({ ledger: partial, profile: 'P1' }).verdict, 'block');
   assert.deepEqual(contextGate({ ledger: partial }).missing, ['primary_screen']);
+});
+
+test('N1 — ANSWER ONCE PER PROJECT: stored context passes at every profile, with no re-interview', () => {
+  for (const profile of ['P1', 'P2', 'P3']) {
+    assert.equal(contextGate({ ledger: FULL, profile }).verdict, 'pass', profile);
+  }
+});
+
+test('N1 — `recontext` deliberately re-opens the questions even when context IS stored', () => {
+  const g = contextGate({ ledger: FULL, profile: 'P1', recontext: true });
+  assert.equal(g.verdict, 'block');
+  assert.deepEqual(g.missing, CONTEXT_KEYS, 'all four are re-asked, not just one');
+  assert.match(g.why, /answers have changed/);
+});
+
+test('N1 — `ui-mode:none` still skips; deferring UI is the default and blocking it would be wrong', () => {
+  assert.equal(contextGate({ ledger: {}, entry: 'ui-mode:none', profile: 'P1' }).verdict, 'skip');
+  assert.equal(contextGate({ ledger: {}, entry: 'ui-mode:none', recontext: true }).verdict, 'skip',
+    'even a recontext request does not manufacture a round that is not happening');
+});
+
+test('MUST FAIL — three of four answers is not "recorded"; a partial context never passes', () => {
+  for (const k of CONTEXT_KEYS) {
+    const partial = { context: { ...FULL.context, [k]: '' } };
+    assert.equal(contextGate({ ledger: partial, profile: 'P1' }).verdict, 'block', `missing ${k}`);
+  }
 });
 
 test('an empty ledger names every missing answer, not just the first', () => {

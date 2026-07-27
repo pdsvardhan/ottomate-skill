@@ -29,24 +29,40 @@ function present(v) {
  * @param {object} [o.ledger]   ui_master_plans.design_ledger (the blob that holds context)
  * @param {string} [o.entry]    stage-2 | stage-4-item | deferred-overhaul | ui-mode:none
  * @param {string} [o.profile]  P1 | P2 | P3
+ * @param {boolean} [o.recontext]  force a re-interview even when context is stored
  * @returns {{verdict:'pass'|'block'|'advise'|'skip', missing:string[], why:string}}
  */
-export function contextGate({ ledger = null, entry = 'stage-2', profile = 'P1' } = {}) {
+export function contextGate({ ledger = null, entry = 'stage-2', profile = 'P1', recontext = false } = {}) {
   if (entry === 'ui-mode:none') {
     return { verdict: 'skip', missing: [], why: 'ui-mode:none runs no design round, so there is nothing to gate' };
   }
   const ctx = ledger?.context ?? ledger ?? {};
   const missing = CONTEXT_KEYS.filter((k) => !present(ctx[k]));
+
+  // N1 — the owner asked to be re-interviewed on purpose. Stored context is deliberately ignored.
+  if (recontext) {
+    return {
+      verdict: 'block', missing: CONTEXT_KEYS,
+      why: 'recontext requested — re-asking audience, use-cases, tone and primary screen even though '
+        + 'context is stored, because the owner said the answers have changed',
+    };
+  }
+
   if (missing.length === 0) {
+    // ANSWER ONCE PER PROJECT. The stored context satisfies the gate at every profile and on every
+    // later round — the questions are asked when there is nothing recorded, not every time.
     return { verdict: 'pass', missing: [], why: 'audience, use-cases, tone and primary screen are all recorded' };
   }
   // A stage-4 entry INHERITS context from the ledger and must not re-interview (routeEntry). If the
   // ledger genuinely has nothing, that is still a block — inheriting nothing is not inheriting.
   const why = `missing context: ${missing.join(', ')}. A round generated without these answers a `
     + 'question nobody asked, and the owner then locks it as a frozen control.';
-  // P1 is the owner alone: advise, because they can hold the context in their head and the cost of a
-  // wrong round is their own time. P2/P3 ship to other people — block.
-  return { verdict: profile === 'P1' ? 'advise' : 'block', missing, why };
+  // N1, owner ruling 2026-07-27: P1 now BLOCKS too. It previously advised, on the reasoning that the
+  // owner alone pays for their own wrong round — but P1 is the profile actually in use, so the locked
+  // spec's "do not proceed to visuals without it" was soft exactly where it mattered, and acceptance
+  // criterion 1 could not honestly be called met. The cost is bounded because the answers persist:
+  // four questions once per project, not once per round. `recontext` re-opens them deliberately.
+  return { verdict: 'block', missing, why };
 }
 
 /**

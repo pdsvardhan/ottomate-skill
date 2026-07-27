@@ -86,6 +86,15 @@ Acquire, up front (short structured interview or a saved project profile):
 Code tells you *what* was built, not *who it's for* or *how it should feel*. Persist to the design
 ledger's `context` block (`stage-2-ui-master-plan.md` → `design_ledger`). Missing context = STOP.
 
+**It now blocks at EVERY profile, P1 included** (N1, owner ruling 2026-07-27). It used to *advise* at
+P1, on the reasoning that the owner alone pays for their own wrong round — but P1 is the profile
+actually in use, so "do not proceed without it" was soft exactly where it mattered.
+
+**The cost is bounded, because the answers persist.** Stored context satisfies the gate at every
+profile and on every later round: **four questions once per project, not once per round.** Pass
+`recontext: true` to deliberately re-open all four when the answers have changed. `ui-mode:none` still
+skips — deferring UI is the default, and a round that is not happening does not need a gate.
+
 ## Step 2 — Worklist decomposition
 
 Break the target into components by **how much the eye drives them**, and let the owner pick
