@@ -23,8 +23,9 @@ tables, reasoning). Pull one on demand for build knowledge on a specific axis; n
 
 | | |
 |---|---|
-| **Plugin** | `~/.claude/plugins/ottomate` · repo `pdsv/ottomate` · branch `main` · **@ `bedc504`, clean, 0 unpushed** |
-| **App** | `/opt/homeserver/ottomate` via `ssh pdsv@192.168.1.10` · repo `pdsv/ottomate-tracker-v3` · branch `iter-65-2026-07-13` · **@ `9c4c75d`** *(unchanged this session — nothing touched the app)* |
+| **Plugin** | `~/.claude/plugins/ottomate` · repo `pdsv/ottomate` · branch `main` · **clean, 0 unpushed (all Phase 1–4 + 3b work pushed)**. Where ALL Task-2 work lives |
+| **App** | `/opt/homeserver/ottomate` via `ssh pdsv@192.168.1.10` · repo `pdsv/ottomate-tracker-v3` · branch `iter-65-2026-07-13` · **@ `9c4c75d`, unchanged since session 2** — Phases 1/2/3a/3b/4 were all plugin-only (the design_decisions table + API already existed). The server's `@playwright`+Chromium hosts the computed checks |
+| **Test suites (plugin)** | `node --test` — generation 8/8 · ledger-context 9/9 · method-routing 9/9 · graduate 6/6 · design-check 33/33 · computed-checks 6/6 · harness-dsd 7/7 · isolation-gate 20/20. Browser test (server only): `computed-checks.browser.test.mjs` 4/4 |
 | **API** | `http://127.0.0.1:8110` · bearer token at `/opt/homeserver/ottomate/.token` |
 | **Preview artifact** | `https://claude.ai/code/artifact/76f9cb7a-9c14-4950-9061-251b75b998f1` |
 
@@ -43,58 +44,42 @@ cramped.** Doctrine rule 83, the P1 profile row and the register all carry the m
 
 ## 3. Do this next, in this order
 
-### 3a. ✅ DONE 2026-07-23 — the variant harness now isolates markup-mode panels
+**Phases 1, 2, 3a (source), 3b (3 computed rules) and 4 (wiring) are all BUILT.** The parts work and
+two throwaway rounds were run end-to-end. What is NOT yet done is a real session on a real project, and
+the remaining implementation tail. Nothing below is blocked on research or a decision — the research
+sweep is complete (22/22) and the owner rulings in §4 are settled. **These are work, not waiting.**
 
-**Resolved.** Markup variants emit as static declarative shadow roots (`renderPanelStatic` +
-`{{PANELS_HTML}}`); verified rendering isolated on real output in the real Artifact sandbox
-(`…/57e854cb-…`), `harness-dsd.test.mjs` 6/6. The render check also caught + fixed two pre-existing
-bugs: `min-height:100%` blanked every artifact (→ `100vh` in both templates), and a
-`path.isAbsolute(undefined)` crash. **Phase 1 generation is unblocked.** Details:
-`docs/plans/2026-07-23-C1-harness-dsd-isolation.md`. Next Phase-1 item: sub-decision inventory from C1
-anatomy + render-by-tier. *(Original blocker writeup kept below for context.)*
+### 3a. ⭐ The biggest gap: run ONE real end-to-end session on a REAL project
+Every round so far used a **throwaway test component** (media-card) on a **throwaway project**. The
+locked spec's §12 acceptance wants a real one. Pick a real tracked project + a real target (Screenroom
+is the natural candidate), run the full loop — route → fresh-context generate → gate + source checker →
+render + computed pass → per-item picks → lock → snapshot — writing to that project's **real** ledger
+(backup-first, ONE DOOR). This is what moves Task 2 from `ITERATE` toward `APPROVE`, and it will
+surface the next batch of real bugs the way rounds 1 and 2 did.
 
-### ~~3a. Unblock Phase 1~~ — original writeup (superseded, kept for context)
+### 3b. Finish Phase 3b — the rest of the computed rules + auto-inline
+The architecture is built (`computed-checks.js`, runs in Node + real Chromium; 3 rules enforced). Add
+the other ~12 `computed` rules (shadow/glass/type-optical/scale/leading/tabular/radius-nesting/…)
+against the same pattern — each with a math unit test + a browser-test case. Then **auto-inline the
+computed pass** so it runs as part of a round rather than a manual server/`run-computed.mjs` step.
 
-**This is the top item and it blocks generation.** `template.variant-set.html:140` does
-`host.innerHTML = panels.map(…)`, so all N variants land in **one document** with no iframe and no
-shadow root. A shared SVG `id` makes `url(#id)` resolve to the **first** match; a shared class plus a
-variant `<style>` block lets the **last** panel restyle its siblings; `@keyframes` and `:root` props go
-document-wide. The set then **differs in source and matches on screen** — exactly what the isolation
-gate exists to prevent, and a second root cause of the A≈B round.
+### 3c. Finish Phase 3a source tail
+`feas-baseline-gate` (`@supports` parsing) · `source_policy` (needs a source-tagging convention) ·
+**constraint capture** — the contract is read from a config today; nothing writes it to the ledger yet.
 
-The **static half is already enforced** (`block-svg-id-collision`, tested) — a colliding set is now
-blocked. But blocking is not fixing: a generator that keeps producing generic class names will just
-keep getting rejected. Three candidate fixes, **none chosen yet**:
+### 3d. Graduation ingest SUBSYSTEM (own unit; protocol + hook already written)
+`references/graduation-protocol.md` + `graduate.mjs` (the non-writing draft hook) exist. The subsystem
+needs a **hand-written migration** adding `master_components` columns (spdx_id, author, attribution,
+retrieved_at, trademark_flag, grade — currently absent), then the grade runner, structural+visual
+dedupe, and the NOTICES assembler. Backup-first; never `drizzle-kit`.
 
-| Option | Upside | What must be verified first |
-|---|---|---|
-| (a) build-time prefix rewriting of ids/classes/keyframes | robust, no browser feature dependency | needs a real HTML+CSS rewriter, not regex |
-| (b) `iframe srcdoc` per panel | total isolation, zero rewriting | per-panel height management; the known iter-16 iframe-scrollbar caveat |
-| (c) declarative shadow DOM (`<template shadowrootmode>`) | native id + CSS scoping, no iframes, no script | **two things I could not verify without a browser:** its Baseline tier as of now (it looked *Newly* rather than *Widely* Available), and — the real catch — **`innerHTML` does not parse declarative shadow roots**; that needs `setHTMLUnsafe()`, which is newer still |
+### One open owner decision (non-blocking)
+Confirm the **`block_feasibility` 4th tier** (eval/WASM/network/inline-handlers — "does it render at
+all") stays as its own tier, or folds into an existing one. It's built and enforcing either way.
 
-**Do not pick from memory.** Doctrine rule 106 is explicit that Baseline tier is a build-time check.
-Verify in a real browser, then write the plan doc.
-
-### 3b. Phase 3b — the computed checker
-
-16 rules are `method:"computed"` and need a rendering host. **The Task-3 Playwright harness in
-`scripts/feature-verify/` is the natural one** — reuse, not a new subsystem. Start with
-**`adv-cross-component-coherence`**: it is the mix-coherence check G1 requires, and the owner's
-per-item pick model (doctrine 38) depends on it — when they take the header from v1 and the card from
-v2, that rule is what proves the result is still one design.
-
-### 3c. The rest, unchanged in intent
-
-| Phase | Items |
-|---|---|
-| **1 Generation** | sub-decision inventory from C1 anatomy · render-by-tier with states pinned · bundle model + per-item picks · over-generate 6 → show best 3. **Gated on 3a** |
-| **2 Persistence** | `rejected[]` wiring · reload-on-resume · snapshot differ. Table already exists (0010) |
-| **3a remainder** | `feas-baseline-gate` (`@supports` parsing) · `source_policy` (needs a tagging convention) · constraint *capture* — the contract is read from config today; nothing writes it to the ledger |
-| **4 Wiring** | fresh-context rounds · scope×entry routing · Stage-3 gate · register gates in SKILL.md's HARD list · **graduation to `master_components` — now specced by H1, see the register's superseded list** |
-
-Write a plan doc before each unit. Pattern:
-`docs/plans/2026-07-23-B1-source-constraint-checker.md` (verifies live state first, then specifies,
-then lists acceptance and risks) or the earlier `…-A2-migration-0010-design-decisions.md`.
+**Write a plan doc before each unit** (verify live state → spec → acceptance → risks). Good patterns:
+`docs/plans/2026-07-23-G1-phase3b-computed-checks.md`, `…-E1-phase2-persistence.md`,
+`…-A2-migration-0010-design-decisions.md`. Demonstrate, don't assert: run it, show the output.
 
 ## 4. Owner rulings — settled, do not re-litigate
 
