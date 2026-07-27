@@ -47,16 +47,48 @@ app/catalog rules rather than pretend a panel checker can see them. 10. **Hand-r
 the plugin stays zero-dependency. 11. **Fresh sub-agent per round.** 12. **No `data-oid`** in
 Screenroom — `target_id` is a label, and the "one instrument, three consumers" claim is **withdrawn**.
 
-## Do this next
+## Do this next — **P1-P4 ARE DONE. Stage 4 (graduation) is the next unit.**
 
-**`2026-07-27-PRE-STAGE4-PLANS.md` is the queue.** P1 (14 panel rules) · P2 (pixel comparison — the
-highest-value item, it fixes the divergence defect) · P3 (defects our own tooling found) · P4 (practise
-the fresh-sub-agent round). P5 is deferred on purpose. Then Stage 4.
+**Session of 2026-07-27 (later): P1 · P2 · P3 · P4 all complete, committed and pushed.**
+
+| | |
+|---|---|
+| **P1** 14 panel rules | ✅ `b82fdbd` — 5 source + 9 computed, collector extended and run in real Chromium |
+| **P2** pixel comparison | ✅ — hand-rolled PNG decoder + perceptual compare, **zero dependency**. Last 3 rules closed |
+| **P3** our own defects | ✅ — all 9 published panels fixed, both templates, captions to 4.88:1, plus 2 defects not in the queue |
+| **P4** fresh sub-agent round | ✅ — practised, **5/5 mechanical**, verifier proven to bite on a sabotaged output |
+| **P5** whole-app audit | deferred on purpose, per the parent plan |
+
+**79 of 79 round-scope rules are enforced. Zero pending.** The 11 remaining `pending` rules are the
+7 `scope:'app'` + 4 `scope:'catalog'` ones, excluded by owner decision D15.
+
+**Suites:** design-check **118/119** · pixel **22/22** · generation **150/150** · preview-build 17/17 ·
+isolation-gate **36/36**. The single failure is `computed-checks.browser.test.mjs`, which needs
+Playwright — **it passes 4/4 on VAULT7A**, re-verified this session after the collector changed.
+To run it there, symlink `node_modules`: ESM resolves bare specifiers from the file's own location.
+
+**Next: Stage 4 — graduation.** It is the last unit, and it is a real subsystem, not a tail: H1 is its
+spec (provenance at ingest, GREEN/AMBER/RED licence tiers, tokenise-on-ingest, A-F grading, structural
+*and* visual dedupe, NOTICES). It needs a **migration** — the `master_components` table has no
+spdx/author/attribution/retrieved_at/trademark/grade columns. `graduate.mjs` is a draft hook that
+never writes. **Start with a live-state check**: do the 179 catalog rows have provenance fields at
+all? Most were authored (`library='ottomate'`), so the gap may be narrow. Named exclusions to encode:
+Shadertoy (CC BY-NC-SA), unDraw (no repackaging/AI-training), Rive (WASM).
 
 ## Blocked on the owner
 
-**One lock.** Judging the live rounds and locking anything makes style priors real and triggers the
-first genuine tokens file in Screenroom's repo — shown as a `--dry-run` first. Nothing else waits on it.
+**One lock, and it is now the ONLY thing outstanding before Stage 4.** Judging the live rounds and
+locking anything makes style priors real and triggers the first genuine tokens file in Screenroom's
+repo — to be shown as a `--dry-run` first. Nothing in P1-P4 waited on it, and Stage 4 does not either.
+
+**Two things deliberately NOT done, so they read as decisions rather than omissions:**
+1. **The live rounds were not republished** after P3 fixed their `prefers-reduced-motion` gap.
+   `publish-round.mjs` writes `design_decisions` rows and the owner is mid-decision on 18-27. The fix
+   is inert unless the viewer asks for reduced motion, so it changes nothing they are choosing
+   between. The fixes are in the source of truth (`gen.mjs` + the committed r1 panels) and proven
+   clean. **Republish on the owner's word.**
+2. **P4's locks and ban were applied in memory only.** Screenroom has 10 real rows, all `in-review`.
+   The DB was not touched.
 
 ## Gotchas — do not rediscover these
 
