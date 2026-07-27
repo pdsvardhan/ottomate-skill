@@ -9,6 +9,27 @@ the owner's real workflow — *build on placeholder UI, do design later, never r
 
 ---
 
+## ✅ Outcome (2026-07-23) — wiring built + demonstrated; graduation scoped honestly
+
+Commit `90e7e9d`. Plugin-only, no DB change. `method-routing.mjs` 9/9 + `graduate.mjs` 6/6.
+- **Fresh-context default** (`buildRoundInput`), **scope×entry routing** (`routeRungs`/`routeEntry`,
+  `ui-mode:none` = default, no round), **Stage-3 profile gate** (`stage3DesignGate`: advise P1/P2, block
+  P3) — wired into `stage-2-generation.md`, `stage-3-scaffolding.md`, and SKILL.md's 2→3 HARD gate +
+  bedrock item 7. Docs: `stage-2-routing.md`.
+- **Graduation** = `graduation-protocol.md` (H1-grounded) + `graduate.mjs` `draftGraduation()` which
+  **never writes** (the catalog lacks spdx/author/attribution/retrieved_at/trademark/grade columns).
+  The full ingest subsystem is the next unit — stated plainly, not claimed.
+
+**Round-2 demo — the payoff, demonstrated not asserted.** Seeded a throwaway `zzz-phase4-demo` ledger
+(corner-radius **locked** at 14; hover-motion rejected {scale,none}; accent-usage rejected {badge}),
+built the packet from the **live** ledger via `buildRoundInput`, spawned a **fresh sub-agent** with only
+that packet. Result, **mechanically verified**: corner-radius is NOT a contested param and is 14 in all
+3 panels; no rejected value reappears (hover-motion ∉ {scale,none}, accent-usage ∉ {badge}). Gate +
+checker PASS, DSD-isolated, published (`…/f287b602-…`) — three genuinely different, legible cards, a
+notch better than round 1. Backup-first, throwaway deleted, ledger temp removed.
+
+---
+
 ## Verified live state (read 2026-07-23)
 ```
 SKILL.md            has "## Stage gates (HARD)" + "## Anti-gaslight bedrock" — item 4 has a home.

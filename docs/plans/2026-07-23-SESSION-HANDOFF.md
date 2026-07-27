@@ -159,9 +159,12 @@ gate → checker → isolated render in the real sandbox → a mixed pick round-
 **What is still specification:** 63 of 89 rules remain `pending` (reported as *skipped*, never passing);
 the 16 `computed` rules have no runner; the 6→3 filter is model judgment, not a mechanical scorer;
 there is no computed rendered-appearance divergence check; the live ledger outside that one round is
-still a seeded demonstration. **Phase 2 persistence is now DONE** — `rejected[]`/frozen wiring,
-reload-on-resume, and the snapshot regression gate, all in `ledger-context.mjs` and demonstrated live.
-**Remaining: Phase 3b** (16 computed rules + the mechanical rubric scorer + the computed appearance
-check) and **Phase 4** (fresh-context rounds as the default, scope×entry routing, Stage-3 gate,
-`master_components` graduation per H1). Task 2 is **`ITERATE`**, not `APPROVE`, against the locked
-spec's §12 — but materially closer.
+still a seeded demonstration. **Phases 2 AND 4 are now DONE.** Phase 2: `rejected[]`/frozen
+wiring, reload-on-resume, snapshot regression gate (`ledger-context.mjs`, demonstrated live). Phase 4:
+fresh-context rounds as the default, scope×entry routing, profile-aware Stage-3 gate, design gates in
+the HARD list, and a graduation **protocol + non-writing hook** (`method-routing.mjs`, `graduate.mjs`) —
+**round 2 demonstrated the ledger being respected** (fresh agent fed the live ledger → no rejected value
+re-offered, frozen axis omitted; mechanically verified + rendered). **Remaining: Phase 3b** (16 computed
+rules + the mechanical rubric scorer + the computed rendered-appearance check) and **the graduation
+ingest SUBSYSTEM** (a migration for the provenance/grade columns + grade runner + dedupe + NOTICES).
+Task 2 is **`ITERATE`**, not `APPROVE`, against the locked spec's §12 — but materially closer.

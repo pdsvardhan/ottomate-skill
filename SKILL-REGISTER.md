@@ -87,7 +87,9 @@ re-derived by hand instead of read.
 | **`design_decisions` ledger** | One row per decision; open/locked/rejected/graduation queries | ✅ | 21/21 live smoke; migration 0010, journal idx 5 |
 | **Lock earned / unlock harder** | `locked` needs `confirmed:true`; reopening needs `unlock_reason` | ✅ | Both 422s verified live |
 | **Uncapped rationale** | Design decisions never truncated | ✅ | 2160-char round-trip |
-| **Named directions** | 20-direction catalogue + adjective disambiguation | ✅ data | JSON validated; **no consumer wired yet** |
+| **Named directions** | 20-direction catalogue + adjective disambiguation | ✅ | JSON validated; **consumed** — the generation method commits to one at rung 0 (both real rounds did) |
+| **scope × entry routing** | Scope selects the rungs; entry decides context; `ui-mode:none` is the default | ✅ | `routeRungs`/`routeEntry` in `method-routing.mjs`, `method-routing.test.mjs` 9/9; `references/stage-2-routing.md` |
+| **Graduation to `master_components`** | Locked bespoke variant → catalog per H1 | 🟡 | `references/graduation-protocol.md` + `graduate.mjs` **draft hook (never writes)** 6/6. The full ingest subsystem needs a migration (spdx/author/attribution/retrieved_at/trademark/grade columns absent) — the next unit |
 | **Audience profiles P1/P2/P3** | Profile selects which floor rules bind | ✅ | `resolveFloor()` in `design-check.mjs`; test proves P1 and P3 return **different** sets, and that a per-project override beats the preset |
 | **Constraint checker** | Mechanically enforce the rules | 🟡 | **26 of 89 rules + 3 of 5 contract keys now enforced**, each naming a test. Of the 26: 19 via the design-check detector, 7 via the isolation gate / harness (the `iso-*`/`present-*` bookkeeping flip). Wired into `build-variant-set.mjs` after the gate, before emit; blocks exit 2 and write nothing. **The other 63 are still `pending`** — the checker reports them as `skipped`, never passing |
 | **Feasibility gate** | Refuse a variant that cannot RUN | 🟡 | **4 of 6 enforced** (`no-eval` · `no-wasm` · `no-network` incl. the placeholder-service list · `no-inline-handlers`). `feas-baseline-gate` needs real `@supports` parsing; `feas-degradation-bottom-rung` is `computed`. Proven profile-invariant by test |
@@ -97,12 +99,13 @@ re-derived by hand instead of read.
 | **Generation (the producer)** | Anatomy → over-generate 6 → filter 3 → states-pinned harness config | 🟡 | `component-anatomy.json` + `stage-2-generation.md` + `picks-to-ledger.mjs`. One **real round demonstrated** end-to-end. Filter is model judgment (no scorer); no computed appearance check yet |
 | **Sub-decision inventory** | Component → named parts + required states + the axes to vary | ✅ | `data/component-anatomy.json`, 3 archetypes, `generation.test.mjs` 8/8 |
 | **Bundle → per-item picks → ledger** | A mixed pick → one `design_decisions` row per sub-decision | ✅ | `picks-to-ledger.mjs`; live round-trip on a throwaway project verified `mixed_from` + `rejected[]` |
-| **Fresh-context rounds** | Each round in a clean sub-agent fed only ledger+constraints+rejected | 🟡 | The Phase-1 round WAS run in a fresh `Agent` sub-agent (proves the pattern); not yet wired as the default with `rejected[]` reload |
+| **Fresh-context rounds** | Each round in a clean sub-agent fed only ledger+constraints+rejected | ✅ | The default in `stage-2-generation.md`; `buildRoundInput` assembles the packet (contested = sub-decisions − frozen; + `rejectedByAxis`). **Demonstrated: round 2 ran in a fresh sub-agent fed the live ledger and its set re-offered NO rejected value + omitted the frozen axis — mechanically verified + rendered** |
 | **Golden-file regression gate** | Diff locked targets after every rebuild | ✅ | `diffAgainstSnapshots` + `snapshotForLock` in `ledger-context.mjs`; `ledger-context.test.mjs` 9/9; **demonstrated live** — a snapshot stored on lock round-tripped through the API, the differ caught 14→8. Source/value-level (pixel diff is the computed follow-up). Wired into stage-4 §4.6.5 |
 | **Reload-on-resume** | Session start re-reads the ledger | ✅ | `resumeSummary` in `ledger-context.mjs`; wired into SKILL.md session-start step 4 (auto GET + partition into open/locked/frozen/rejected) |
 | **`rejected[]` + frozen-controls wiring** | A round is fed what to never re-offer | ✅ | `rejectedByAxis` + `frozenByAxis`; wired into `stage-2-generation.md` input #6; tested |
-| **Stage-3 handoff** | Stage 3 builds from the locked design spec | ⬜ | Stage-3 references never read the ledger |
-| **Context gate** | No visuals before audience/use-case/tone/screen | 🟡 prose | Not in SKILL.md's HARD gate list |
+| **Stage-3 handoff** | Stage 3 builds from the locked design spec | ✅ | `stage3DesignGate` (profile-aware: advise P1/P2, block P3); wired into `stage-3-scaffolding.md` pre-checks + SKILL.md's 2→3 HARD gate. `method-routing.test.mjs` covers it |
+| **Design-round gates in the HARD list** | Isolation gate + checker + regression gate are first-class stops | ✅ | SKILL.md 2→3 gate + anti-gaslight bedrock item 7 |
+| **Context gate** | No visuals before audience/use-case/tone/screen | 🟡 prose | Still prose; `ui-mode:none` (the default) legitimately skips it, but a cold start's gate is not mechanically enforced |
 | **Code verifier** | Independent sub-agent, proves the CODE | ✅ | Task-3 sibling; pre-existing |
 | **Feature verifier** | Drives the REAL app, asserts system state | 🟡 | Sink + unicode recipe real; no browser-driving spec |
 | **Visual-QA intake** | Comment → ingest → classify → lock-in | ✅ | Task 1 complete, dogfooded |
@@ -304,7 +307,9 @@ theme-from-content · uncapped ledger · `design_decisions` + migration 0010 · 
 **declarative-shadow-DOM panel isolation (verified in-sandbox)** · **Phase-1 generation — one real
 round run end-to-end** (fresh sub-agent → gate → checker → isolated render → live ledger round-trip) ·
 **Phase-2 persistence** — rejected[]/frozen wiring, reload-on-resume, and the snapshot regression gate
-(demonstrated live)
+(demonstrated live) · **Phase-4 wiring** — fresh-context default, scope×entry routing, profile-aware
+Stage-3 gate, design gates in the HARD list, graduation protocol+hook; **round 2 demonstrated the
+ledger being respected** (fresh agent → no rejected value re-offered, frozen axis omitted)
 
 ### Pending, in build order
 | Phase | Items |
@@ -314,7 +319,7 @@ round run end-to-end** (fresh sub-agent → gate → checker → isolated render
 | ~~**2 Persistence**~~ | ✅ **DONE 2026-07-23** — `rejected[]`/frozen wiring · reload-on-resume · snapshot differ, all in `ledger-context.mjs` (9/9), wired, and the differ + lock/unlock 422s **demonstrated live**. No DB change (table + API already supported it) |
 | ~~**3a Enforcement — source**~~ | 🟡 **LARGELY DONE 2026-07-23** — `resolveFloor()` ✅ · the source checker ✅ (15 rules + 3 contract keys, 29/29 tests) · wired into `build-variant-set.mjs` ✅. **Remaining:** `feas-baseline-gate` (`@supports` parsing) · `source_policy` (needs a tagging convention) · constraint *capture* (the contract is read from config; nothing writes it to the ledger yet) |
 | **3b Enforcement — computed** | The 5 `computed` rules, hosted in the existing Task-3 Playwright harness: `adv-cross-component-coherence` first, since the per-item pick model depends on it |
-| **4 Wiring** | Fresh-context rounds · scope×entry routing · Stage-3 gate · register gates in HARD list · **graduation to `master_components` — now specced by H1, see superseded** |
+| ~~**4 Wiring**~~ | 🟡 **DONE 2026-07-23 (wiring)** — fresh-context default ✅ · scope×entry routing ✅ · Stage-3 profile gate ✅ · design gates in the HARD list ✅ · graduation **protocol + non-writing hook** ✅. **Remaining: the graduation ingest SUBSYSTEM** (migration for provenance/grade columns + grade runner + dedupe + NOTICES) — its own unit |
 
 ### Superseded — kept deliberately
 - ⛔ **5-tier granularity ladder** (primitive/element/composite/section/shell), invented in the Task-2
