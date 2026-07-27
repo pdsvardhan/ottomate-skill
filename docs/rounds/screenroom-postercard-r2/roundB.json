@@ -1,0 +1,13 @@
+{
+  "project_slug": "screenroom", "target_id": "screenroom.poster-card", "target_kind": "component",
+  "archetype": "media-card", "round": 2, "profile": "P1",
+  "html": "/tmp/ottoskill/work/screenroom-postercard-r2.html",
+  "session_id": "2026-07-27-stage1-U6",
+  "constraints": { "animation_vocab": ["transform","opacity"], "forbidden": ["parallax","bounce","gradient-text"],
+    "note": "Round B of 2. Composition rule: colour + motion channels, 5 axes, per-item-viable. Weight and density are frozen at Screenroom's current values here and are decided in round A. 'poster-derived-edge' is theme-from-content: each card's border is that poster's own dominant vibrant colour." },
+  "variants_shown": {
+    "A": { "accent-usage": "ownership-chip-only", "badge-style": "hairline-outline", "selected-signal": "ring",  "actions-reveal": "always-visible", "hover-motion": "none-edge-tint" },
+    "B": { "accent-usage": "chip-and-meter",      "badge-style": "corner-ribbon",    "selected-signal": "check", "actions-reveal": "always-visible", "hover-motion": "scale-1.02" },
+    "C": { "accent-usage": "poster-derived-edge", "badge-style": "pill-solid",       "selected-signal": "fill",  "actions-reveal": "hover-reveal",   "hover-motion": "lift-6px" }
+  }
+}

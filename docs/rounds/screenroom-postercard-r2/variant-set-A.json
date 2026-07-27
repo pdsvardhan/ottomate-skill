@@ -1,0 +1,108 @@
+{
+  "title": "Screenroom — poster card · round A: weight + density",
+  "subtitle": "Four states pinned open per option: rest · hover · focus-visible+selected · not-ours-yet. Real library posters, identical in every option; only the five named parameters move.",
+  "audienceProfile": "P1",
+  "axis": {
+    "name": "poster-card weight + density",
+    "parameter": "corner-radius · elevation · media-aspect · title-placement · meta-density",
+    "rung": 3,
+    "kind": "stylistic",
+    "params": [
+      "corner-radius",
+      "elevation",
+      "media-aspect",
+      "title-placement",
+      "meta-density"
+    ]
+  },
+  "control": {
+    "accentUsage": "ownership-chip-only",
+    "badgeStyle": "hairline-outline",
+    "selectedSignal": "ring",
+    "actionsReveal": "always-visible",
+    "hoverMotion": "lift-6px",
+    "typeface": "system-ui (Sora at build)",
+    "canvas": "#101216",
+    "gold-token": "#e9b84c",
+    "content": "the same 4 real library titles and posters in every option"
+  },
+  "contract": {
+    "animation_vocab": [
+      "transform",
+      "opacity"
+    ],
+    "forbidden": [
+      "parallax",
+      "bounce",
+      "gradient-text"
+    ]
+  },
+  "cards": [
+    {
+      "image": "/opt/homeserver/appdata/radarr/MediaCover/4/poster-500.jpg",
+      "title": "Cautionary Tale",
+      "meta": "2023 · 1.4 GB",
+      "owned": true
+    },
+    {
+      "image": "/opt/homeserver/appdata/radarr/MediaCover/13/poster-500.jpg",
+      "title": "Harry Potter and the Deathly Hallows: Part 2",
+      "meta": "2011 · 46.2 GB",
+      "owned": true
+    },
+    {
+      "image": "/opt/homeserver/appdata/radarr/MediaCover/42/poster-500.jpg",
+      "title": "The Lord of the Rings: The Fellowship of the Ring",
+      "meta": "2001 · 16.4 GB",
+      "owned": true
+    },
+    {
+      "image": "/opt/homeserver/appdata/radarr/MediaCover/59/poster-500.jpg",
+      "title": "Arjun Reddy",
+      "meta": "2017 · 6.2 GB",
+      "owned": false
+    }
+  ],
+  "posterWidth": 340,
+  "variants": [
+    {
+      "label": "tight-below",
+      "caption": "sharp corners, flat, caption under the poster",
+      "panelTemplate": "panel-A-tight-below.html",
+      "axis_values": {
+        "corner-radius": "4px",
+        "elevation": "flat-hairline",
+        "media-aspect": "2/3",
+        "title-placement": "below-media",
+        "meta-density": "2-line"
+      }
+    },
+    {
+      "label": "soft-overlay",
+      "caption": "soft corners, lighter surface, title over the poster",
+      "panelTemplate": "panel-A-soft-overlay.html",
+      "axis_values": {
+        "corner-radius": "18px",
+        "elevation": "surface-lightness",
+        "media-aspect": "2/3",
+        "title-placement": "overlay",
+        "meta-density": "1-line"
+      }
+    },
+    {
+      "label": "wide-plate",
+      "caption": "still frame instead of poster, cast shadow, three meta lines",
+      "panelTemplate": "panel-A-wide-plate.html",
+      "axis_values": {
+        "corner-radius": "10px",
+        "elevation": "dual-layer-shadow",
+        "media-aspect": "16/9",
+        "title-placement": "below-media",
+        "meta-density": "3-line"
+      }
+    }
+  ],
+  "shuffleSeed": 20260727,
+  "output": "screenroom-postercard-r1.html",
+  "manifest": "screenroom-postercard-r1.manifest.json"
+}

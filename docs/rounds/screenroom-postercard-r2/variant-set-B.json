@@ -1,0 +1,108 @@
+{
+  "title": "Screenroom — poster card · round B: colour + motion",
+  "subtitle": "Four states pinned open per option: rest · hover · focus-visible+selected · not-ours-yet. Real library posters, identical in every option; only the five named parameters move.",
+  "audienceProfile": "P1",
+  "axis": {
+    "name": "poster-card colour + motion",
+    "parameter": "accent-usage · badge-style · selected-signal · actions-reveal · hover-motion",
+    "rung": 3,
+    "kind": "stylistic",
+    "params": [
+      "accent-usage",
+      "badge-style",
+      "selected-signal",
+      "actions-reveal",
+      "hover-motion"
+    ]
+  },
+  "control": {
+    "radius": "12px",
+    "elevation": "flat-hairline",
+    "aspect": "2/3",
+    "titlePlacement": "below-media",
+    "metaDensity": "2-line",
+    "typeface": "system-ui (Sora at build)",
+    "canvas": "#101216",
+    "gold-token": "#e9b84c",
+    "content": "the same 4 real library titles and posters in every option"
+  },
+  "contract": {
+    "animation_vocab": [
+      "transform",
+      "opacity"
+    ],
+    "forbidden": [
+      "parallax",
+      "bounce",
+      "gradient-text"
+    ]
+  },
+  "cards": [
+    {
+      "image": "/opt/homeserver/appdata/radarr/MediaCover/4/poster-500.jpg",
+      "title": "Cautionary Tale",
+      "meta": "2023 · 1.4 GB",
+      "owned": true
+    },
+    {
+      "image": "/opt/homeserver/appdata/radarr/MediaCover/13/poster-500.jpg",
+      "title": "Harry Potter and the Deathly Hallows: Part 2",
+      "meta": "2011 · 46.2 GB",
+      "owned": true
+    },
+    {
+      "image": "/opt/homeserver/appdata/radarr/MediaCover/42/poster-500.jpg",
+      "title": "The Lord of the Rings: The Fellowship of the Ring",
+      "meta": "2001 · 16.4 GB",
+      "owned": true
+    },
+    {
+      "image": "/opt/homeserver/appdata/radarr/MediaCover/59/poster-500.jpg",
+      "title": "Arjun Reddy",
+      "meta": "2017 · 6.2 GB",
+      "owned": false
+    }
+  ],
+  "posterWidth": 340,
+  "variants": [
+    {
+      "label": "gold-only",
+      "caption": "gold on the ownership chip alone; nothing moves on hover",
+      "panelTemplate": "panel-B-gold-only.html",
+      "axis_values": {
+        "accent-usage": "ownership-chip-only",
+        "badge-style": "hairline-outline",
+        "selected-signal": "ring",
+        "actions-reveal": "always-visible",
+        "hover-motion": "none-edge-tint"
+      }
+    },
+    {
+      "label": "poster-edge",
+      "caption": "each card edged in its own poster colour; controls appear on hover",
+      "panelTemplate": "panel-B-poster-edge.html",
+      "axis_values": {
+        "accent-usage": "poster-derived-edge",
+        "badge-style": "pill-solid",
+        "selected-signal": "fill",
+        "actions-reveal": "hover-reveal",
+        "hover-motion": "lift-6px"
+      }
+    },
+    {
+      "label": "chip-meter",
+      "caption": "gold on chip and progress meter; ribbon spec tags; scales on hover",
+      "panelTemplate": "panel-B-chip-meter.html",
+      "axis_values": {
+        "accent-usage": "chip-and-meter",
+        "badge-style": "corner-ribbon",
+        "selected-signal": "check",
+        "actions-reveal": "always-visible",
+        "hover-motion": "scale-1.02"
+      }
+    }
+  ],
+  "shuffleSeed": 20260728,
+  "output": "screenroom-postercard-r2.html",
+  "manifest": "screenroom-postercard-r2.manifest.json"
+}
