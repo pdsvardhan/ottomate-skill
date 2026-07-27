@@ -534,8 +534,9 @@
       "source": "B1 §3.9 (WCAG 2.2.2)",
       "statement": "Motion must never sit un-mitigated behind reading text. Visible movement behind text at rest is a defect. Auto-motion lasting >5s alongside content needs a pause control.",
       "check": "motion_behind_text",
-      "status": "pending",
-      "method": "computed"
+      "status": "enforced",
+      "method": "computed",
+      "enforced_by": "pixel/pixel-rules.mjs (pure function over captured PNGs); pixel/pixel-rules.test.mjs — must-fail AND must-pass in plain Node. Decoder pixel/png-decode.mjs + pixel/pixel-compare.mjs, pixel/pixel.test.mjs 14/14, including a REAL Chromium screenshot decoded with asserted pixel values. Hand-rolled, zero dependency (owner decision D16). Capture host: pixel/run-pixel.mjs — runs only where Chromium lives, and reports unavailable rather than passing anywhere else"
     },
     {
       "id": "adv-accent-budget",
@@ -550,8 +551,9 @@
         "secondary_pct": 30
       },
       "note": "The numeric form of the owner's colour-budget rule. Both must pass — this counts pixels, colour_budget counts surfaces.",
-      "status": "pending",
-      "method": "computed"
+      "status": "enforced",
+      "method": "computed",
+      "enforced_by": "pixel/pixel-rules.mjs (pure function over captured PNGs); pixel/pixel-rules.test.mjs — must-fail AND must-pass in plain Node. Decoder pixel/png-decode.mjs + pixel/pixel-compare.mjs, pixel/pixel.test.mjs 14/14, including a REAL Chromium screenshot decoded with asserted pixel values. Hand-rolled, zero dependency (owner decision D16). Capture host: pixel/run-pixel.mjs — runs only where Chromium lives, and reports unavailable rather than passing anywhere else"
     },
     {
       "id": "adv-semantic-separate",
@@ -867,7 +869,8 @@
       "params_note": "THE PROPER BACKSTOP FOR A STYLISTIC BUNDLE. The gate's source structural check counts tag/class/property NAMES and is BLIND to CSS-value differences, so it reported ~2% for three visibly-different round-1 cards (a false reject). This reads getComputedStyle, so it sees radius 0 vs 14, flat vs shadowed, coral vs amber. Per panel: the SET of resolved values across all styled elements (a holistic look signature); distance = mean Jaccard across props. Advise, not block, because it complements — not replaces — the source gate. Verified on real round-2 output: A/B 0.39, A/C 0.41, B/C 0.57 (all differ); a near-identical pair scored 0.06 (flagged).",
       "remedy": "annotate",
       "status": "enforced",
-      "enforced_by": "scripts/design-check/computed-checks.test.mjs (vecDistance) + computed-checks.browser.test.mjs › CATCH: divergence flags near-identical panels + PASS: different panels diverge"
+      "enforced_by": "scripts/design-check/computed-checks.test.mjs (vecDistance) + computed-checks.browser.test.mjs › CATCH: divergence flags near-identical panels + PASS: different panels diverge",
+      "pixel_complement": "P2 2026-07-27: divergence is now ALSO measured in rendered pixels (pixel/pixel-compare.mjs divergenceVerdict), because a set of resolved values says nothing about how much of the panel each value covers. The Jaccard signature is kept and both are reported. Calibrated against the failure, not a round: byte-identical panels measure EXACTLY 0.0000; the real Screenroom r1 panels measure 0.0809 / 0.1108 / 0.1581 with peak delta 0.93. The floor is deliberately LOW (0.5% of pixels) because a controlled variant set is designed to be mostly identical — the isolation gate requires everything off-axis to be held constant, so a high floor would reject exactly the well-controlled sets the gate demands."
     },
     {
       "id": "feas-no-eval",
@@ -1220,7 +1223,9 @@
       },
       "params_note": "MEASUREMENT CAVEAT, stated honestly: the effective background behind glass is the BLURRED COMPOSITE, which getComputedStyle cannot report. A credible implementation screenshots the region and samples actual pixels behind the text — otherwise this rule can only check that the guard rails (fallback, prefix, reduced-transparency) exist, not that contrast is met. Do not claim the contrast half is enforced until pixel sampling exists.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "pixel/pixel-rules.mjs (pure function over captured PNGs); pixel/pixel-rules.test.mjs — must-fail AND must-pass in plain Node. Decoder pixel/png-decode.mjs + pixel/pixel-compare.mjs, pixel/pixel.test.mjs 14/14, including a REAL Chromium screenshot decoded with asserted pixel values. Hand-rolled, zero dependency (owner decision D16). Capture host: pixel/run-pixel.mjs — runs only where Chromium lives, and reports unavailable rather than passing anywhere else",
+      "scope_note": "THE CONTRAST HALF IS NOW MEASURED, AND ONLY THAT. Pixel sampling reads the composited backdrop getComputedStyle cannot report, but nothing knows which pixels the glyphs cover, so what is enforced is the WORST-CASE REGION contrast behind the text box — conservative and real. The guard-rail half (@supports fallback, -webkit- prefix, prefers-reduced-transparency) is covered separately by adv-reduced-transparency and feas-degradation-bottom-rung."
     },
     {
       "id": "adv-reduced-transparency",

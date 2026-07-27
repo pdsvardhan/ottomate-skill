@@ -106,7 +106,7 @@ re-derived by hand instead of read.
 | **scope × entry routing** | Scope selects the rungs; entry decides context; `ui-mode:none` is the default | ✅ | `routeRungs`/`routeEntry` in `method-routing.mjs`, `method-routing.test.mjs` 9/9; `references/stage-2-routing.md` |
 | **Graduation to `master_components`** | Locked bespoke variant → catalog per H1 | 🟡 | `references/graduation-protocol.md` + `graduate.mjs` **draft hook (never writes)** 6/6. The full ingest subsystem needs a migration (spdx/author/attribution/retrieved_at/trademark/grade columns absent) — the next unit |
 | **Audience profiles P1/P2/P3** | Profile selects which floor rules bind | ✅ | `resolveFloor()` in `design-check.mjs`; test proves P1 and P3 return **different** sets, and that a per-project override beats the preset |
-| **Constraint checker (source)** | Mechanically enforce source-readable rules | ✅ | **76 of 79 round-scope rules + 3 of 5 contract keys enforced**, each naming a test. Source checker (pure Node) is wired into `build-variant-set.mjs` after the gate, before emit; blocks exit 2. **3 still `pending`** — all three need pixel comparison (P2) — reported as `skipped`, never passing |
+| **Constraint checker (source)** | Mechanically enforce source-readable rules | ✅ | **79 of 79 round-scope rules + 3 of 5 contract keys enforced**, each naming a test. Source checker (pure Node) is wired into `build-variant-set.mjs` after the gate, before emit; blocks exit 2. **0 still `pending`** in round scope |
 | **Computed checker (browser)** | The rules that need resolved styles — contrast, coherence, appearance divergence | ✅ | `computed-checks.js` (one script, runs in Node for the math + in real Chromium for the DOM). **3 rules enforced: `floor-contrast`, `adv-cross-component-coherence`, `computed-axis-divergence`.** Math: `computed-checks.test.mjs` 6/6. DOM: `computed-checks.browser.test.mjs` 4/4 on the server's Chromium (real catch + real pass). Demonstrated on round-2 output. Host: `run-computed.mjs` (server) or claude-in-chrome. **A post-render pass, not auto-inlined in the harness yet** |
 | **Feasibility gate** | Refuse a variant that cannot RUN | 🟡 | **4 of 6 enforced** (`no-eval` · `no-wasm` · `no-network` incl. the placeholder-service list · `no-inline-handlers`). `feas-baseline-gate` needs real `@supports` parsing; `feas-degradation-bottom-rung` is `computed`. Proven profile-invariant by test |
 | **Cross-component coherence** | Same semantic role → same computed value across components; shared state vocab → same token delta | 📋 | `adv-cross-component-coherence`, C2 §3.10. **This is the mix-coherence check G1 requires and the per-item pick model (doctrine 38) depends on.** Needs a browser; no runner |
@@ -168,16 +168,19 @@ re-derived by hand instead of read.
 | **P1 source tail (5)** — `adv-p3-meaning-independent` · `adv-bar-zero-baseline` · `adv-series-cap-and-labels` · `adv-encoding-channel` · `adv-plain-language` | ADVISE | C3/D1/E2 | `checks.mjs` + `checks-p1.test.mjs` **13/13** ✅ |
 | **P1 computed tail (9)** — `floor-not-colour-alone` · `floor-focus-ring` · `adv-state-delta-relative` · `adv-derivation-contrast-guarantee` · `adv-density-scale` · `adv-whitespace-first` · `adv-body-type` · `adv-token-adherence` · `adv-dark-mode-type-optical` | 2 BLOCK-floor, 7 ADVISE | A1/A2/A3/C2/G2/A5 | `computed-rules.mjs` + `computed-rules-p1.test.mjs` **21/21** ✅, collector verified in real Chromium |
 
-### Specified, enforcing nothing (`status:"pending"`) — **3 of 79 round-scope** *(P1 closed the panel tail)*
-`adv-motion-behind-text` · `adv-accent-budget` · `adv-glass-legibility` — **all three need pixel
-comparison**, which is P2. Nothing else in round scope is pending. The other 11 `pending` rules in the
-file are the 7 `scope:'app'` + 4 `scope:'catalog'` rules, excluded from this denominator by owner
-decision D15 with a `scope_note` on each.
+### Specified, enforcing nothing (`status:"pending"`) — **0 of 79 round-scope**
+**Nothing in round scope is pending.** P1 closed the panel tail; P2 closed the last three, which
+needed pixel sampling. The 11 remaining `pending` rules in the file are the 7 `scope:'app'` + 4
+`scope:'catalog'` rules, excluded from this denominator by owner decision D15 with a `scope_note` on
+each. `adv-brand-mark-authentic` remains `declared-unenforceable`, and must never be claimed.
 
-**Two rules can never be fully enforced by any method** and must never be listed as enforced:
-`adv-glass-legibility` (the background behind glass is the blurred composite, invisible to
-`getComputedStyle` — needs pixel sampling) and `adv-brand-mark-authentic` (no checker distinguishes an
-authentic mark from a good imitation; it is a prompt-time constraint plus a provenance annotation).
+⛔ ~~**Two rules can never be fully enforced by any method**~~ → **one of them now is, partly.**
+`adv-glass-legibility` said "needs pixel sampling", and P2 built pixel sampling — so the CONTRAST half
+is now measured on the composited backdrop. **Only that half**: nothing knows which pixels the glyphs
+cover, so what is enforced is the worst-case region contrast behind the text box, and the rule carries
+a `scope_note` saying exactly that. `adv-brand-mark-authentic` remains genuinely unenforceable — no
+checker distinguishes an authentic mark from a good imitation; it is a prompt-time constraint plus a
+provenance annotation, and it stays out of the denominator.
 
 **New: a fourth tier, `block_feasibility`** (6 rules). The other three tiers all answer *"is this good,
 for this audience?"*; H2/E2 surfaced a class of failure that is not a taste question — **the artifact
@@ -289,6 +292,43 @@ injecting a fake name and watching it fail with the rule id.
 **No threshold was moved.** The one must-pass fixture that failed was the fixture's fault:
 `rgb(29,78,187)` is ΔL 0.095 off its base — a *press* delta offered as a hover. The rule was right;
 the test now pins both bands.
+
+### P2 — 2026-07-27 · pixel comparison, hand-rolled. **79 of 79 round-scope rules enforced**
+Plan: `docs/plans/2026-07-27-P2-pixel-comparison.md`. Owner decision **D16** honoured: **zero
+dependency, no `package.json`.** Playwright already returns PNG buffers and zlib is in Node core, so
+the decoder is inflate plus un-filtering scanlines — `pixel/png-decode.mjs`, deliberately narrow
+(8-bit, non-interlaced, colour type 2/6) and **throwing on anything else rather than returning
+plausible garbage**, because a mis-read format still yields a divergence number that looks fine.
+
+- **`pixel.test.mjs` 14/14 · `pixel-rules.test.mjs` 8/8.** Every PNG filter type round-trips, mixed
+  per row as a real encoder emits them.
+- **Checked against a PNG this code did not write.** An encoder and decoder written in one sitting can
+  share a misunderstanding and round-trip perfectly, so `capture-fixture.mjs` captures a two-swatch
+  render in real Chromium and the suite asserts the decoded pixel values **by number**.
+- **Three rules closed:** `adv-accent-budget` (pixel share, not declaration count) ·
+  `adv-glass-legibility` (**contrast half only** — see above) · `adv-motion-behind-text` (frame diff).
+- **A normalisation bug the tests caught immediately:** the YIQ weights give a *squared* distance, and
+  the first version divided by 255 instead of by the black↔white maximum. Every delta read ~30% low —
+  black vs white scored 0.71, and a plainly visible grey→purple recolour scored **under** the
+  threshold and was reported as no change at all. On a metric whose entire job is "do these look
+  different?", that was the whole failure.
+
+**The divergence metric, corrected — and my own plan doc was wrong first.** The plan asserted that
+`computed-axis-divergence` compared CSS property *strings*. Reading the implementation showed it does
+not: it takes the mean Jaccard distance over sets of *resolved* values, and had already been fixed
+once for diluting the score with control properties. The **real** residual defect is narrower: a set
+of values says nothing about **how much of the panel each value covers**, and geometry is invisible to
+it. So the pixel measure **complements** the Jaccard one; both are reported, and the register no
+longer claims a replacement.
+
+**The floor was calibrated against the failure, not against a round we wanted to pass:**
+byte-identical panels (the gate hole reproduced 2026-07-27) measure **exactly 0.0000**; the real
+Screenroom r1 panels measure **0.0809 / 0.1108 / 0.1581**, peak delta 0.93. Two orders of magnitude
+apart. The floor is deliberately **low** (0.5% of pixels), and the reasoning is the point: a
+controlled variant set is *designed* to be mostly identical, because the isolation gate requires
+everything off-axis held constant. A high "percentage differing" floor would reject exactly the
+well-controlled sets the gate demands and reward sloppy ones. This is a **near-identity guard**, not a
+score of how different two panels are.
 
 ### Prose only (nothing checks them)
 Context gate · anti-slop tells · core-mechanic-before-page · colour-budget stated up front ·
@@ -519,6 +559,8 @@ backstop, verified in real Chromium (the check that would NOT have false-rejecte
 | **`variants_shown` is keyed by SLOT letter, and slots are re-shuffled every round** | Medium | G3 §3.6 randomises presentation order per round, so `A` in round 1 is a different bundle from `A` in round 2. The ledger stores `mixed_from: {variant:'A'}` with no label, so cross-round provenance is only recoverable by hand from the harness manifest. Store the label alongside the slot |
 | **`inheritedControls` is computed and then dropped** | Medium | `buildRoundInput` returns inherited axes, but `build-variant-set.mjs` never reads them — the harness `control` block is still hand-written. So an inherited value is not mechanically frozen in the artifact; it is a note |
 | **The catalog is bypassed** | Medium | `must_use` was empty on the real round and `source_policy` is `pending`, so "library-first" is enforced by nothing. 179 catalog components exist and the design method never consults them |
+| **Our published Screenroom r1 panels are ~10× under the accent budget** | Medium — **owner judgement, not a code fix** | Found by P2's own rule on our own work: `#e9b84c` covers **0.72% · 0.51% · 1.11%** of rendered pixels against the doctrine's 10±5%. **The threshold was NOT moved.** The honest caveat is carried in the finding text itself: the denominator is the whole panel *including poster art*, which carries its own colour, so the accent's share of *design* surface is higher than the raw number. A screenshot cannot cleanly separate content from chrome. `advise` tier, so it annotates. **The owner decides whether these cards want more gold** |
+| ~~`adv-dark-surface-floor` counts every transparent element as a pure-black surface~~ → **FIXED 2026-07-27 (P1)** | — | `rgba(0, 0, 0, 0)` is the computed background of *every* element with no background, and it parses to pure black. Reported "6 surfaces at or near pure black" on a page with one dark card. Pre-existing since batch 3; surfaced only when the P1 collector ran for real. `paintedBg()` now returns null for a fully transparent background |
 | ~~**No prior-art / reuse pass** (G-B)~~ → **ledger half CLOSED 2026-07-27** | Medium *(was High)* | `prior-art.mjs` now answers it from the ledger, across targets, before a round opens. **Still open: the project's built code is never read** — "already decided" is answered, "already built" is not (D2) |
 | ⛔ ~~"`data-oid` — one instrument, three consumers"~~ → **CLAIM WITHDRAWN 2026-07-27 (owner decision)** | — | `grep -rc data-oid` over Screenroom's `app/` + `components/` returns **0**, and the owner has chosen **not** to stamp it. So the three-consumer wiring (Task-1 comment→component · Task-3 test selector · Task-2 design target) **is not real on any live project**, and the register no longer claims it. **`target_id` is a chosen identifier — a label, not a wire.** That is a supported way to work: the ledger, the picker and the emitter all key on the label consistently, and nothing in the design method requires the attribute. What it costs: a rename of a component does not invalidate its design decisions, because nothing connects them. Stamping remains available later; it is not a prerequisite for anything |
 | ~~The harness cannot inject real content into a markup panel~~ → **FIXED 2026-07-27 (U6a)** | — | Found while planning Stage 1: the harness had six TEMPLATE-level placeholders and **none per-card**, so a markup panel received no shared content at all — theme-from-content and markup mode were **incompatible**. That, not only a bad poster search, is why round 1 used CSS gradients. `fillCardSlots` (9/9) substitutes `{{IMG_n}}`/`{{TITLE_n}}`/`{{META_n}}`/`{{ACCENT_n}}` before the gate, so every check reads the artifact that will render |
