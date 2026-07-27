@@ -20,7 +20,11 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { questionRegistry } from './anatomy.mjs';
 
-export const ARTIFACT_DIR = 'design';
+// A DEDICATED subdirectory, not `design/` itself. Found by the first dry run against a real repo
+// (2026-07-27): Screenroom's `design/` already holds 159 tracked files — prototypes, data, templates,
+// handover notes. Writing generated artifacts in there would bury them, and it would couple our
+// dirty-tree guard to every unrelated edit anyone makes in that folder. Own a narrow path instead.
+export const ARTIFACT_DIR = 'design/ottomate';
 export const TOKENS_FILE = 'ottomate-tokens.css';
 export const SPEC_FILE = 'ottomate-design-spec.json';
 

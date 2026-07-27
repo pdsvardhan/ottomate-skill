@@ -118,6 +118,19 @@ test('re-emitting identical artifacts is a no-op, not an empty commit', () => {
   assert.equal(execFileSync('git', ['-C', r, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(), first);
 });
 
+test('the artifact dir is a dedicated subdirectory, never a shared design/ folder', () => {
+  // Screenroom's design/ has 159 tracked files; owning it would bury our output and couple the
+  // dirty-tree guard to every unrelated edit in there.
+  assert.equal(ARTIFACT_DIR, 'design/ottomate');
+});
+
+test('a dirty file elsewhere in design/ does NOT block us — only our own subdirectory counts', () => {
+  const r = repo();
+  mkdirSync(path.join(r, 'design'), { recursive: true });
+  writeFileSync(path.join(r, 'design', 'someone-elses-prototype.html'), '<p>wip</p>');
+  assert.deepEqual(repoGuards(r), [], 'an unrelated file in design/ must not stop us');
+});
+
 test('guards report a clean repo as safe', () => {
   assert.deepEqual(repoGuards(repo()), []);
 });
