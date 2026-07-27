@@ -3,6 +3,11 @@
 > **Resuming work?** Read **`docs/plans/2026-07-27-SESSION-HANDOFF.md`** first, then this file —
 > together they are the complete entry point. The work queue is
 > `docs/plans/2026-07-27-PRE-STAGE4-PLANS.md`. Do not bulk-read `docs/research/`.
+>
+> **The complete outstanding backlog, one list, marked by kind of work needed:**
+> `docs/plans/2026-07-27-OUTSTANDING-WORK.md`. **Running Task 3 in a separate session?** Start from
+> `docs/plans/2026-07-27-TASK3-PARALLEL-SESSION-BRIEF.md` — it is self-contained and carries the
+> file-ownership map that keeps two sessions from colliding.
 > *(The 2026-07-23 handoff is superseded and kept only for history.)*
 
 **The single index of the Ottomate skill.** Structure · systems · rules · intelligence · improvements.
@@ -580,12 +585,20 @@ backstop, verified in real Chromium (the check that would NOT have false-rejecte
   tiers with `-NC`/`-ND`/unknown rejected · framework coupling stripped · **tokenised, because a
   baked-in `#fff` is a downgrade not an entry** · graded A–F with only A/B shipping · deduped
   **structurally *and* visually** · and a NOTICES block assembled into the output.
-  **Consequence for the plan:** Phase 4 needs a live-state check first — do the 179 catalog rows have
-  provenance/licence fields at all? Most were *authored* (`library='ottomate'`), so the gap may be
-  narrow, but the 5 wired upstream registries make it real the moment that pass runs. Named
-  exclusions to encode now: **Shadertoy (CC BY-NC-SA 3.0 — non-commercial *and* viral)**, **unDraw
+  **Consequence for the plan:** Phase 4 needs a live-state check first. ✅ **RUN 2026-07-27 — and it
+  falsified two standing claims.** (1) The catalog is **116 rows, not 179**: `GET /api/master-components`
+  returns `count: 116`, and the route applies no limit and no default filter (read directly). Every
+  "179 catalog components" claim in this register and in the plans was wrong. (2) The columns are
+  **not** all absent — `source_url`, `license_note`, `quality_grade`, `ingestion_method`, `source_paths`
+  already exist, and `quality_grade` is **85% filled** (A 31 · B 21 · C 47 · null 17). `license_note` is
+  non-empty on 86/116, `source_url` on 40/116. **Genuinely missing: six columns** — `spdx_id`, `author`,
+  `attribution`, `licence_url`, `retrieved_at`, `trademark_flag`. So the migration is smaller than H1
+  implied, and S6 is "write the runner that justifies the grade", not "add grading". **A drift nobody
+  planned for:** **267 component dirs on disk vs 116 registered** (to-do #306) — graduation would write
+  into a catalog that is 57% unregistered, so reconciling that is a prerequisite, not a footnote.
+  Named exclusions to encode: **Shadertoy (CC BY-NC-SA 3.0 — non-commercial *and* viral)**, **unDraw
   (per-image only; its licence forbids repackaging in packs, scraping, and AI-training use)**,
-  **Rive (WASM)**.
+  **Rive (WASM)**. Full numbers: `docs/plans/2026-07-27-OUTSTANDING-WORK.md` §B.
 
 ### Known defects
 | Defect | Severity | Note |
@@ -610,7 +623,8 @@ backstop, verified in real Chromium (the check that would NOT have false-rejecte
 | **`rejected[]` conflates "not picked" with "rejected"** | **High** | Picking A writes B and C as `rejected` with `why_rejected: 'not selected in the per-item pick'`, and the method says a round must **never re-offer a rejected value**. So a close second is banned permanently by the act of not winning once. Needs two grades — `not_selected` (may return) vs `rejected_with_reason` (hard ban) — and only the second should bind |
 | **`variants_shown` is keyed by SLOT letter, and slots are re-shuffled every round** | Medium | G3 §3.6 randomises presentation order per round, so `A` in round 1 is a different bundle from `A` in round 2. The ledger stores `mixed_from: {variant:'A'}` with no label, so cross-round provenance is only recoverable by hand from the harness manifest. Store the label alongside the slot |
 | **`inheritedControls` is computed and then dropped** | Medium | `buildRoundInput` returns inherited axes, but `build-variant-set.mjs` never reads them — the harness `control` block is still hand-written. So an inherited value is not mechanically frozen in the artifact; it is a note |
-| **The catalog is bypassed** | Medium | `must_use` was empty on the real round and `source_policy` is `pending`, so "library-first" is enforced by nothing. 179 catalog components exist and the design method never consults them |
+| **The catalog is bypassed** | Medium | `must_use` was empty on the real round and `source_policy` is `pending`, so "library-first" is enforced by nothing. ~~179~~ **116** catalog components exist (measured 2026-07-27; the 179 figure was never true of `master_components`) and the design method never consults them |
+| **Catalog drift — 267 dirs on disk, 116 registered** | **High — blocks Stage 4** | `ls /mnt/storage/ottomate/assets/components/` = **267**; `GET /api/master-components` = **116**. A 151-dir gap, filed as to-do #306 and confirmed today. Graduation writes *into* this table, so ingesting one new component into a catalog that is 57% unregistered would compound the drift rather than start clean. **Reconcile before S2** |
 | **Our published Screenroom r1 panels are ~10× under the accent budget** | Medium — **owner judgement, not a code fix** | Found by P2's own rule on our own work: `#e9b84c` covers **0.72% · 0.51% · 1.11%** of rendered pixels against the doctrine's 10±5%. **The threshold was NOT moved.** The honest caveat is carried in the finding text itself: the denominator is the whole panel *including poster art*, which carries its own colour, so the accent's share of *design* surface is higher than the raw number. A screenshot cannot cleanly separate content from chrome. `advise` tier, so it annotates. **The owner decides whether these cards want more gold** |
 | ~~`adv-dark-surface-floor` counts every transparent element as a pure-black surface~~ → **FIXED 2026-07-27 (P1)** | — | `rgba(0, 0, 0, 0)` is the computed background of *every* element with no background, and it parses to pure black. Reported "6 surfaces at or near pure black" on a page with one dark card. Pre-existing since batch 3; surfaced only when the P1 collector ran for real. `paintedBg()` now returns null for a fully transparent background |
 | ~~**No prior-art / reuse pass** (G-B)~~ → **ledger half CLOSED 2026-07-27** | Medium *(was High)* | `prior-art.mjs` now answers it from the ledger, across targets, before a round opens. **Still open: the project's built code is never read** — "already decided" is answered, "already built" is not (D2) |
