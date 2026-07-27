@@ -12,6 +12,12 @@ Run sanity-check first (`GET /api/sanity-check`on Ottomate; the per-stage checks
 
 Required to pass:
 - Stage 2 verified
+- **Design-lock gate (profile-aware, Phase 4).** `GET /api/projects/<slug>/design-decisions?status=locked`
+  and run `stage3DesignGate({ profile, targetsBuilt, lockedDecisions })`
+  (`scripts/generation/method-routing.mjs`). A user-facing target built with no locked design decision
+  is **advisory at P1/P2** (the owner's default is to build on placeholder UI and design later — do not
+  block) and **BLOCKING at P3** (public ships no un-designed UI). This is the ledger reaching into
+  Stage 3: the build reads the locked design spec instead of ignoring it.
 - Repo absent at `git.vault7a.xyz/pdsv/<slug>` (else: revive flow)
 - Gitea Actions runner up
 - Server disk ≥10GB free

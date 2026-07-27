@@ -1,8 +1,20 @@
 # Stage 2 — Variant generation (the producer)
 
 **Loaded when a design round needs variants made.** The harness *displays* variants; this is the method
-that *produces* them. Run it in a **fresh sub-agent** fed only the inputs below — not inline in a long
-session (a long session produces repetitive designs; the ledger is the memory, the chat is disposable).
+that *produces* them.
+
+**Route first (`references/stage-2-routing.md`).** Ask **scope** (component/cluster/page/site) and
+**entry** (stage-2 / stage-4-item / deferred-overhaul / `ui-mode:none`). Scope selects the rungs via
+`routeRungs` — a `component` scope never runs whole-vibe directions. **`ui-mode:none` is the default and
+runs NO round** (build neutral placeholder UI + `data-oid`, design later).
+
+**Every round runs in a FRESH `Agent` sub-agent** — not inline in a long session (a long session
+produces repetitive designs; the ledger is the memory, the chat is disposable). Assemble its
+self-contained input packet with `buildRoundInput(...)` (`scripts/generation/method-routing.mjs`): it
+reads the ledger and hands the agent the contested axes **with locked/frozen axes already removed** and
+the `rejectedByAxis` map, so the fresh context cannot re-offer a locked or rejected value. Spawn recipe:
+one `Agent` call, `subagent_type: general-purpose`, prompt = this method + the packet; it writes the
+panel files + config and returns its 6→3 rationale; the main session runs the harness.
 
 > **Honesty flags baked in.** The 6→3 filter is **model-applied rubric judgment**, not a mechanical
 > score — no scoring runner exists yet. The "get 6 genuinely-different variants" step is a `[REASONED]`
