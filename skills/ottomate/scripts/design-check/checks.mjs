@@ -525,7 +525,205 @@ function advNoImageDistortion(src, rule) {
 // Keyed by the rule id in data/design-rules.json. A rule with no entry here is SKIPPED and reported
 // as skipped — never as a pass. That distinction is the whole point of the register's Enforced? field.
 
+// ── C6 batch 2: source detectors ────────────────────────────────────────────────────────────────
+// Everything here reads the TEXT of a variant. No browser, no dependencies. Each one is paired with a
+// must-fail and a must-pass case in design-check.test.mjs — a detector with only a passing test is
+// indistinguishable from a stub that returns true.
+
+const C6_DUR_RE = /(\d+(?:\.\d+)?)\s*(ms|s)\b/g;
+function durationsMs(s) {
+  const out = [];
+  for (const m of s.matchAll(C6_DUR_RE)) {
+    const n = parseFloat(m[1]);
+    out.push(m[2] === 's' ? n * 1000 : n);
+  }
+  return out;
+}
+function hasMotion(s) {
+  return /transition\s*:|animation\s*:|@keyframes/i.test(s);
+}
+
+// floor-reduced-motion — BLOCK-floor. Motion without an opt-out is not a style choice, it is an
+// accessibility failure for people who get sick from it.
+function floorReducedMotion(src) {
+  const s = stripComments(src);
+  if (!hasMotion(s)) return ok('no motion declared, so nothing to opt out of');
+  return /@media[^{]*prefers-reduced-motion/i.test(s)
+    ? ok('motion is present and prefers-reduced-motion is honoured')
+    : no('motion is declared with NO prefers-reduced-motion block — there is no way to turn it off');
+}
+
+// adv-motion-duration — B1's role ladder. Anything past ~600ms in UI motion reads as sluggish; a 0ms
+// transition is a transition that does not exist.
+function advMotionDuration(src) {
+  const s = stripComments(src);
+  if (!hasMotion(s)) return ok('no motion declared');
+  const bad = durationsMs(s).filter((d) => d > 600 || (d > 0 && d < 60));
+  return bad.length
+    ? no(`motion durations outside the role ladder (60-600ms): ${[...new Set(bad)].join(', ')}ms`)
+    : ok('all durations sit inside the role ladder');
+}
+
+// adv-compositor-only — animating anything but transform/opacity forces layout or paint per frame.
+const CHEAP = new Set(['transform', 'opacity', 'filter', 'backdrop-filter']);
+function advCompositorOnly(src) {
+  const s = stripComments(src);
+  const props = new Set();
+  for (const m of s.matchAll(/transition\s*:\s*([^;}]+)/gi)) {
+    for (const part of m[1].split(',')) {
+      const first = part.trim().split(/\s+/)[0];
+      if (first && first !== 'all' && !/^\d/.test(first)) props.add(first);
+      if (first === 'all') props.add('all');
+    }
+  }
+  const costly = [...props].filter((p) => !CHEAP.has(p) && p !== 'all'
+    && /^(width|height|top|left|right|bottom|margin|padding|border-width|font-size|line-height)/.test(p));
+  if (props.has('all')) return no('transition: all — animates every property that ever changes, including layout ones');
+  return costly.length
+    ? no(`transitions on layout/paint properties: ${costly.join(', ')} — only transform and opacity are compositor-cheap`)
+    : ok('transitions stay on compositor-friendly properties');
+}
+
+// adv-easing-direction — linear easing on UI motion reads mechanical; B1 wants ease-out for entering.
+function advEasingDirection(src) {
+  const s = stripComments(src);
+  if (!hasMotion(s)) return ok('no motion declared');
+  return /transition[^;}]*\blinear\b|animation[^;}]*\blinear\b/i.test(s)
+    ? no('linear easing on UI motion — reads mechanical; entering motion should decelerate (ease-out)')
+    : ok('no linear easing on UI motion');
+}
+
+// adv-stagger-cap — a staggered list where the last item waits too long stops feeling responsive.
+function advStaggerCap(src) {
+  const s = stripComments(src);
+  const delays = [];
+  for (const m of s.matchAll(/(?:transition-delay|animation-delay)\s*:\s*([^;}]+)/gi)) {
+    delays.push(...durationsMs(m[1]));
+  }
+  const worst = delays.length ? Math.max(...delays) : 0;
+  return worst > 500
+    ? no(`largest stagger delay ${worst}ms — past ~500ms the last item feels broken, not choreographed`)
+    : ok(delays.length ? `largest stagger delay ${worst}ms` : 'no stagger delays');
+}
+
+// adv-flash-limit — anything repeating faster than 3Hz is a seizure risk (WCAG 2.3.1).
+function advFlashLimit(src) {
+  const s = stripComments(src);
+  const problems = [];
+  for (const m of s.matchAll(/animation\s*:\s*([^;}]+)/gi)) {
+    const decl = m[1];
+    if (!/infinite/i.test(decl)) continue;
+    const ds = durationsMs(decl).filter((d) => d > 0);
+    if (ds.length && Math.min(...ds) < 333) problems.push(`${Math.min(...ds)}ms infinite`);
+  }
+  return problems.length
+    ? no(`repeating animation faster than 3Hz: ${problems.join(', ')} — seizure risk (WCAG 2.3.1)`)
+    : ok('no sub-333ms infinite animation');
+}
+
+// adv-zindex-ladder — arbitrary z-index numbers are how stacking bugs are born.
+function advZindexLadder(src) {
+  const s = stripComments(src);
+  const vals = [...s.matchAll(/z-index\s*:\s*(-?\d+)/gi)].map((m) => parseInt(m[1], 10));
+  if (!vals.length) return ok('no z-index used');
+  const wild = vals.filter((v) => Math.abs(v) > 100);
+  const distinct = new Set(vals);
+  if (wild.length) return no(`z-index values outside a ladder: ${[...new Set(wild)].join(', ')} — 9999 is not a layer, it is an argument`);
+  return distinct.size > 6
+    ? no(`${distinct.size} distinct z-index values — a ladder has a few named steps, not a scatter`)
+    : ok(`${distinct.size} z-index step(s), all within a ladder`);
+}
+
+// adv-focus-ring-not-shadow-only — arbitrated A5 over A4: forced-colors DELETES box-shadow, so a
+// shadow-only focus ring leaves a High Contrast user with no visible focus at all.
+function advFocusRingNotShadowOnly(src) {
+  const s = stripComments(src);
+  const blocks = [...s.matchAll(/:focus(?:-visible)?[^{]*\{([^}]*)\}/gi)].map((m) => m[1]);
+  if (!blocks.length) return ok('no focus styling declared here');
+  const bad = blocks.filter((b) => /box-shadow/i.test(b) && !/outline\s*:/i.test(b));
+  return bad.length
+    ? no('focus ring drawn with box-shadow and no outline — forced-colors removes box-shadow, leaving no visible focus')
+    : ok('focus styling uses outline');
+}
+
+// adv-icon-delivery-inline-svg — D2: one icon set, delivered inline. An icon font ships a whole
+// alphabet to draw an arrow and breaks when the font fails.
+function advIconDelivery(src) {
+  const s = stripComments(src);
+  const tells = [];
+  if (/font-family\s*:[^;}]*(material icons|font ?awesome|glyphicon|icomoon)/i.test(s)) tells.push('icon font');
+  if (/<i\s+class\s*=\s*["'][^"']*\b(fa|fas|far|fab|material-icons|glyphicon)\b/i.test(s)) tells.push('<i class="fa…"> icon markup');
+  return tells.length
+    ? no(`icons delivered by ${tells.join(' + ')} — inline SVG is the delivery that survives a failed font`)
+    : ok('no icon-font delivery detected');
+}
+
+// adv-deterministic-placeholder — D2 §3.14. A placeholder that changes on every render makes a
+// variant set un-comparable: two panels differ because the dice differed, not because the design did.
+function advDeterministicPlaceholder(src) {
+  const s = stripComments(src);
+  return /Math\.random|crypto\.getRandomValues|\?random|\/random\b/i.test(s)
+    ? no('non-deterministic placeholder content — a variant set must not differ because the dice differed')
+    : ok('placeholder content is deterministic');
+}
+
+// adv-realistic-content — F2: lorem ipsum and one-word strings hide every overflow bug there is.
+function advRealisticContent(src) {
+  const s = stripComments(src);
+  return /lorem ipsum|dolor sit amet/i.test(s)
+    ? no('lorem ipsum in a variant — placeholder prose hides the overflow and wrapping the real copy will cause')
+    : ok('no lorem ipsum');
+}
+
+// adv-semantic-separate — C2/A1: if success/error/warning are drawn in the brand accent, a state stops
+// reading as a state and starts reading as branding.
+function advSemanticSeparate(src) {
+  const s = stripComments(src);
+  const semantic = [...s.matchAll(/--(?:success|error|danger|warning|info)[\w-]*\s*:\s*([^;}]+)/gi)].map((m) => m[1].trim().toLowerCase());
+  const accents = [...s.matchAll(/--(?:accent|brand|primary|au)[\w-]*\s*:\s*([^;}]+)/gi)].map((m) => m[1].trim().toLowerCase());
+  if (!semantic.length || !accents.length) return ok('not enough declared tokens to compare');
+  const clash = semantic.filter((v) => accents.includes(v));
+  return clash.length
+    ? no(`semantic colour(s) identical to the brand accent: ${[...new Set(clash)].join(', ')} — a state must not read as branding`)
+    : ok('semantic colours are distinct from the accent');
+}
+
+// adv-reduced-transparency — A4 §3.7 added the fourth preference query. Translucency without an
+// opt-out is unreadable for people who need opacity.
+function advReducedTransparency(src) {
+  const s = stripComments(src);
+  const translucent = /backdrop-filter|rgba?\([^)]*0?\.\d+\s*\)|hsla?\([^)]*0?\.\d+\s*\)|opacity\s*:\s*0?\.\d/i.test(s);
+  if (!translucent) return ok('nothing translucent declared');
+  return /prefers-reduced-transparency/i.test(s)
+    ? ok('translucency present and prefers-reduced-transparency honoured')
+    : no('translucent surfaces with no prefers-reduced-transparency fallback');
+}
+
+// feas-canvas-a11y-mirror — a <canvas> with no DOM equivalent is invisible to a screen reader and to
+// every test selector.
+function feasCanvasA11yMirror(src) {
+  const s = stripComments(src);
+  if (!/<canvas[\s>]/i.test(s)) return ok('no canvas used');
+  return /<canvas[^>]*>[\s\S]*?<[a-z]/i.test(s) || /aria-label\s*=/.test(s)
+    ? ok('canvas carries fallback content or a label')
+    : no('<canvas> with no DOM mirror or label — invisible to assistive tech and to test selectors');
+}
+
 export const DETECTORS = {
+  'floor-reduced-motion': { scope: 'variant', fn: floorReducedMotion },
+  'adv-motion-duration': { scope: 'variant', fn: advMotionDuration },
+  'adv-compositor-only': { scope: 'variant', fn: advCompositorOnly },
+  'adv-easing-direction': { scope: 'variant', fn: advEasingDirection },
+  'adv-stagger-cap': { scope: 'variant', fn: advStaggerCap },
+  'adv-flash-limit': { scope: 'variant', fn: advFlashLimit },
+  'adv-zindex-ladder': { scope: 'variant', fn: advZindexLadder },
+  'adv-focus-ring-not-shadow-only': { scope: 'variant', fn: advFocusRingNotShadowOnly },
+  'adv-icon-delivery-inline-svg': { scope: 'variant', fn: advIconDelivery },
+  'adv-deterministic-placeholder': { scope: 'variant', fn: advDeterministicPlaceholder },
+  'adv-realistic-content': { scope: 'variant', fn: advRealisticContent },
+  'adv-semantic-separate': { scope: 'variant', fn: advSemanticSeparate },
+  'adv-reduced-transparency': { scope: 'variant', fn: advReducedTransparency },
+  'feas-canvas-a11y-mirror': { scope: 'variant', fn: feasCanvasA11yMirror },
   'adv-no-slop-tells': { scope: 'variant', fn: advNoSlopTells },
   'feas-no-eval': { scope: 'variant', fn: feasNoEval },
   'feas-no-wasm': { scope: 'variant', fn: feasNoWasm },

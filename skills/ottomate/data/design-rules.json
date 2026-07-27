@@ -181,7 +181,8 @@
       "params_note": "0.15 is a [REASONED] engineering default, not a measured constant (G1 §8). Tune per axis against real 'felt identical' reports.",
       "remedy": "regenerate_set",
       "status": "enforced",
-      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › \"felt identical\" set is REJECTED › axis-diff catches it"
+      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › \"felt identical\" set is REJECTED › axis-diff catches it",
+      "method": "gate"
     },
     {
       "id": "iso-control-diff",
@@ -192,7 +193,8 @@
       "remedy": "regenerate_set",
       "note": "This is the check that makes a lock TRUE rather than a guess about why the owner picked.",
       "status": "enforced",
-      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › contaminated set is REJECTED › control-diff catches the second axis"
+      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › contaminated set is REJECTED › control-diff catches the second axis",
+      "method": "gate"
     },
     {
       "id": "iso-blind-sort",
@@ -203,7 +205,8 @@
       "remedy": "regenerate_set",
       "note": "If the tool cannot articulate where each variant sits, a human never will and the set will feel identical.",
       "status": "enforced",
-      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › good set passes the gate › blind-sort ok"
+      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › good set passes the gate › blind-sort ok",
+      "method": "gate"
     },
     {
       "id": "iso-count",
@@ -241,7 +244,8 @@
       },
       "remedy": "adjust_count",
       "status": "enforced",
-      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › 6 options is REJECTED even at rung 0 / 3 options at rung 4 (page) is REJECTED"
+      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › 6 options is REJECTED even at rung 0 / 3 options at rung 4 (page) is REJECTED",
+      "method": "gate"
     },
     {
       "id": "iso-never-one",
@@ -254,7 +258,8 @@
       },
       "remedy": "regenerate_set",
       "status": "enforced",
-      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › a single option is REJECTED"
+      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › a single option is REJECTED",
+      "method": "gate"
     },
     {
       "id": "seq-parents-locked",
@@ -277,7 +282,9 @@
       },
       "params_note": "[REASONED]. The RULE (parents before children) is invariant; this specific order is a default a brand-led product may legitimately reorder.",
       "remedy": "block_lock",
-      "status": "pending"
+      "status": "enforced",
+      "method": "ledger",
+      "enforced_by": "method-routing.mjs buildRoundInput excludes LOCKED axes from the contested set (frozen controls, doctrine 39); method-routing.test.mjs. A child axis cannot be offered while its parent is locked."
     },
     {
       "id": "lock-regression-gate",
@@ -287,7 +294,9 @@
       "check": "golden_file_diff",
       "remedy": "revert_to_snapshot",
       "note": "Treat locks as golden files under test. Requires a snapshot per locked target in the ledger.",
-      "status": "pending"
+      "status": "enforced",
+      "method": "ledger",
+      "enforced_by": "ledger-context.mjs diffAgainstSnapshots + snapshotForLock; ledger-context.test.mjs 9/9 (a stored snapshot round-tripped through the API and the differ caught a 14->8 regression). Was built 2026-07-23 and left marked pending until C6."
     },
     {
       "id": "present-randomise-order",
@@ -297,7 +306,8 @@
       "check": "presentation_order_randomised",
       "remedy": "shuffle",
       "status": "enforced",
-      "enforced_by": "scripts/preview-build/harness-dsd.test.mjs › shuffle randomises slot order, reproducible per seed, lossless"
+      "enforced_by": "scripts/preview-build/harness-dsd.test.mjs › shuffle randomises slot order, reproducible per seed, lossless",
+      "method": "gate"
     },
     {
       "id": "present-neutral-labels",
@@ -308,7 +318,8 @@
       "remedy": "relabel",
       "note": "Suspends the skill's usual 'put the recommended option first' house style — for TASTE choices only.",
       "status": "enforced",
-      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › evaluative labels are REJECTED"
+      "enforced_by": "scripts/preview-build/isolation-gate.test.mjs › evaluative labels are REJECTED",
+      "method": "gate"
     },
     {
       "id": "floor-contrast",
@@ -345,7 +356,9 @@
       "statement": "Any variant carrying motion declares @media (prefers-reduced-motion: reduce) and neutralises non-essential animation within it.",
       "check": "reduced_motion_honoured",
       "remedy": "regenerate_variant",
-      "status": "pending"
+      "status": "enforced",
+      "method": "source",
+      "enforced_by": "checks.mjs + checks-c6.test.mjs (must-fail AND must-pass)"
     },
     {
       "id": "floor-target-size",
@@ -357,7 +370,8 @@
         "min_px": 24
       },
       "remedy": "regenerate_variant",
-      "status": "pending"
+      "status": "pending",
+      "method": "computed"
     },
     {
       "id": "floor-not-colour-alone",
@@ -367,7 +381,8 @@
       "check": "second_channel_present",
       "remedy": "regenerate_variant",
       "note": "Also the method's own 'state reads via form, not only colour' rule.",
-      "status": "pending"
+      "status": "pending",
+      "method": "computed"
     },
     {
       "id": "adv-flash-limit",
@@ -378,7 +393,9 @@
       "params": {
         "max_per_second": 3
       },
-      "status": "pending"
+      "status": "enforced",
+      "method": "source",
+      "enforced_by": "checks.mjs + checks-c6.test.mjs (must-fail AND must-pass)"
     },
     {
       "id": "floor-focus-ring",
@@ -395,7 +412,8 @@
       "why_not_box_shadow": "forced-colors: active deletes box-shadow entirely, so a box-shadow-only ring vanishes for Windows High Contrast users.",
       "remedy": "regenerate_variant",
       "profile_dependent": true,
-      "status": "pending"
+      "status": "pending",
+      "method": "computed"
     },
     {
       "id": "adv-motion-duration",
@@ -434,7 +452,9 @@
           100
         ]
       },
-      "status": "pending"
+      "status": "enforced",
+      "method": "source",
+      "enforced_by": "checks.mjs + checks-c6.test.mjs (must-fail AND must-pass)"
     },
     {
       "id": "adv-easing-direction",
@@ -452,7 +472,9 @@
           "left"
         ]
       },
-      "status": "pending"
+      "status": "enforced",
+      "method": "source",
+      "enforced_by": "checks.mjs + checks-c6.test.mjs (must-fail AND must-pass)"
     },
     {
       "id": "adv-compositor-only",
@@ -481,7 +503,9 @@
           "border-radius"
         ]
       },
-      "status": "pending"
+      "status": "enforced",
+      "method": "source",
+      "enforced_by": "checks.mjs + checks-c6.test.mjs (must-fail AND must-pass)"
     },
     {
       "id": "adv-stagger-cap",
@@ -497,7 +521,9 @@
         "total_max_ms": 500,
         "viewport_only_after_items": 10
       },
-      "status": "pending"
+      "status": "enforced",
+      "method": "source",
+      "enforced_by": "checks.mjs + checks-c6.test.mjs (must-fail AND must-pass)"
     },
     {
       "id": "adv-motion-behind-text",
@@ -505,7 +531,8 @@
       "source": "B1 §3.9 (WCAG 2.2.2)",
       "statement": "Motion must never sit un-mitigated behind reading text. Visible movement behind text at rest is a defect. Auto-motion lasting >5s alongside content needs a pause control.",
       "check": "motion_behind_text",
-      "status": "pending"
+      "status": "pending",
+      "method": "computed"
     },
     {
       "id": "adv-accent-budget",
@@ -520,7 +547,8 @@
         "secondary_pct": 30
       },
       "note": "The numeric form of the owner's colour-budget rule. Both must pass — this counts pixels, colour_budget counts surfaces.",
-      "status": "pending"
+      "status": "pending",
+      "method": "computed"
     },
     {
       "id": "adv-semantic-separate",
@@ -528,7 +556,9 @@
       "source": "A1 §3.2",
       "statement": "One accent hue family; the four semantic colours (success/warn/danger/info) are a SEPARATE axis. Never derive danger-red or success-green from the accent. If a derived accent lands on a semantic hue, nudge one apart.",
       "check": "accent_semantic_separation",
-      "status": "pending"
+      "status": "enforced",
+      "method": "source",
+      "enforced_by": "checks.mjs + checks-c6.test.mjs (must-fail AND must-pass)"
     },
     {
       "id": "adv-dark-surface-floor",
@@ -546,7 +576,8 @@
           30
         ]
       },
-      "status": "pending"
+      "status": "pending",
+      "method": "computed"
     },
     {
       "id": "adv-neutral-tint",
@@ -559,7 +590,8 @@
         "max_chroma": 0.02,
         "hard_max_chroma": 0.03
       },
-      "status": "pending"
+      "status": "pending",
+      "method": "computed"
     },
     {
       "id": "adv-state-delta-relative",
@@ -577,7 +609,8 @@
           0.1
         ]
       },
-      "status": "pending"
+      "status": "pending",
+      "method": "computed"
     },
     {
       "id": "adv-derivation-contrast-guarantee",
@@ -586,7 +619,8 @@
       "statement": "Derive content colour by ROLE (vibrant swatch, not most-common pixel), then normalise L to the theme's accent target and clamp C so contrast is guaranteed AT DERIVATION TIME. Never paint a surface with the raw extracted pick.",
       "check": "derived_colour_normalised",
       "implementation_note": "theme-extract.mjs already picks vibrant-not-dominant and skips near-black/near-grey. The L-normalise + C-clamp step is the outstanding upgrade.",
-      "status": "pending"
+      "status": "pending",
+      "method": "computed"
     },
     {
       "id": "adv-line-length",
@@ -601,7 +635,8 @@
         "hard_max": 80,
         "cjk_max": 40
       },
-      "status": "pending"
+      "status": "pending",
+      "method": "computed"
     },
     {
       "id": "adv-large-display-structure",
@@ -621,7 +656,8 @@
         ]
       },
       "corrects": "The method's 'primary-screen-tuned, 4K-first' instruction assumed the marketing resolution.",
-      "status": "pending"
+      "status": "pending",
+      "method": "computed"
     },
     {
       "id": "adv-density-scale",
@@ -640,7 +676,8 @@
         "step_px": 4,
         "target_review_below": 32
       },
-      "status": "pending"
+      "status": "pending",
+      "method": "computed"
     },
     {
       "id": "adv-zindex-ladder",
@@ -655,7 +692,9 @@
           99999
         ]
       },
-      "status": "pending"
+      "status": "enforced",
+      "method": "source",
+      "enforced_by": "checks.mjs + checks-c6.test.mjs (must-fail AND must-pass)"
     },
     {
       "id": "adv-whitespace-first",
@@ -669,7 +708,8 @@
           2.0
         ]
       },
-      "status": "pending"
+      "status": "pending",
+      "method": "computed"
     },
     {
       "id": "adv-body-type",
@@ -683,7 +723,8 @@
         "line_height_min": 1.4,
         "line_height_max": 1.6
       },
-      "status": "pending"
+      "status": "pending",
+      "method": "computed"
     },
     {
       "id": "adv-spacing-scale",
@@ -964,7 +1005,8 @@
       "method": "source",
       "params_note": "Canvas and WebGL expose NO accessibility semantics. The mirror is cheap (a visually-hidden table or summary) relative to rebuilding the visual in SVG, and it is the only way the content exists for a screen reader. Advise rather than block because 'is it decorative?' is not mechanically decidable; at P3 with screen-reader support on, this should be promoted to block_floor.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "checks.mjs + checks-c6.test.mjs (must-fail AND must-pass)"
     },
     {
       "id": "adv-no-font-smoothing",
@@ -1173,7 +1215,8 @@
       },
       "params_note": "This is the FOURTH preference query (doctrine 58); A5 listed only three and A4 supplied it. Deliberately filed as advise rather than block_floor: the owner's ruling named exactly four floor rules and expanding a profile-filtered floor is the owner's call, not mine. CANDIDATE FOR PROMOTION to block_floor at P2/P3 alongside floor-reduced-motion — flagged for owner decision.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "checks.mjs + checks-c6.test.mjs (must-fail AND must-pass)"
     },
     {
       "id": "adv-focus-ring-not-shadow-only",
@@ -1192,7 +1235,8 @@
       },
       "params_note": "ARBITRATED CONFLICT, see doctrine §6. A4 §3.13 is right that box-shadow: 0 0 0 1px draws a ring without shifting layout, and it is the better tool for dividers and hairlines. But forced-colors mode deletes box-shadow entirely, leaving a Windows High Contrast user with NO visible focus. A5 is the conformance authority (doctrine 54) and wins for focus specifically. Overlaps floor-focus-ring, which owns the >=2px / >=3:1 geometry; this rule owns the mechanism.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "checks.mjs + checks-c6.test.mjs (must-fail AND must-pass)"
     },
     {
       "id": "adv-leading-by-role",
@@ -1349,7 +1393,8 @@
       },
       "params_note": "Distinct from feas-no-network: an icon font embedded as a data: URI passes the network check but is still a11y-hostile and monochrome-only. Advise rather than block because the failure is quality, not rendering.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "checks.mjs + checks-c6.test.mjs (must-fail AND must-pass)"
     },
     {
       "id": "adv-deterministic-placeholder",
@@ -1364,7 +1409,8 @@
       },
       "params_note": "The network half is enforced by feas-no-network's known_placeholder_services. This rule owns the positive requirement: same seed => same image forever, so a rebuild does not silently change the design. The 0.179 crossover is the genuinely provable part — choosing black above / white below it floors contrast at ~4.58:1 against ANY solid background, which beats guessing.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "checks.mjs + checks-c6.test.mjs (must-fail AND must-pass)"
     },
     {
       "id": "adv-no-image-distortion",
@@ -1399,7 +1445,9 @@
       "method": "source",
       "params_note": "NOT MECHANICALLY DECIDABLE and flagged as such — a checker cannot tell an authentic mark from a good imitation. Implement as a PROMPT-TIME constraint plus a provenance annotation the generator must supply for any recognisable brand mark. The legal point is the one that matters and it is easy to get wrong: Simple Icons' SVG data is CC0, but CC0 waives COPYRIGHT, not TRADEMARK — it does not permit implying endorsement, altering the mark, or ignoring clear-space and approved-colour guidelines.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "declared-unenforceable",
+      "enforced_by": null,
+      "why_unenforceable": "No checker can distinguish an authentic brand mark from a good imitation. Ships as a prompt-time constraint plus a provenance annotation, and is EXCLUDED from the enforceable denominator. The ceiling is 90, not 91."
     },
     {
       "id": "adv-hover-control-focus-within",
@@ -1850,7 +1898,9 @@
       "source": "G2 §4.6 dim 4",
       "statement": "Re-render at min/max plausible content lengths — no clipping, overflow, orphans or broken wraps.",
       "check": "content_length_stress",
-      "status": "pending"
+      "status": "enforced",
+      "method": "source",
+      "enforced_by": "checks.mjs + checks-c6.test.mjs (must-fail AND must-pass)"
     },
     {
       "id": "adv-nonhappy-states",
@@ -1858,7 +1908,8 @@
       "source": "G2 §4.6 dim 4, F2 §7 row 17",
       "statement": "Empty, loading and error states exist and are styled to the primary state's standard.",
       "check": "nonhappy_states_present",
-      "status": "pending"
+      "status": "pending",
+      "method": "source"
     },
     {
       "id": "adv-no-slop-tells",

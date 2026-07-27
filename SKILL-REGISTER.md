@@ -193,6 +193,28 @@ composite, which `getComputedStyle` cannot report — needs pixel sampling) and
 `adv-brand-mark-authentic` (a checker cannot tell an authentic mark from a good imitation — it is a
 prompt-time constraint plus a provenance annotation).
 
+### C6 progress — 2026-07-27
+**46 of 90 enforceable rules** (was 29). 44 pending, reported as *skipped*, never as passing.
+**91st rule `adv-brand-mark-authentic` is `declared-unenforceable`** with its reason and is excluded
+from the denominator — no method can distinguish an authentic mark from a good imitation, so the real
+ceiling is 90.
+
+- **All 91 rules now carry a `method`** — `source` 51 · `computed` 31 · `gate` 7 · `ledger` 2. Nothing
+  is unclassified, so every remaining rule has an owner.
+- **Two rules were enforced but marked pending**, which hides real coverage — the mirror image of
+  overclaiming and just as wrong. `lock-regression-gate` is the snapshot differ (`ledger-context` 9/9);
+  `seq-parents-locked` is `buildRoundInput` excluding locked axes. Both now claimed, and the meta-test
+  extended to recognise the ledger subsystem as a legitimate enforcement home.
+- **14 new source detectors**, each with a must-fail AND a must-pass case (`checks-c6.test.mjs` 15/15):
+  reduced-motion · motion duration ladder · compositor-only · easing direction · stagger cap · flash
+  limit · z-index ladder · focus-ring-not-shadow-only · icon delivery · deterministic placeholder ·
+  realistic content · semantic-vs-brand separation · reduced-transparency · canvas a11y mirror.
+- **They fire on real markup, not just fixtures:** `floor-reduced-motion` flagged **our own published
+  Screenroom round panels** — they declare transitions with no `prefers-reduced-motion` block.
+- **Dependency decision:** the plugin stays **zero-dependency**. postcss/culori were proposed but the
+  plugin has no `package.json`, and its portability across Windows and VAULT7A is worth more than a
+  parser we can hand-write. `feas-baseline-gate` will get a purpose-built `@supports` parser.
+
 ### Prose only (nothing checks them)
 Context gate · anti-slop tells · core-mechanic-before-page · colour-budget stated up front ·
 harvest-before-ask · pressure-test-before-presenting

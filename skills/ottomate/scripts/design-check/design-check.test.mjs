@@ -319,9 +319,15 @@ test('every enforced rule names a test AND either has a detector or is gate-enfo
   for (const rule of RULES.rules) {
     if (rule.status !== 'enforced') continue;
     assert.ok(rule.enforced_by, `rule "${rule.id}" claims enforced without naming a test`);
-    // A rule is legitimately enforced by: a design-check source detector; the isolation gate / harness
-    // (own suites); or the COMPUTED checker (a browser test, computed-checks.*). Each names its file.
-    const elsewhereEnforced = /isolation-gate\.test|harness-dsd\.test|computed-checks/.test(rule.enforced_by);
+    // A rule is legitimately enforced by one of FOUR subsystems, each naming its own suite:
+    //   - a design-check source detector (DETECTOR_IDS below)
+    //   - the isolation gate / variant harness
+    //   - the COMPUTED checker (browser)
+    //   - the LEDGER (method:'ledger') — rules about the decision GRAPH rather than the artifact.
+    //     `lock-regression-gate` is the snapshot differ; `seq-parents-locked` is buildRoundInput
+    //     excluding locked axes from the contested set. Both were built and left marked `pending`,
+    //     which hides real coverage — the mirror image of overclaiming, and just as wrong.
+    const elsewhereEnforced = /isolation-gate\.test|harness-dsd\.test|computed-checks|ledger-context\.test|method-routing\.test/.test(rule.enforced_by);
     assert.ok(DETECTOR_IDS.has(rule.id) || elsewhereEnforced, `rule "${rule.id}" claims enforced but has no detector and is not gate/computed-enforced`);
   }
 });
