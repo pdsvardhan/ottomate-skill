@@ -16,6 +16,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runComputedRules } from './computed-rules.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
@@ -52,7 +53,12 @@ export function runComputedPass(htmlPath, { cwd = null, profile = 'P1', timeoutM
 // The real shape, confirmed by running it: { contrast:[], divergence:[], coherence:[], meta:{} }.
 // I had assumed a flat array and the first inline run threw — recorded because guessing a shape and
 // asserting on the guess is how a checker ends up reporting a pass for something it never parsed.
-export function blockingFindings(findings, { profile = 'P1' } = {}) {
+export function blockingFindings(findings, opts = {}) {
+  return allFindings(findings, opts).filter((f) => !f.advise);
+}
+
+/** Everything the computed pass found, blocking and advisory alike. */
+export function allFindings(findings, { profile = 'P1' } = {}) {
   const f = findings ?? {};
   const out = [];
   // Contrast: block at P2/P3, advise at P1 (the audience-profile ruling). Text over an image or a
@@ -76,6 +82,14 @@ export function blockingFindings(findings, { profile = 'P1' } = {}) {
       out.push({ rule: 'colour_budget', detail: `${c.label}: ${c.distinctAccents} distinct accent colours across ${c.surfaces} surfaces, budget ${c.budget} — ${c.colours.slice(0, 4).join(', ')}` });
     }
   }
+  // C6 batch 3: the pure computed rules, evaluated over the records the browser collected.
+  // All ADVISE tier, so they annotate rather than block — but they are counted and shown.
+  for (const panel of f.records ?? []) {
+    const verdicts = runComputedRules(panel.rows ?? []);
+    for (const [id, v] of Object.entries(verdicts)) {
+      if (v.pass === false) out.push({ rule: id, advise: true, detail: `${panel.label}: ${v.detail}` });
+    }
+  }
   for (const c of f.coherence ?? []) {
     if (c.coherent === false) out.push({ rule: 'adv-cross-component-coherence', detail: c.detail ?? JSON.stringify(c).slice(0, 160) });
   }
@@ -90,6 +104,7 @@ export function summariseFindings(findings) {
     contrastFails: (f.contrast ?? []).filter((c) => c.ratio != null && c.need != null && c.ratio < c.need).length,
     divergencePairs: (f.divergence ?? []).length,
     divergenceFails: (f.divergence ?? []).filter((d) => d.differ === false).length,
+    computedRuleFails: (f.records ?? []).reduce((a, p) => a + Object.values(runComputedRules(p.rows ?? [])).filter((v) => v.pass === false).length, 0),
     coherence: (f.coherence ?? []).length,
     colourOverBudget: (f.colourBudget ?? []).filter((c) => c.withinBudget === false).length,
     monochromePanels: (f.colourBudget ?? []).filter((c) => c.monochrome).length,
@@ -101,7 +116,10 @@ export function formatComputed(result, profile = 'P1') {
   if (result.state === 'failed') return `computed pass: FAILED TO RUN — ${result.why}`;
   const sum = summariseFindings(result.findings);
   const blocking = blockingFindings(result.findings, { profile });
-  const lines = [`computed pass: ran — contrast ${sum.contrastFails}/${sum.contrast} below floor · divergence ${sum.divergenceFails}/${sum.divergencePairs} pairs too alike · colour ${sum.colourOverBudget} over budget${sum.monochromePanels ? ` (${sum.monochromePanels} monochrome — reported, not blocked)` : ''} · ${blocking.length} blocking`];
+  const lines = [`computed pass: ran — contrast ${sum.contrastFails}/${sum.contrast} below floor · divergence ${sum.divergenceFails}/${sum.divergencePairs} pairs too alike · colour ${sum.colourOverBudget} over budget${sum.monochromePanels ? ` (${sum.monochromePanels} monochrome — reported, not blocked)` : ''} · ${sum.computedRuleFails} computed advisories · ${blocking.length} blocking`];
   for (const f of blocking) lines.push(`  BLOCK ${f.rule ?? f.id ?? '?'}: ${f.detail ?? f.message ?? ''}`);
+  for (const f of allFindings(result.findings, { profile }).filter((x) => x.advise).slice(0, 8)) {
+    lines.push(`  advise ${f.rule}: ${f.detail}`);
+  }
   return lines.join('\n');
 }

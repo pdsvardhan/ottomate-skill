@@ -709,7 +709,87 @@ function feasCanvasA11yMirror(src) {
     : no('<canvas> with no DOM mirror or label — invisible to assistive tech and to test selectors');
 }
 
+// ── C6 batch 4: the feasibility tail ────────────────────────────────────────────────────────────
+// A purpose-built @supports reader rather than a postcss dependency. The plugin has no package.json
+// and its portability across Windows and VAULT7A is worth more than a parser we can write here.
+// This does not need to be a full CSS parser — it needs to answer one question: which risky features
+// does this variant use, and are they guarded?
+
+// Features that are NOT safely assumable and therefore want a guard or a fallback. Each is here
+// because it silently produces NOTHING (not a degraded look — nothing) where unsupported.
+export const RISKY_FEATURES = {
+  'backdrop-filter': /backdrop-filter\s*:/i,
+  'container-queries': /@container\b|container-type\s*:/i,
+  'has-selector': /:has\(/i,
+  'subgrid': /grid-template-(?:rows|columns)\s*:[^;}]*\bsubgrid\b/i,
+  'anchor-positioning': /anchor-name\s*:|position-anchor\s*:/i,
+  'scroll-timeline': /animation-timeline\s*:|scroll-timeline\s*:/i,
+  'color-mix': /color-mix\(/i,
+  'oklch': /\boklch\(/i,
+  'text-wrap-balance': /text-wrap\s*:\s*balance/i,
+};
+
+/**
+ * Every feature named inside an `@supports` condition, however nested. Deliberately tolerant: it
+ * reads the CONDITION text, not a full grammar, because all we need to know is "was this guarded".
+ */
+export function supportsGuarded(src) {
+  const guarded = new Set();
+  for (const m of String(src).matchAll(/@supports\s+([^{]+)\{/gi)) {
+    const cond = m[1];
+    for (const [name, re] of Object.entries(RISKY_FEATURES)) {
+      if (re.test(cond)) guarded.add(name);
+    }
+    // `@supports (backdrop-filter: blur(1px))` names the property directly
+    for (const p of cond.matchAll(/\(\s*([a-z-]+)\s*:/gi)) {
+      if (RISKY_FEATURES[p[1].toLowerCase()]) guarded.add(p[1].toLowerCase());
+    }
+  }
+  return guarded;
+}
+
+// feas-baseline-gate — a risky feature used with no @supports guard and no fallback declaration.
+// BLOCK-feasibility: unlike a taste rule, this is about whether the thing renders at all.
+function feasBaselineGate(src) {
+  const s = stripComments(src);
+  const guarded = supportsGuarded(s);
+  const used = Object.entries(RISKY_FEATURES)
+    .filter(([, re]) => re.test(s))
+    .map(([name]) => name);
+  if (!used.length) return ok('no non-baseline features used');
+  const unguarded = used.filter((f) => !guarded.has(f));
+  return unguarded.length
+    ? no(`non-baseline feature(s) used with no @supports guard: ${unguarded.join(', ')} — where unsupported these produce nothing at all, not a degraded look`)
+    : ok(`${used.length} non-baseline feature(s), all guarded: ${used.join(', ')}`);
+}
+
+// feas-degradation-bottom-rung — H2's escalation ladder. If a variant reaches for an advanced
+// technique, SOMETHING must still be there when it is unavailable: a guard, a fallback declaration
+// before the risky one, or a plain background beneath a filter.
+function feasDegradationBottomRung(src) {
+  const s = stripComments(src);
+  const used = Object.entries(RISKY_FEATURES).filter(([, re]) => re.test(s)).map(([n]) => n);
+  if (!used.length) return ok('nothing to degrade from');
+  const guarded = supportsGuarded(s);
+  const problems = [];
+  for (const f of used) {
+    if (guarded.has(f)) continue;
+    // A fallback is a plainer declaration of the same property earlier in the same block.
+    if (f === 'backdrop-filter' && /background(?:-color)?\s*:\s*(?:#|rgb|hsl)/i.test(s)) continue;
+    if (f === 'color-mix' || f === 'oklch') {
+      if (/(?:color|background(?:-color)?)\s*:\s*(?:#[0-9a-f]{3,8}|rgba?\()/i.test(s)) continue;
+    }
+    if (f === 'text-wrap-balance') continue;          // purely cosmetic; absence degrades gracefully
+    problems.push(f);
+  }
+  return problems.length
+    ? no(`no bottom rung for: ${problems.join(', ')} — neither an @supports guard nor a plainer fallback declaration`)
+    : ok('every advanced technique has a bottom rung');
+}
+
 export const DETECTORS = {
+  'feas-baseline-gate': { scope: 'variant', fn: feasBaselineGate },
+  'feas-degradation-bottom-rung': { scope: 'variant', fn: feasDegradationBottomRung },
   'floor-reduced-motion': { scope: 'variant', fn: floorReducedMotion },
   'adv-motion-duration': { scope: 'variant', fn: advMotionDuration },
   'adv-compositor-only': { scope: 'variant', fn: advCompositorOnly },

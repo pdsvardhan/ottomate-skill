@@ -370,8 +370,9 @@
         "min_px": 24
       },
       "remedy": "regenerate_variant",
-      "status": "pending",
-      "method": "computed"
+      "status": "enforced",
+      "method": "computed",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules.test.mjs — must-fail AND must-pass, runnable in plain Node without a browser"
     },
     {
       "id": "floor-not-colour-alone",
@@ -576,8 +577,9 @@
           30
         ]
       },
-      "status": "pending",
-      "method": "computed"
+      "status": "enforced",
+      "method": "computed",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules.test.mjs — must-fail AND must-pass, runnable in plain Node without a browser"
     },
     {
       "id": "adv-neutral-tint",
@@ -590,8 +592,9 @@
         "max_chroma": 0.02,
         "hard_max_chroma": 0.03
       },
-      "status": "pending",
-      "method": "computed"
+      "status": "enforced",
+      "method": "computed",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules.test.mjs — must-fail AND must-pass, runnable in plain Node without a browser"
     },
     {
       "id": "adv-state-delta-relative",
@@ -635,8 +638,9 @@
         "hard_max": 80,
         "cjk_max": 40
       },
-      "status": "pending",
-      "method": "computed"
+      "status": "enforced",
+      "method": "computed",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules.test.mjs — must-fail AND must-pass, runnable in plain Node without a browser"
     },
     {
       "id": "adv-large-display-structure",
@@ -739,7 +743,8 @@
         "geometry_tolerance_px_strict": 0.5
       },
       "params_note": "C2 §3.10 supplies the tolerance the G2 statement lacked: a computed value is 'on-ramp' if it is within ±0.5-1px of a ramp entry. Sub-pixel drift from percentage/flex layout is expected and must not be reported as scale debt.",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules.test.mjs — must-fail AND must-pass, runnable in plain Node without a browser"
     },
     {
       "id": "adv-type-scale",
@@ -752,7 +757,8 @@
         "max_distinct": 7,
         "geometry_tolerance_px": 0.5
       },
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules.test.mjs — must-fail AND must-pass, runnable in plain Node without a browser"
     },
     {
       "id": "adv-token-adherence",
@@ -983,7 +989,8 @@
       },
       "params_note": "E2 §3.3: for COLOUR VALUES the cascade is itself the fallback (`color:#a33; color:oklch(...)`) so no @supports is required — hence cascade_fallback_exempt. The gate applies to PROPERTIES that change layout or need a companion rule. Content must remain complete and usable when a gated feature no-ops.",
       "remedy": "regenerate_variant",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "checks.mjs feasBaselineGate/feasDegradationBottomRung with a hand-written @supports reader; checks-c6.test.mjs"
     },
     {
       "id": "feas-degradation-bottom-rung",
@@ -991,10 +998,11 @@
       "source": "H2 §3.7",
       "statement": "Every degradation ladder has a true bottom rung: zero JS, zero gated CSS feature, always renders correctly. That rung is what ships under prefers-reduced-motion, to any engine failing a feature check, and to anything that throws.",
       "check": "bottom_rung_present",
-      "method": "computed",
+      "method": "source",
       "params_note": "HARDEST RULE IN THE SET TO AUTOMATE and honestly flagged as such. A credible approximation: render the variant twice with JS disabled and with prefers-reduced-motion:reduce forced, and assert the accessible text content and the primary layout box are unchanged. Do NOT claim this is enforced until that harness exists.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "checks.mjs feasBaselineGate/feasDegradationBottomRung with a hand-written @supports reader; checks-c6.test.mjs"
     },
     {
       "id": "feas-canvas-a11y-mirror",
@@ -1129,7 +1137,8 @@
       },
       "params_note": "Also flag a radius >= ~40% of the element's smaller dimension on elements under 16px (A4 §3.3: a 12px radius on a 16px chip eats the chip), and any non-zero radius on a full-bleed edge-touching element (leaves a sliver).",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules.test.mjs — must-fail AND must-pass, runnable in plain Node without a browser"
     },
     {
       "id": "adv-radius-nesting",
@@ -1143,7 +1152,8 @@
       },
       "params_note": "Measurable at runtime: for each nested rounded pair, compare the child's computed border-radius against max(0, parentRadius - parentPadding). Off by more than 1px = corners run un-parallel and the gap visibly pinches.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules.test.mjs — must-fail AND must-pass, runnable in plain Node without a browser"
     },
     {
       "id": "adv-shadow-one-light-source",
@@ -1159,7 +1169,8 @@
       },
       "params_note": "Inset shadows are exempt (they are edge highlights, rule 127, not elevation). As elevation rises, offset and blur must increase together while per-layer opacity falls.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules.test.mjs — must-fail AND must-pass, runnable in plain Node without a browser"
     },
     {
       "id": "adv-shadow-tinted-layered",
@@ -1178,7 +1189,8 @@
       },
       "params_note": "Pure black (hue-less, chroma 0) reads muddy and dead. In DARK MODE this rule mostly should not fire at all: shadows barely read on a near-black surface, so the correct answer is surface-tint + hairline + optional glow (doctrine 121, corroborating A1 rule 65). If a dark variant leans on cast shadows for elevation, that is the finding.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules.test.mjs — must-fail AND must-pass, runnable in plain Node without a browser"
     },
     {
       "id": "adv-glass-legibility",
@@ -1263,7 +1275,8 @@
       },
       "params_note": "The missing half of adv-line-length, which specified the measure but not the leading. Leading rises with measure and falls with size, so a single global line-height across a 12->48px range is the defect this catches.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules.test.mjs — must-fail AND must-pass, runnable in plain Node without a browser"
     },
     {
       "id": "adv-type-family-count",
@@ -1278,7 +1291,8 @@
       },
       "params_note": "A2 §3.3: 'subtle differences look like accidents, clear differences look like design.' Two near-identical neutral sans read as a mistake. Detecting 'same class' from a family name alone is unreliable — flag for human judgement rather than asserting it.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules.test.mjs — must-fail AND must-pass, runnable in plain Node without a browser"
     },
     {
       "id": "adv-tabular-numerals",
@@ -1299,7 +1313,8 @@
       },
       "params_note": "The proportional-lining default makes a live timer or a stat tile JITTER as digits change width — a defect the owner would feel without being able to name it. Detect: numeric text inside a table column, or any element whose textContent changes and matches /^[\\d.,:%$-]+$/.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules.test.mjs — must-fail AND must-pass, runnable in plain Node without a browser"
     },
     {
       "id": "adv-dark-mode-type-optical",
@@ -1473,7 +1488,8 @@
       "check": "numeric_column_alignment",
       "method": "computed",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "enforced",
+      "enforced_by": "computed-rules.mjs (pure function over collected element records); computed-rules.test.mjs — must-fail AND must-pass, runnable in plain Node without a browser"
     },
     {
       "id": "adv-bar-zero-baseline",

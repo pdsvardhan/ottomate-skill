@@ -193,8 +193,8 @@ composite, which `getComputedStyle` cannot report — needs pixel sampling) and
 `adv-brand-mark-authentic` (a checker cannot tell an authentic mark from a good imitation — it is a
 prompt-time constraint plus a provenance annotation).
 
-### C6 progress — 2026-07-27
-**46 of 90 enforceable rules** (was 29). 44 pending, reported as *skipped*, never as passing.
+### C6 — 2026-07-27
+**62 of 90 enforceable rules** (was 29 at the start of the day). 28 pending, reported as *skipped*. 44 pending, reported as *skipped*, never as passing.
 **91st rule `adv-brand-mark-authentic` is `declared-unenforceable`** with its reason and is excluded
 from the denominator — no method can distinguish an authentic mark from a good imitation, so the real
 ceiling is 90.
@@ -211,9 +211,23 @@ ceiling is 90.
   realistic content · semantic-vs-brand separation · reduced-transparency · canvas a11y mirror.
 - **They fire on real markup, not just fixtures:** `floor-reduced-motion` flagged **our own published
   Screenroom round panels** — they declare transitions with no `prefers-reduced-motion` block.
-- **Dependency decision:** the plugin stays **zero-dependency**. postcss/culori were proposed but the
-  plugin has no `package.json`, and its portability across Windows and VAULT7A is worth more than a
-  parser we can hand-write. `feas-baseline-gate` will get a purpose-built `@supports` parser.
+- **Batch 3 — 14 computed rules as PURE FUNCTIONS** (`computed-rules.mjs`, 14/14). Written over
+  collected *element records* rather than a live DOM, so each has a must-fail and a must-pass case
+  runnable **in plain Node without a browser** — the previous computed rules could only be exercised on
+  the server, so their edge cases got argued about instead of tested. The browser pass now only
+  *collects*; it makes no judgements. Target size · type-family count · leading-by-role · line length ·
+  tabular numerals · radius nesting · shadow light-source · shadow layering · dark-surface floor ·
+  neutral tint · type/radius/spacing scale adherence · numeric alignment.
+- **Batch 4 — the feasibility tail.** `feas-baseline-gate` and `feas-degradation-bottom-rung`, with a
+  **hand-written `@supports` reader** (9 risky features, nested conditions handled).
+- **Dependency decision, honoured:** the plugin is still **zero-dependency**. postcss and culori were
+  in the OSS plan; the `@supports` reader is ~40 lines and the colour maths already existed, so
+  portability across Windows and VAULT7A was kept.
+- **Two rules stay honestly out of reach:** `adv-glass-legibility` needs pixel sampling of a
+  composited backdrop (server-only, waits on the pixel-diff work) and `adv-brand-mark-authentic` is
+  `declared-unenforceable`.
+- **A real find, twice over:** the numeric-cell matcher missed every real cell (`"12.4 GB"` has a unit
+  suffix) — caught by its own must-fail test on the first run.
 
 ### Prose only (nothing checks them)
 Context gate · anti-slop tells · core-mechanic-before-page · colour-budget stated up front ·

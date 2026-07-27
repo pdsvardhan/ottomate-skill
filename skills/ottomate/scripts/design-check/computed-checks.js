@@ -210,6 +210,42 @@
         colours: distinct.slice(0, 8),
       });
     }
+    // 5. ELEMENT RECORDS (C6 batch 3) — collect, do not judge. The rules themselves are pure
+    // functions in computed-rules.mjs so they can be unit-tested in plain Node; this pass only has to
+    // gather what they read. Emitted per panel and evaluated by the host runner.
+    findings.records = [];
+    for (const { label, sr } of scopes) {
+      const rows = [];
+      for (const node of sr.querySelectorAll('*')) {
+        const cs = getComputedStyle(node);
+        const rect = node.getBoundingClientRect();
+        const parent = node.parentElement;
+        const pr = parent ? parseFloat(getComputedStyle(parent).borderTopLeftRadius) : null;
+        const own = [...node.childNodes].filter((n) => n.nodeType === 3).map((n) => n.nodeValue).join('').trim();
+        rows.push({
+          tag: node.tagName.toLowerCase(),
+          cls: (node.className && String(node.className).split(/\s+/)[0]) || '',
+          text: own.slice(0, 200),
+          w: rect.width, h: rect.height,
+          parentRadius: Number.isFinite(pr) ? pr : null,
+          styles: {
+            fontSize: parseFloat(cs.fontSize) || 0,
+            lineHeight: parseFloat(cs.lineHeight) || 0,
+            fontFamily: cs.fontFamily,
+            fontWeight: cs.fontWeight,
+            fontVariantNumeric: cs.fontVariantNumeric,
+            color: cs.color,
+            backgroundColor: cs.backgroundColor,
+            borderRadius: parseFloat(cs.borderTopLeftRadius) || 0,
+            boxShadow: cs.boxShadow,
+            textAlign: cs.textAlign,
+            paddingTop: parseFloat(cs.paddingTop) || 0,
+            paddingBottom: parseFloat(cs.paddingBottom) || 0,
+          },
+        });
+      }
+      findings.records.push({ label, rows });
+    }
     return findings;
   }
 

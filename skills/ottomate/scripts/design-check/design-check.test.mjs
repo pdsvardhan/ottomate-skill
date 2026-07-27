@@ -327,7 +327,7 @@ test('every enforced rule names a test AND either has a detector or is gate-enfo
     //     `lock-regression-gate` is the snapshot differ; `seq-parents-locked` is buildRoundInput
     //     excluding locked axes from the contested set. Both were built and left marked `pending`,
     //     which hides real coverage — the mirror image of overclaiming, and just as wrong.
-    const elsewhereEnforced = /isolation-gate\.test|harness-dsd\.test|computed-checks|ledger-context\.test|method-routing\.test/.test(rule.enforced_by);
+    const elsewhereEnforced = /isolation-gate\.test|harness-dsd\.test|computed-checks|computed-rules[.]test|ledger-context\.test|method-routing\.test/.test(rule.enforced_by);
     assert.ok(DETECTOR_IDS.has(rule.id) || elsewhereEnforced, `rule "${rule.id}" claims enforced but has no detector and is not gate/computed-enforced`);
   }
 });

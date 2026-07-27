@@ -96,3 +96,24 @@ test('every C6 detector is registered against a real rule id', async () => {
   const ids = new Set(JSON.parse(RULES).rules.map((r) => r.id));
   for (const id of Object.keys(DETECTORS)) assert.ok(ids.has(id), `detector "${id}" has no rule`);
 });
+
+// ── batch 4: the feasibility tail ───────────────────────────────────────────────────────────────
+test('feas-baseline-gate — a non-baseline feature with no @supports guard is caught', () => {
+  fails('feas-baseline-gate', '.glass{backdrop-filter:blur(12px)}');
+  fails('feas-baseline-gate', '.c:has(> img){outline:1px solid red}');
+  passes('feas-baseline-gate', '@supports (backdrop-filter: blur(1px)){.glass{backdrop-filter:blur(12px)}}');
+  passes('feas-baseline-gate', '.c{color:#fff}');
+});
+
+test('feas-degradation-bottom-rung — an advanced technique with nothing beneath it is caught', () => {
+  fails('feas-degradation-bottom-rung', '.g{backdrop-filter:blur(12px)}');
+  passes('feas-degradation-bottom-rung', '.g{background:#161a22;backdrop-filter:blur(12px)}',
+    'a solid background IS the bottom rung when the blur is unavailable');
+  passes('feas-degradation-bottom-rung', '@supports (color-mix(in srgb, red, blue)){.c{color:color-mix(in srgb, red, blue)}}');
+});
+
+test('supportsGuarded reads a nested condition, not just a flat one', async () => {
+  const { supportsGuarded } = await import('./checks.mjs');
+  const g = supportsGuarded('@supports ((backdrop-filter: blur(1px)) and (display: grid)) { .a{} }');
+  assert.ok(g.has('backdrop-filter'));
+});
