@@ -1,7 +1,9 @@
 # Skill register — what exists, what governs it, what is actually enforced
 
-> **Resuming work?** Read this file, then **`docs/plans/2026-07-23-SESSION-HANDOFF.md`** — together
-> they are the complete entry point. Do not bulk-read `docs/research/`.
+> **Resuming work?** Read **`docs/plans/2026-07-27-SESSION-HANDOFF.md`** first, then this file —
+> together they are the complete entry point. The work queue is
+> `docs/plans/2026-07-27-PRE-STAGE4-PLANS.md`. Do not bulk-read `docs/research/`.
+> *(The 2026-07-23 handoff is superseded and kept only for history.)*
 
 **The single index of the Ottomate skill.** Structure · systems · rules · intelligence · improvements.
 Created 2026-07-23 because knowledge had scattered across ~40 files with no index — which is how an
@@ -193,8 +195,15 @@ composite, which `getComputedStyle` cannot report — needs pixel sampling) and
 `adv-brand-mark-authentic` (a checker cannot tell an authentic mark from a good imitation — it is a
 prompt-time constraint plus a provenance annotation).
 
-### C6 — 2026-07-27
-**62 of 90 enforceable rules** (was 29 at the start of the day). 28 pending, reported as *skipped*. 44 pending, reported as *skipped*, never as passing.
+### C6 — 2026-07-27 · COMPLETE for the round checker
+**62 of 79 round-scope rules enforced** (29 at the start of the day). **17 pending**, reported as
+*skipped*, never as passing — 14 panel-checkable, 3 needing pixel comparison.
+
+**The denominator changed honestly, not conveniently.** 11 rules were excluded because a design round
+shows ONE component in isolation and a panel checker structurally cannot see them: **7 `scope:'app'`**
+(nav counts, URL state, empty states, disclosure depth) await a separate whole-app audit, and
+**4 `scope:'catalog'`** (provenance, licence, font strategy) are ingest rules that move to Stage 4.
+Each carries a `scope_note` saying why. Plus 1 `declared-unenforceable`. Owner decision 2026-07-27. 44 pending, reported as *skipped*, never as passing.
 **91st rule `adv-brand-mark-authentic` is `declared-unenforceable`** with its reason and is excluded
 from the denominator — no method can distinguish an authentic mark from a good imitation, so the real
 ceiling is 90.
@@ -459,7 +468,7 @@ backstop, verified in real Chromium (the check that would NOT have false-rejecte
 | **`inheritedControls` is computed and then dropped** | Medium | `buildRoundInput` returns inherited axes, but `build-variant-set.mjs` never reads them — the harness `control` block is still hand-written. So an inherited value is not mechanically frozen in the artifact; it is a note |
 | **The catalog is bypassed** | Medium | `must_use` was empty on the real round and `source_policy` is `pending`, so "library-first" is enforced by nothing. 179 catalog components exist and the design method never consults them |
 | ~~**No prior-art / reuse pass** (G-B)~~ → **ledger half CLOSED 2026-07-27** | Medium *(was High)* | `prior-art.mjs` now answers it from the ledger, across targets, before a round opens. **Still open: the project's built code is never read** — "already decided" is answered, "already built" is not (D2) |
-| **Screenroom has zero `data-oid` stamping** | Medium | `grep -rc data-oid` over its `app/` + `components/` returns **0**. So the register's "one instrument, three consumers" (Task-1 comment→component, Task-3 selector, Task-2 design target) is **not wired for this project** — round 1's `target_id` (`screenroom.poster-card`) is a chosen identifier, not a live oid. Found while running the first real round |
+| ⛔ ~~"`data-oid` — one instrument, three consumers"~~ → **CLAIM WITHDRAWN 2026-07-27 (owner decision)** | — | `grep -rc data-oid` over Screenroom's `app/` + `components/` returns **0**, and the owner has chosen **not** to stamp it. So the three-consumer wiring (Task-1 comment→component · Task-3 test selector · Task-2 design target) **is not real on any live project**, and the register no longer claims it. **`target_id` is a chosen identifier — a label, not a wire.** That is a supported way to work: the ledger, the picker and the emitter all key on the label consistently, and nothing in the design method requires the attribute. What it costs: a rename of a component does not invalidate its design decisions, because nothing connects them. Stamping remains available later; it is not a prerequisite for anything |
 | ~~The harness cannot inject real content into a markup panel~~ → **FIXED 2026-07-27 (U6a)** | — | Found while planning Stage 1: the harness had six TEMPLATE-level placeholders and **none per-card**, so a markup panel received no shared content at all — theme-from-content and markup mode were **incompatible**. That, not only a bad poster search, is why round 1 used CSS gradients. `fillCardSlots` (9/9) substitutes `{{IMG_n}}`/`{{TITLE_n}}`/`{{META_n}}`/`{{ACCENT_n}}` before the gate, so every check reads the artifact that will render |
 | ~~The round's poster art is the initials-fallback because no posters exist locally~~ → **THE CLAIM WAS WRONG** | Low | **Correction 2026-07-27: 348 real posters ARE on the box**, at `/opt/homeserver/appdata/radarr/MediaCover/<id>/poster-500.jpg`. The original search only covered `/mnt/storage/media`. `theme-extract.mjs` runs on them and returns genuinely varied accents (`#3395A9` teal · `#DDA257` gold · `#BF3F2C` red · `#266E8C` deep blue · `#A44621` burnt orange). So theme-from-content was **not blocked — it was skipped by a bad search.** Round 1 still uses the fallback treatment; rebuilding it with real posters is available whenever the owner wants |
 

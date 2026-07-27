@@ -661,7 +661,9 @@
       },
       "corrects": "The method's 'primary-screen-tuned, 4K-first' instruction assumed the marketing resolution.",
       "status": "pending",
-      "method": "computed"
+      "method": "computed",
+      "scope": "app",
+      "scope_note": "A design round shows ONE component in isolation; this rule is about the whole application, so a panel checker structurally cannot see it. Owned by the future whole-app audit, NOT by the round checker. Owner decision 2026-07-27."
     },
     {
       "id": "adv-density-scale",
@@ -1345,7 +1347,9 @@
       "check": "font_fallback_metrics",
       "method": "source",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "pending",
+      "scope": "catalog",
+      "scope_note": "This is a catalog-INGEST rule (provenance, licence, font strategy), not a design-round rule. Moves to Stage 4 graduation, which owns the ingest contract. Owner decision 2026-07-27."
     },
     {
       "id": "adv-not-default-inter",
@@ -1575,7 +1579,9 @@
       },
       "params_note": "Extends adv-nonhappy-states, which only asked that empty/loading/error EXIST. C3 §3.15 adds that they must be mutually distinguishable — a table that just goes blank reads as broken. D1 §3.7 adds that reusing one generic empty string for create-vs-restore-vs-adjust-filters is a common avoidable failure. One primary CTA only.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "pending",
+      "scope": "app",
+      "scope_note": "A design round shows ONE component in isolation; this rule is about the whole application, so a panel checker structurally cannot see it. Owned by the future whole-app audit, NOT by the round checker. Owner decision 2026-07-27."
     },
     {
       "id": "adv-nav-item-count",
@@ -1595,7 +1601,9 @@
       },
       "params_note": "HONESTY FLAG: '7+-2' is FOLKLORE for menus — NN/g is explicit that menu size is 'not 7, despite a common myth'. These bands come from observed convention (mobile bottom nav, iOS tab bars, desktop global nav), not from a memory limit, and are soft. What IS measured is the cost of HIDING nav: hamburger-only was used in 27% of desktop sessions vs 48-50% visible, discoverability fell >20%, task difficulty rose 21%, completion was >=39% slower on desktop. Fire hard on a hidden desktop sidebar; fire softly on counts.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "pending",
+      "scope": "app",
+      "scope_note": "A design round shows ONE component in isolation; this rule is about the whole application, so a panel checker structurally cannot see it. Owned by the future whole-app audit, NOT by the round checker. Owner decision 2026-07-27."
     },
     {
       "id": "adv-you-are-here",
@@ -1616,7 +1624,9 @@
       },
       "params_note": "A conformance floor, not polish: WCAG 2.4.5 Multiple Ways (AA). Process-step pages are exempt.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "pending",
+      "scope": "app",
+      "scope_note": "A design round shows ONE component in isolation; this rule is about the whole application, so a panel checker structurally cannot see it. Owned by the future whole-app audit, NOT by the round checker. Owner decision 2026-07-27."
     },
     {
       "id": "adv-url-carries-state",
@@ -1635,7 +1645,9 @@
       },
       "params_note": "The pushState/replaceState split is the part that gets missed: using pushState for every filter tweak means Back needs thirty presses to escape a filter session.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "pending",
+      "scope": "app",
+      "scope_note": "A design round shows ONE component in isolation; this rule is about the whole application, so a panel checker structurally cannot see it. Owned by the future whole-app audit, NOT by the round checker. Owner decision 2026-07-27."
     },
     {
       "id": "adv-progressive-disclosure-depth",
@@ -1649,7 +1661,9 @@
       },
       "params_note": "A third disclosure level is a documented usability failure pattern, not a judgement call.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "pending",
+      "scope": "app",
+      "scope_note": "A design round shows ONE component in isolation; this rule is about the whole application, so a panel checker structurally cannot see it. Owned by the future whole-app audit, NOT by the round checker. Owner decision 2026-07-27."
     },
     {
       "id": "adv-action-label-specific",
@@ -1827,7 +1841,9 @@
       },
       "params_note": "CORRECTS a naive application of doctrine rule 141: unicode-range and font-display exist to manage per-range lazy download and FOIT/FOUT, and OFFLINE THERE IS NEITHER — splitting a face into many subsets saves nothing and adds parse blocks. Subset once, embed once. The >=3 weight break-even independently confirms A2 §3.6 from a byte-measurement direction (Inter: 12 statics ~321KB vs 1 variable ~95KB, but Regular+Bold alone ~53KB static).",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "pending",
+      "scope": "catalog",
+      "scope_note": "This is a catalog-INGEST rule (provenance, licence, font strategy), not a design-round rule. Moves to Stage 4 graduation, which owns the ingest contract. Owner decision 2026-07-27."
     },
     {
       "id": "adv-asset-provenance",
@@ -1876,7 +1892,9 @@
       },
       "params_note": "No provenance => QUARANTINE, do not ship. Re-deriving a licence weeks later from a stripped SVG is impossible, which is why this is an ingest-time rule rather than an audit-time one. Brand marks need an extra 'trademark, not licensed' flag: CC0 on the path data waives COPYRIGHT, not TRADEMARK (H1 §3.5 independently confirming D2 §3.7).",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "pending",
+      "scope": "catalog",
+      "scope_note": "This is a catalog-INGEST rule (provenance, licence, font strategy), not a design-round rule. Moves to Stage 4 graduation, which owns the ingest contract. Owner decision 2026-07-27."
     },
     {
       "id": "adv-ingest-tokenised",
@@ -1906,7 +1924,9 @@
       },
       "params_note": "H1 §3.12 is blunt and worth quoting: a snippet with baked-in #fff backgrounds is a DOWNGRADE, not a finished entry. This is the ingestion-time instance of doctrine rule 92. Dedupe must be BOTH structural and visual — a normalised DOM hash alone misses two entries that render identically from different markup.",
       "remedy": "annotate",
-      "status": "pending"
+      "status": "pending",
+      "scope": "catalog",
+      "scope_note": "This is a catalog-INGEST rule (provenance, licence, font strategy), not a design-round rule. Moves to Stage 4 graduation, which owns the ingest contract. Owner decision 2026-07-27."
     },
     {
       "id": "adv-realistic-content",
@@ -1925,7 +1945,9 @@
       "statement": "Empty, loading and error states exist and are styled to the primary state's standard.",
       "check": "nonhappy_states_present",
       "status": "pending",
-      "method": "source"
+      "method": "source",
+      "scope": "app",
+      "scope_note": "A design round shows ONE component in isolation; this rule is about the whole application, so a panel checker structurally cannot see it. Owned by the future whole-app audit, NOT by the round checker. Owner decision 2026-07-27."
     },
     {
       "id": "adv-no-slop-tells",
