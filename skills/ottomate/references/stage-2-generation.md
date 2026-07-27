@@ -133,6 +133,11 @@ checker before emitting. On a BLOCK (exit 2, nothing written): a feasibility/own
 set → **fix and regenerate**, never present. Advisories annotate the panels; a *Rebuild* band triggers
 one auto-regeneration.
 
+**Pressure-test before presenting (C6, AC7).** Before a set is shown to the owner, call
+`pressureTest({ checks })` from `pre-round-gates.mjs` over the contrast / reduced-motion / colour-budget
+results. It refuses to present unless every check **ran** — an `unavailable` check (e.g. no Chromium)
+is reported as unavailable, **never rounded up to a pass**. You cannot present what you did not check.
+
 ### 6. Publish INTO THE APP + record per-item picks
 ⛔ *Was: publish a Claude Artifact.* **Retired 2026-07-27** (owner decision) — the design surface is
 `/projects/<slug>/design/<target>`.
@@ -177,6 +182,12 @@ server has `@playwright` + chromium; run `scripts/design-check/run-computed.mjs 
 - **`computed-axis-divergence`** — the stylistic-bundle backstop: the panels' resolved-style signatures
   must actually differ. This is what the source structural check cannot see (it's blind to CSS values),
   so declare a stylistic bundle `kind:"stylistic"` at the gate and let THIS confirm real divergence.
+
+**Ask on primary (C6, AC7).** Before recording a **foundational** sub-decision — or one
+`round-composition.mjs` flagged for **promotion** — call `primaryDecisionGate({ decision, ownerChoice,
+promoted })`. A primary axis may not be recorded without an explicit owner choice: it is lock-earned one
+rung earlier, because a foundational default silently becomes a frozen control everything inherits. A
+non-primary axis is unaffected — a round must not become a dialog.
 
 ### 7. Lock + guard against regression (Phase 2)
 When the owner confirms a pick, **lock** it: `ledger-context.lockDecision(...)` PATCHes

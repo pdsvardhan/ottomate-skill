@@ -95,6 +95,64 @@ export function preRoundGates({ ledger, entry, profile, scope, decisions } = {})
   return { context, mechanic, pass: blocked.length === 0, blocked };
 }
 
+/**
+ * C6 — ASK ON PRIMARY (closes AC7's second half). A *primary* decision — a foundational axis, or one
+ * flagged for promotion by `round-composition.mjs` — may not be RECORDED without an explicit owner
+ * choice. This is the lock-earned rule applied one rung earlier: a default is not a decision, and a
+ * foundational default silently becomes a frozen control everything inherits.
+ * @param {object} o
+ * @param {{axis?:string, scope_hint?:string, primary?:boolean}} o.decision
+ * @param {*} [o.ownerChoice]  the value the owner explicitly chose (null/blank = no choice)
+ * @param {boolean} [o.promoted]  round-composition flagged this axis for promotion to cluster scope
+ */
+export function primaryDecisionGate({ decision = {}, ownerChoice = null, promoted = false } = {}) {
+  const isPrimary = decision.scope_hint === 'foundational' || decision.primary === true || promoted === true;
+  const axis = decision.axis ?? 'axis';
+  if (!isPrimary) {
+    return { verdict: 'pass', primary: false, why: `${axis} is not a primary decision — recorded without an extra confirmation (a round must not become a dialog)` };
+  }
+  const chosen = ownerChoice != null && String(ownerChoice).trim() !== '';
+  if (chosen) {
+    return { verdict: 'pass', primary: true, why: `primary decision ${axis} carries an explicit owner choice (${ownerChoice})` };
+  }
+  return {
+    verdict: 'block', primary: true,
+    why: `${axis} is foundational/promoted and has no explicit owner choice — it may not be recorded. `
+      + 'This is lock-earned one rung earlier: a default is not a decision, and a foundational default becomes a frozen control everything downstream inherits.',
+  };
+}
+
+// The checks that must have RUN before a set is shown. Named so callers cannot quietly shrink the set.
+export const PRESSURE_CHECKS = ['contrast', 'reduced-motion', 'colour-budget'];
+
+/**
+ * C6 — PRESSURE-TEST BEFORE PRESENTING (closes AC7's first half). Refuse to present a set until the
+ * checks that already exist have RUN. Three states, never blurred (the computed pass's own vocabulary):
+ *   `ran`         it executed and found no blocker
+ *   `failed`      it executed and found a blocker
+ *   `unavailable` it could not execute (no Chromium, no result supplied) — NEVER rounded up to a pass
+ * A missing result is `unavailable`, not a pass: you cannot present what you did not check.
+ * @param {object} o
+ * @param {Object<string,{state:'ran'|'failed'|'unavailable', detail?:string}>} o.checks
+ * @param {string[]} [o.required]
+ */
+export function pressureTest({ checks = {}, required = PRESSURE_CHECKS } = {}) {
+  const rows = required.map((name) => {
+    const r = checks[name];
+    const state = r?.state ?? 'unavailable';
+    return { name, state, detail: r?.detail ?? (r ? '' : 'no result supplied — treated as unavailable, never a pass') };
+  });
+  const failed = rows.filter((r) => r.state === 'failed').map((r) => r.name);
+  const unavailable = rows.filter((r) => r.state === 'unavailable').map((r) => r.name);
+  const ok = failed.length === 0 && unavailable.length === 0;
+  return {
+    verdict: ok ? 'pass' : 'block', rows, failed, unavailable,
+    why: ok
+      ? 'every pressure-test check ran and passed before presenting'
+      : `not safe to present — ${failed.length ? `FAILED [${failed.join(', ')}] ` : ''}${unavailable.length ? `UNAVAILABLE [${unavailable.join(', ')}] (an unavailable check is not a pass)` : ''}`.trim(),
+  };
+}
+
 export function formatGates(g) {
   const l = [];
   const mark = (v) => ({ pass: 'PASS', advise: 'ADVISE', block: 'BLOCK', skip: 'SKIP' }[v] ?? v);

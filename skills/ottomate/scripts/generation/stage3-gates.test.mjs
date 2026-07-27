@@ -3,7 +3,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { contextGate, coreMechanicGate, preRoundGates, formatGates, CONTEXT_KEYS } from './pre-round-gates.mjs';
+import { contextGate, coreMechanicGate, preRoundGates, formatGates, CONTEXT_KEYS, primaryDecisionGate, pressureTest } from './pre-round-gates.mjs';
 import { catalogCandidates, checkSourcePolicy, formatSource } from './catalog-source.mjs';
 
 const FULL = { context: { audience: 'solo owner', use_cases: ['browse', 'request'], brand_tone: 'calm, dense', primary_screen: '/find' } };
@@ -149,4 +149,46 @@ test('an all-bespoke set with candidates available PASSES but is called out', ()
 
 test('with no candidates at all, the output says bespoke was the only option', () => {
   assert.match(formatSource(checkSourcePolicy([], {}), []), /none for this archetype\/tier/);
+});
+
+// ── C6 — ask-on-primary + pressure-test-before-presenting (AC7), 2026-07-28 ───────────────────────
+
+test('MUST FAIL — a primary (foundational) axis recorded with no owner choice is refused', () => {
+  const g = primaryDecisionGate({ decision: { axis: 'corner-radius', scope_hint: 'foundational' }, ownerChoice: null });
+  assert.equal(g.verdict, 'block');
+  assert.match(g.why, /foundational|primary/);
+});
+
+test('MUST FAIL — an axis flagged for promotion is treated as primary too', () => {
+  assert.equal(primaryDecisionGate({ decision: { axis: 'accent-usage', scope_hint: 'local' }, promoted: true }).verdict, 'block');
+});
+
+test('MUST PASS — a primary axis WITH an explicit owner choice is allowed', () => {
+  const g = primaryDecisionGate({ decision: { axis: 'corner-radius', scope_hint: 'foundational' }, ownerChoice: '4px' });
+  assert.equal(g.verdict, 'pass');
+});
+
+test('MUST PASS — a non-primary axis is unaffected (a round must not become a dialog)', () => {
+  const g = primaryDecisionGate({ decision: { axis: 'meta-density', scope_hint: 'local' }, ownerChoice: null });
+  assert.equal(g.verdict, 'pass');
+  assert.equal(g.primary, false);
+});
+
+test('MUST PASS — pressure-test passes only when every check RAN and passed', () => {
+  const p = pressureTest({ checks: { contrast: { state: 'ran' }, 'reduced-motion': { state: 'ran' }, 'colour-budget': { state: 'ran' } } });
+  assert.equal(p.verdict, 'pass');
+});
+
+test('MUST FAIL — presenting before the pressure-test has run is refused; unavailable is NOT a pass', () => {
+  const p = pressureTest({ checks: {} }); // nothing has run
+  assert.equal(p.verdict, 'block');
+  assert.deepEqual(p.unavailable.sort(), ['colour-budget', 'contrast', 'reduced-motion']);
+  assert.match(p.why, /UNAVAILABLE/);
+  assert.match(p.why, /not a pass/);
+});
+
+test('MUST FAIL — a check that RAN and failed blocks presentation, naming it', () => {
+  const p = pressureTest({ checks: { contrast: { state: 'failed', detail: '3.2:1' }, 'reduced-motion': { state: 'ran' }, 'colour-budget': { state: 'ran' } } });
+  assert.equal(p.verdict, 'block');
+  assert.deepEqual(p.failed, ['contrast']);
 });
