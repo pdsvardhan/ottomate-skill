@@ -1,6 +1,6 @@
 # Skill register — what exists, what governs it, what is actually enforced
 
-> **Resuming work?** Read **`docs/plans/2026-07-27-SESSION-HANDOFF.md`** first, then this file —
+> **Resuming work?** Read **`docs/plans/2026-07-28-SESSION-HANDOFF.md`** first, then this file —
 > together they are the complete entry point. The work queue is
 > `docs/plans/2026-07-27-PRE-STAGE4-PLANS.md`. Do not bulk-read `docs/research/`.
 >
