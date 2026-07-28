@@ -231,6 +231,19 @@ pass at T3 — `judgeGate(tier)`), and **structurally incapable of a gating pass
   **NOT yet wired into the live runner's afterAll** (the dispatch is skill-driven; wiring the automatic
   in-run judge pass is the remaining tail).
 
+**Trajectory monitor (P3-D, built 2026-07-29).** `harness/trajectory-monitor.mjs` — a cheap
+`scanTrajectory()` over the **coder's** build-session log for self-narrated reward-hacking ("let me just
+skip these tests", "hardcode the expected value", "make it pass", `@pytest.mark.skip`, "bypass the
+verifier", conftest/report-patching) → `risk: none|medium|high`, specificity-guarded so legitimate talk
+("this test skips the network") doesn't false-alarm. **Two hard invariants:** (1) **detection/gating
+only, NEVER a training/optimisation signal** — optimising a coder against the monitor teaches it to
+obfuscate its narration (T3); the flag is read by a human, never fed back. (2) A heuristic tripwire, not
+proof — the deterministic gate (L1–L6 + reproduce-symptom + trust record) is what actually catches a
+faked-green. `trajectoryReport()` carries that framing into `full_report`. **Precondition/tail:** the
+coder's session trajectory must be handed to the verifier — the wiring point (where the build-session log
+lives) is confirmed when the monitor is plugged into the build flow. 5/5 unit tests (clean → not flagged;
+hack-narration → high-risk).
+
 ### 6. Reporting + the sink
 
 Per-step (timestamp, action, screenshot, network, console) → per-case (inputs, action log,
