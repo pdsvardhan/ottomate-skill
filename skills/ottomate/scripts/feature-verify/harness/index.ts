@@ -5,3 +5,6 @@ export * from './system-state';
 export * from './unicode';
 export * from './evidence';
 export * from './report';
+export * from './implicit-oracle';   // L1 (P1-C)
+export * from './metamorphic';       // L3 (P1-D)
+export * from './visual-robustness'; // L4 (P1-E)
