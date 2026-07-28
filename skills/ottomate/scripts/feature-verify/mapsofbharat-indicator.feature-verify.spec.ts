@@ -125,3 +125,28 @@ test('drives the real indicator switch and asserts the data via a 2nd channel', 
   // The hard part the whole layer exists to prove: the switch really changed the data.
   expect(switched === false, `indicator switch did not change the histogram data (A sum ${sumA}, B sum ${sumB})`).toBeFalsy();
 });
+
+// ── P1-B: the DELIBERATE RED case — proves the gate actually BLOCKS (a gate that never blocked
+// isn't proven). Runs only under FV_DEMO_RED=1 so the normal suite stays green. It asserts the
+// live histogram equals a FABRICATED wrong count; MoB serves the real number, so the assertion
+// fails → the case records `fail` → Matrix.verdict() = BLOCK, with trace/screenshot as proof.
+// This is the shape a real "displayed data ≠ expected data" defect would take. ──
+test('RED (deliberate): a wrong data expectation BLOCKS the gate', async ({ page }) => {
+  test.skip(!process.env.FV_DEMO_RED, 'red-path demonstration only — set FV_DEMO_RED=1');
+  const dir = await caseEvidenceDir(cfg.evidenceRoot, 'deliberate-red');
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(`/?m=${B.id}&lvl=district`);
+  await page.addStyleTag({ content: '*,*::before,*::after{transition:none!important;animation:none!important}' });
+  await expect(page.getByText(B.name).first()).toBeVisible({ timeout: 20_000 });
+
+  const sum = await legendCountSum(page);
+  const FABRICATED = 999; // MoB actually serves 733; a correct verifier must NOT let this pass.
+  const matched = sum === FABRICATED;
+  matrix.record({
+    case: 'histogram matches a deliberately-wrong expected count (must fail)', variant: 'error', axis: 'gate-bites',
+    inputs: { fabricated_expected: FABRICATED }, system_state: { observed_legend_sum: sum, expected_fabricated: FABRICATED },
+    outcome: matched ? 'pass' : 'fail', evidence: { dir },
+  });
+  // Intentional: this SHOULD throw — the point is to see red + BLOCK + persisted evidence.
+  expect(matched, `deliberate red: observed ${sum} !== fabricated ${FABRICATED} → the gate must BLOCK, with this trace as proof`).toBeTruthy();
+});
