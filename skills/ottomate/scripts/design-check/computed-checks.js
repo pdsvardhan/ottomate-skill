@@ -55,7 +55,10 @@
   }
 
   // ── style vector + distance (for the appearance-divergence backstop) ────────────────────────────
-  const VECTOR_PROPS = ['borderRadius', 'boxShadow', 'backgroundColor', 'color', 'padding', 'borderWidth', 'borderStyle', 'fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform'];
+  // R3.2 (F-9): the vector was blind to ARRANGEMENT — a 3-col vs rail vs bento difference (exactly what
+  // a cluster round varies) registered as "too alike" because layout is not a paint property. Add the
+  // layout channels so a genuine structural difference counts as divergence.
+  const VECTOR_PROPS = ['borderRadius', 'boxShadow', 'backgroundColor', 'color', 'padding', 'borderWidth', 'borderStyle', 'fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform', 'display', 'gridTemplateColumns', 'gridTemplateRows', 'flexDirection', 'gap'];
   function styleVector(cs) {
     const v = {};
     for (const p of VECTOR_PROPS) v[p] = cs[p] || '';

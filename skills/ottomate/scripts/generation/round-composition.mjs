@@ -67,9 +67,14 @@ function isFoundational(sd) { return sd.scope_hint === 'foundational'; }
  * @param {string} [opts.scope]       'component' | 'cluster' | 'page' | 'site'
  * @returns {{rounds:Array, promote:Array, matrix:object, warnings:string[]}}
  */
-export function composeRounds(contested, { maxAxes = DEFAULT_MAX_AXES, scope = 'component' } = {}) {
+export function composeRounds(contested, { maxAxes = DEFAULT_MAX_AXES, scope = 'component', granularity = 'one-per-round' } = {}) {
   const axes = (contested ?? []).filter(Boolean);
   const warnings = [];
+  // R3.1 (F-5): the greedy packer merged up to 3 perceptual channels into one round — "one question per
+  // round" was aspirational. Default is now ONE CHANNEL PER ROUND (maximally legible); `packed` reproduces
+  // the old greedy behaviour and is an EXPLICIT owner choice (the WS1.2 banner enumerates a packed round's
+  // questions, so packing is informed, not silent). An unknown value falls back to one-per-round.
+  const packed = granularity === 'packed';
 
   // group by perceptual channel, in the structure-before-dress order
   const byChannel = new Map();
@@ -100,7 +105,7 @@ export function composeRounds(contested, { maxAxes = DEFAULT_MAX_AXES, scope = '
       cur = null;
       continue;
     }
-    if (cur && cur.axes.length + g.axes.length <= maxAxes) {
+    if (packed && cur && cur.axes.length + g.axes.length <= maxAxes) {
       cur.channels.push(g.channel);
       cur.axes.push(...g.axes);
     } else {
@@ -118,10 +123,20 @@ export function composeRounds(contested, { maxAxes = DEFAULT_MAX_AXES, scope = '
     axes: axes.length,
     rounds: rounds.length,
     maxAxes,
+    granularity: packed ? 'packed' : 'one-per-round',
+    widestChannels: rounds.reduce((m, r) => Math.max(m, r.channels.length), 0),
     widest: rounds.reduce((m, r) => Math.max(m, r.axes.length), 0),
     regime: rounds.some((r) => r.axes.length > maxAxes) ? 'expect-panel-level' : 'per-item-viable',
   };
   return { rounds, promote, matrix, warnings };
+}
+
+// R3.2 (F-9): map the WS1.3 scope granularity to the ROUND TYPE that selects the gate. A one-property
+// round is a controlled one-axis round (control-diff governs, divergence N/A); a whole/section round runs
+// as whole, dramatically-distinct directions (divergence governs). Pass the result as `roundType` to the
+// computed runner's allFindings/blockingFindings.
+export function roundTypeForScope(granularity) {
+  return granularity === 'property' ? 'one-axis' : 'whole-direction';
 }
 
 /** Human summary — printed before a round is generated, so the composition is a visible decision. */

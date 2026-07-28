@@ -78,7 +78,7 @@ function panelInputs(f) {
 }
 
 /** Everything the computed pass found, blocking and advisory alike. */
-export function allFindings(findings, { profile = 'P1' } = {}) {
+export function allFindings(findings, { profile = 'P1', roundType = 'whole-direction' } = {}) {
   const f = findings ?? {};
   const out = [];
   // Contrast: block at P2/P3, advise at P1 (the audience-profile ruling). Text over an image or a
@@ -88,11 +88,16 @@ export function allFindings(findings, { profile = 'P1' } = {}) {
       out.push({ rule: 'floor-contrast', detail: `${c.label}: "${c.text}" ${c.ratio}:1 < ${c.need}:1` });
     }
   }
-  // Divergence is the stylistic-bundle backstop — if the panels do not actually LOOK different, the
-  // set is not a set of options, whatever the declaration says.
-  for (const d of f.divergence ?? []) {
-    if (d.differ === false) {
-      out.push({ rule: 'computed-axis-divergence', detail: `${(d.pair ?? []).join(' / ')}: resolved-style distance ${d.distance} — these render nearly identically` });
+  // R3.2 (F-9): divergence is the WHOLE-DIRECTION backstop — variants must LOOK different, or the set is
+  // not a set of options. But a ONE-AXIS CONTROLLED round is SUPPOSED to look near-identical except the
+  // named axis; there the isolation gate's control-diff governs, and the divergence floor must NOT
+  // false-block it (the two gates were mutually opposed only because both ran on every round). So the
+  // divergence block applies to whole-direction rounds only.
+  if (roundType !== 'one-axis') {
+    for (const d of f.divergence ?? []) {
+      if (d.differ === false) {
+        out.push({ rule: 'computed-axis-divergence', detail: `${(d.pair ?? []).join(' / ')}: resolved-style distance ${d.distance} — these render nearly identically` });
+      }
     }
   }
   // colour budget: ADVISORY, not blocking (owner ruling 2026-07-29, WS1.0). The accent-count budget was
