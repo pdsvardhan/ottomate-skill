@@ -186,6 +186,12 @@ quietly undo a locked decision. *Source/value-level; a rendered-pixel diff is th
 
 ### 4.7 — Verifier (MANDATORY)
 
+> **Two verifiers run at this step** (consistent with `SKILL.md:86`). The **code verifier** (the 4-pass,
+> immediately below) on every item; the **feature verifier** — the *sibling gate* documented further down
+> this section — additionally on every **user-facing** item. "Done" = **both** green (block cv/public,
+> warn personal — adr-014). Read to the "Feature verifier — the sibling gate" paragraph; §4.7 is not
+> code-verifier-only.
+
 Run the full 4-pass verifier (see `references/stage-3-verifier.md`) PER ITEM, not per iteration. Each item gets independent verification.
 
 Output: per-item `verification_report` blocks merged into the iteration's report.
