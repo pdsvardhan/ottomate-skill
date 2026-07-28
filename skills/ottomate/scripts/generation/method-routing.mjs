@@ -35,7 +35,7 @@ export function routeRungs(scope) {
 
 const ENTRY = {
   'stage-2': { when: 'designing before build (rare)', contextGate: 'full', reInterview: true, foundationSetHere: true },
-  'stage-4-item': { when: 'a built component/page bugs you', contextGate: 'inherit', reInterview: false, note: 'inherit locked context + foundation from the ledger; do NOT re-interview' },
+  'stage-4-item': { when: 'a built component/page bugs you', contextGate: 'inherit', reInterview: false, note: 'inherit locked context + foundation from the ledger; do NOT re-interview. CAVEAT (F-1): "inherit" does not mean "skip" — contextGate STILL BLOCKS on an empty ledger at every profile (inheriting nothing is not inheriting), so a stage-4 entry on a project with no stored context re-asks the four questions.' },
   'deferred-overhaul': { when: 'built on placeholders, now doing UI', contextGate: 'run-now', reInterview: true, forceScope: ['page', 'site'], note: 'the context gate was skipped at build time — run it now' },
   'ui-mode:none': { when: 'defer UI — THE DEFAULT', contextGate: 'defer', reInterview: false, buildNeutral: true, recordDropWithReason: true, runsDesign: false, note: 'build neutral + data-oid, expect a later overhaul' },
 };
