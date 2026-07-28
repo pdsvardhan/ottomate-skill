@@ -48,12 +48,13 @@ on top of it.) If the screenshot shows the reported area unchanged → `flag`.
 ## Bands — NONE gate
 | Band | When | What it does |
 |---|---|---|
-| **clean** | no surviving findings | recorded; case outcome unchanged |
-| **warn** | minor findings survive the cross-check | recorded; a green case → `warn` (advisory), a red stays red |
-| **flag** | something looks wrong, OR the T3 samples disagreed (`no-confidence`) | recorded; **needs a human**; still never gates |
+| **clean** | no surviving findings | recorded in `judge_verdict`; case outcome unchanged |
+| **warn** | minor findings survive the cross-check | recorded in `judge_verdict` (visible); a **minor** advisory note **does not flip the gate** — the judge is advisory, and any *real* issue (contrast, clip, overflow) is already caught deterministically by L1–L4 |
+| **flag** | something looks wrong, OR the T3 samples disagreed (`no-confidence`) | recorded; **needs a human**; downgrades a green case to `warn` (→ ITERATE, a human reviews); a red stays red; still never gates |
 
 `applyJudgeToOutcome` enforces the direction: **downgrade-only** — `fail`→`fail`, `pass`→`warn` (on a
-flag), never `pass`→gating-pass, never `fail`→`pass`.
+**flag** — a plain warn leaves a pass a pass, the advisory note lives in `judge_verdict`), never
+`pass`→gating-pass, never `fail`→`pass`.
 
 ## T3 reliability guardrails
 - **Order-randomised** — judge the screenshots in a random order so position doesn't anchor the verdict.

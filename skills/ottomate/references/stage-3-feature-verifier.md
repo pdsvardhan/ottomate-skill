@@ -208,6 +208,29 @@ For cells that are genuinely a judgement ("does the recommended metadata look se
 captured artifact, recording `{verdict, score, rubric_ref, evidence_paths, rationale}`. Never
 gates. If a subjective cell is the *only* thing red, the case is `warn`, not `fail`.
 
+**The AI-visual-judge (P3-A, built + demonstrated 2026-07-29).** The judge is now a concrete,
+guardrailed unit — advisory, **tier-gated** (skipped below T2; a quick glance at T2, a full guardrailed
+pass at T3 — `judgeGate(tier)`), and **structurally incapable of a gating pass**:
+- **Rubric** `data/feature-verify-judge-rubric.md` — four advisory dims (*intentional/on-spec* ·
+  *empty-state works* · *nothing visibly broken* · *symptom-relevance* for fixes), each a
+  `clean|warn|flag` with a **cited region**. None gate.
+- **Prompt** `prompts/feature-verifier-judge-prompt.md` — a **fresh Claude sub-agent, blind to the diff**,
+  fed the requirement + screenshots + ARIA + the deterministic facts + the rubric; **forced grounding**
+  (a region per finding), structured-JSON only, no pass/approve verdict.
+- **Harness** `harness/ai-judge.mjs` — `crossCheckSpatialClaims` **discards any spatial claim the L2/L4
+  DOM/geometry layer contradicts** (neutralising VLM spatial-blindness; `measureRegionsOverlap` in
+  `visual-robustness.ts` re-measures the judge's own cited overlap selectors), `reconcileSamples`
+  (T3: 2–3 order-randomised passes → agreed vs `no-confidence`→human), `judgeVerdict` (`gating` always
+  false), `applyJudgeToOutcome` (**downgrade-only**: `fail`→`fail`, `pass`→`warn` on a *flag*, never the
+  reverse). A real issue is still caught deterministically by L1–L4; the judge is a redundant advisory
+  glance on top.
+- **Demonstrated live on MoB:** a fresh judge sub-agent judged the real indicator-switch screenshot →
+  `intentional:clean`, a `contrast:warn` **corroborated** by L4's real axe flag, `nothing-broken:clean`;
+  an injected **fabricated "overlap"** was **discarded** by the DOM cross-check; verdict advisory
+  (band `warn`, `gating:false`). Plan `docs/plans/2026-07-28-task3-P3A-ai-visual-judge-plan.md`.
+  **NOT yet wired into the live runner's afterAll** (the dispatch is skill-driven; wiring the automatic
+  in-run judge pass is the remaining tail).
+
 ### 6. Reporting + the sink
 
 Per-step (timestamp, action, screenshot, network, console) → per-case (inputs, action log,
