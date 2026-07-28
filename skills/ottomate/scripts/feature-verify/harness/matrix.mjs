@@ -13,6 +13,9 @@ export function validateMatrix(m) {
   if (m.authored?.blind_to_diff !== true) e.push('authored.blind_to_diff must be true');
   if (!m.target?.kind || !m.target?.id) e.push('missing target.kind/id');
   if (!Array.isArray(m.cases) || m.cases.length === 0) e.push('cases must be a non-empty array');
+  // P3-C1: optional `covers` globs drive on-commit impacted-matrix selection (absent ⇒ always impacted).
+  if (m.covers !== undefined && (!Array.isArray(m.covers) || m.covers.some((g) => typeof g !== 'string')))
+    e.push('covers, if present, must be an array of glob strings');
   const ids = new Set((m.cases ?? []).map((c) => c.id));
   for (const c of m.cases ?? []) {
     if (!c.id) e.push('case missing id');

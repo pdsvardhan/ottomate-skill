@@ -24,6 +24,12 @@ test('must-fail: no cases / missing authored.at_commit', () => {
   assert.equal(validateMatrix({ ...good, cases: [] }).ok, false);
   const b2 = structuredClone(good); delete b2.authored.at_commit; assert.equal(validateMatrix(b2).ok, false);
 });
+test('covers is optional but must be an array of strings when present (P3-C1)', () => {
+  const ok = structuredClone(good); ok.covers = ['app/components/PosterCard.tsx', 'app/**'];
+  assert.equal(validateMatrix(ok).ok, true);
+  const bad = structuredClone(good); bad.covers = [1, 'ok'];
+  assert.equal(validateMatrix(bad).ok, false);
+});
 test('reproduce_symptom: pass_to_pass must reference a real case id', () => {
   const m = structuredClone(good);
   m.cases[0].reproduce_symptom = true; m.cases[0].symptom_assert = 'x'; m.cases[0].pass_to_pass = ['nope'];
