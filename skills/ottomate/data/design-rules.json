@@ -162,10 +162,11 @@
         "max_accent_surfaces": 3
       },
       "check": "accent_surface_count_within_budget",
-      "semantics": "Count distinct rendered surfaces carrying the derived accent. Over budget = fail. Under-use is NOT a pass: a fully monochrome result fails the 'restraint is not monochrome' half of the rule.",
-      "status": "enforced",
+      "semantics": "Count distinct rendered accent hues. Over budget = a SOFT signal (advisory), not a block. Monochrome is reported, not blocked.",
+      "status": "advisory",
       "method": "computed",
-      "enforced_by": "computed-checks.js colourBudget; surfaced as a BLOCK by computed-runner.mjs blockingFindings. C4 2026-07-27. Monochrome is REPORTED, not blocked - a deliberately monochrome design is a legitimate owner choice."
+      "tier": "advise",
+      "enforced_by": "computed-checks.js colourBudget; surfaced as an ADVISORY by computed-runner.mjs allFindings (advise:true). DOWNGRADED from blocking 2026-07-29 (WS1.0): the accent-count was F-8 — it mis-counted cointrail's cool-neutral slate as accents and could not pass a legitimate >4-category data-viz. LEGIBILITY is now enforced by the per-theme CONTRAST GATE (theming/contrast-gate.mjs) — correct + fail-closed — so the budget stays only as a soft 'lots of accents?' hint. Monochrome still reported, not blocked."
     }
   },
   "rules": [

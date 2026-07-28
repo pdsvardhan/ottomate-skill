@@ -95,11 +95,15 @@ export function allFindings(findings, { profile = 'P1' } = {}) {
       out.push({ rule: 'computed-axis-divergence', detail: `${(d.pair ?? []).join(' / ')}: resolved-style distance ${d.distance} — these render nearly identically` });
     }
   }
-  // C4: over budget BLOCKS; monochrome is reported but never blocked (restraint is not absence, and
-  // a deliberately monochrome design is a legitimate choice the owner may have made on purpose).
+  // colour budget: ADVISORY, not blocking (owner ruling 2026-07-29, WS1.0). The accent-count budget was
+  // F-8: it mis-counted cointrail's cool-neutral slate as accents and could not pass a legitimate
+  // >4-category data-viz — it contorted the design to appease a miscounting check. Legibility is now
+  // owned by the per-theme CONTRAST GATE (theming/contrast-gate.mjs), which is correct and fail-closed;
+  // the budget stays as a soft "lots of accents?" signal (advise), never a block. Monochrome: still just
+  // reported (restraint is not absence).
   for (const c of f.colourBudget ?? []) {
     if (c.withinBudget === false) {
-      out.push({ rule: 'colour_budget', detail: `${c.label}: ${c.distinctAccents} distinct accent colours across ${c.surfaces} surfaces, budget ${c.budget} — ${c.colours.slice(0, 4).join(', ')}` });
+      out.push({ rule: 'colour_budget', advise: true, detail: `${c.label}: ${c.distinctAccents} distinct accent colours across ${c.surfaces} surfaces, soft budget ${c.budget} — ${c.colours.slice(0, 4).join(', ')} (advisory since WS1.0; legibility is enforced by the per-theme contrast gate)` });
     }
   }
   // C6 batch 3 + P1: the pure computed rules, evaluated over the records the browser collected.

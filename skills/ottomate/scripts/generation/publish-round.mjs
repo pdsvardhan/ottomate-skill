@@ -31,6 +31,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { resolveAnatomy, rungForTier } from './anatomy.mjs';
 import { resolveLabels, buildShown } from './variant-slots.mjs';
+import { prePublishGates, formatPrePublish } from './pre-publish-gates.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 // Two files since U1 (2026-07-27); anatomy.mjs resolves them to the pre-split shape.
@@ -208,7 +209,7 @@ async function api(base, token, pathname, init = {}) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.manifest) {
-    console.error('usage: node publish-round.mjs --manifest round.json --previews-dir <dir> --api <base> --token-file <file> [--public-base https://ottomate.vault7a.xyz] [--dry-run] [--replace]');
+    console.error('usage: node publish-round.mjs --manifest round.json --previews-dir <dir> --api <base> --token-file <file> [--public-base https://ottomate.vault7a.xyz] [--theme-file <tokens.json>] [--block-source <block.css>] [--dry-run] [--replace]');
     process.exit(1);
   }
   const manifest = JSON.parse(readFileSync(args.manifest, 'utf8'));
@@ -225,7 +226,27 @@ async function main() {
   console.log(`preview:  ${publicUrl}`);
   for (const p of payloads) console.log(`  ${p.axis.padEnd(34)} ${JSON.stringify(p.variants_shown)}`);
 
+  // WS1.0 — the fail-closed pre-publish gates (per-theme contrast + ban-raw-values), replacing the
+  // colourBudget block (F-8, now advisory). `theme_file`/`block_sources` are manifest paths, resolved
+  // relative to the manifest; `--theme-file`/`--block-source` override. A project with no theme yet
+  // reports skip (not a pass). This runs in --dry-run too, so the gate is visible before a real publish.
+  const manifestDir = path.dirname(path.resolve(args.manifest));
+  // CLI paths resolve vs the CWD; manifest-declared paths resolve vs the manifest's directory.
+  const fromManifest = (p) => (path.isAbsolute(p) ? p : path.join(manifestDir, p));
+  const themeFile = args.theme_file ? path.resolve(args.theme_file)
+    : (manifest.theme_file ? fromManifest(manifest.theme_file) : null);
+  const blockCssFiles = args.block_source ? [path.resolve(args.block_source)]
+    : (manifest.block_sources ?? []).map(fromManifest);
+  const gates = prePublishGates({ themeFile, blockCssFiles });
+  console.log('\npre-publish gates:');
+  console.log(formatPrePublish(gates));
+
   if (args.dry_run || args.dryRun) { console.log('\n--dry-run: nothing written.'); return; }
+
+  if (!gates.pass) {
+    console.error('\nREFUSED: a fail-closed pre-publish gate blocked this round. Nothing written.');
+    process.exit(5);
+  }
 
   // 1. the HTML → the previews volume
   if (!args.previews_dir) throw new Error('--previews-dir is required (e.g. /mnt/storage/ottomate/assets/previews)');
