@@ -1,0 +1,46 @@
+/* spending-variant.block.css — WS1.1. The category-breakdown Block as a VARIANT SET on ONE axis:
+ * panel-depth (flat · raised · floating). Token-only (passes ban-raw-values). Everything else — content,
+ * category colours, layout, type, motion — is HELD (the isolation control); only .depth-* moves. This is
+ * what the live iframe grid renders, one variant per frame, so the owner judges the real interactive thing.
+ */
+
+.cb-panel {
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  padding: 24px;
+  transition: transform var(--motion-duration-fast) var(--motion-ease-standard),
+              box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+}
+
+/* ── the ONLY axis that moves: panel-depth ─────────────────────────────────── */
+.depth-flat   { border: 1px solid var(--color-border); border-radius: var(--radius-md); box-shadow: none; }
+.depth-raised { border: 1px solid var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
+.depth-floating {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+.depth-raised:hover   { transform: translateY(-3px); box-shadow: var(--shadow-card-hover); }
+.depth-floating:hover { transform: translateY(-5px); box-shadow: var(--shadow-card-hover); }
+
+/* ── everything below is HELD constant across all three variants ───────────── */
+.cb-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+.cb-title { font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
+.cb-sub { font-size: 12px; color: var(--color-on-surface-muted); }
+.cb-total { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; margin: 8px 0 2px; }
+.cb-delta { font-size: 12px; font-weight: 600; color: var(--color-action); }
+.cb-list { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; }
+.cb-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
+.cb-swatch { width: 10px; height: 10px; border-radius: var(--radius-pill); }
+.cb-label { font-size: 13px; font-weight: 600; }
+.cb-amount { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+.cb-barwrap { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
+.cb-track { height: 8px; border-radius: var(--radius-pill); background: var(--color-surface-raised); overflow: hidden; }
+.cb-fill { height: 100%; border-radius: var(--radius-pill); width: var(--cb-pct, 0%); transition: width var(--motion-duration-slow) var(--motion-ease-standard); }
+.cb-pct { font-size: 12px; color: var(--color-on-surface-subtle); font-variant-numeric: tabular-nums; min-width: 34px; text-align: right; }
+.cb-c1 { background: var(--color-chart-1); } .cb-c2 { background: var(--color-chart-2); }
+.cb-c3 { background: var(--color-chart-3); } .cb-c4 { background: var(--color-chart-4); }
+.cb-c5 { background: var(--color-on-surface-subtle); }
+
+@media (prefers-reduced-motion: reduce) { .cb-panel, .cb-fill { transition: none; } .depth-floating { transform: none; } }
