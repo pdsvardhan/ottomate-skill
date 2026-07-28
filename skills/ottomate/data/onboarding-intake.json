@@ -1,0 +1,57 @@
+{
+  "$description": "Phase 2 P2.4 — the ONE-TIME project onboarding intake (spec §3 Pillar D). ~30 UI-decision questions in 5 stages, each enum + default, each PRE-FILLABLE from the repo/DB/taste, persisted per project (design_ledger.intake), re-run only on what is being rebuilt. Distinct from data/design-questions.json (the per-ROUND axis registry). Grounding rule (v0): the AI uses only tokens/components verified in the project — follow-up questions only when sources are insufficient. `prefill` rules are declarative; scripts/generation/intake.mjs evaluates them against repo evidence.",
+  "meta": { "version": 1, "created": "2026-07-29", "stages": 5, "sources": ["v0 Design Systems 2.0", "Builder Fusion", "Uizard", "Stitch"] },
+  "stages": [
+    { "id": "research", "label": "What to show", "silent": false, "questions": [
+      { "id": "archetype", "q": "What kind of app is this?", "enum": ["dashboard", "landing", "feed", "detail-page", "wizard", "settings", "auth", "data-explorer"], "default": "dashboard",
+        "prefill": [{ "from": "repo", "any": ["chart", "kpi", "metric", "analytics"], "then": "dashboard" }, { "from": "repo", "any": ["hero", "landing", "pricing"], "then": "landing" }] },
+      { "id": "audience", "q": "Who is the audience?", "enum": ["P1-owner", "P2-team", "P3-public"], "default": "P1-owner",
+        "prefill": [{ "from": "ledger", "key": "profile", "map": { "P1": "P1-owner", "P2": "P2-team", "P3": "P3-public" } }] },
+      { "id": "primary-data", "q": "What is the primary data?", "enum": ["financial", "analytics", "content", "social", "geographic", "none"], "default": "analytics",
+        "prefill": [{ "from": "repo", "any": ["transaction", "spend", "invoice", "₹", "currency"], "then": "financial" }, { "from": "repo", "any": ["map", "geo", "region"], "then": "geographic" }] },
+      { "id": "primary-job", "q": "The #1 thing a user does here?", "enum": ["monitor", "explore", "create", "decide", "convert", "configure"], "default": "monitor", "prefill": [] },
+      { "id": "data-relationship", "q": "The main data relationship the UI shows?", "enum": ["change-over-time", "part-to-whole", "magnitude", "ranking", "correlation", "distribution", "spatial", "flow", "none"], "default": "change-over-time",
+        "prefill": [{ "from": "repo", "any": ["breakdown", "category", "share"], "then": "part-to-whole" }, { "from": "repo", "any": ["trend", "over time", "history"], "then": "change-over-time" }] }
+    ]},
+    { "id": "structure", "label": "Structure", "silent": false, "questions": [
+      { "id": "dashboard-subtype", "q": "Dashboard sub-type?", "enum": ["operational", "analytical", "strategic"], "default": "analytical", "when": { "archetype": "dashboard" }, "prefill": [] },
+      { "id": "nav-pattern", "q": "Primary navigation?", "enum": ["sidebar", "topbar", "none"], "default": "sidebar",
+        "prefill": [{ "from": "repo", "any": ["sidebar", "aside"], "then": "sidebar" }, { "from": "repo", "any": ["navbar", "topbar", "header-nav"], "then": "topbar" }] },
+      { "id": "layout-template", "q": "Page skeleton?", "enum": ["sidebar-shell", "topbar-shell", "hero-stack", "split-detail", "centered-frame"], "default": "sidebar-shell", "prefill": [] },
+      { "id": "above-the-fold", "q": "What must be first on the primary screen?", "enum": ["kpi-row", "hero", "chart-panel", "data-table", "filter-bar"], "default": "kpi-row", "prefill": [] },
+      { "id": "page-types", "q": "Which page types exist?", "enum": ["list", "detail", "form", "dashboard", "settings", "auth"], "default": "dashboard", "multi": true, "prefill": [] },
+      { "id": "structural-density", "q": "How much per screen?", "enum": ["compact", "comfortable", "spacious"], "default": "comfortable", "prefill": [] }
+    ]},
+    { "id": "style", "label": "Style", "silent": false, "questions": [
+      { "id": "theme-mode", "q": "Colour modes?", "enum": ["light", "dark", "both"], "default": "both",
+        "prefill": [{ "from": "tokens", "has": "dark", "then": "both" }] },
+      { "id": "style-family", "q": "Style family?", "enum": ["aceternity-magicui", "minimal", "corporate", "brutalist", "editorial"], "default": "aceternity-magicui",
+        "prefill": [{ "from": "taste", "key": "styleFamilyKey", "default": "aceternity-magicui" }] },
+      { "id": "radius-scale", "q": "Corner language?", "enum": ["sharp", "rounded", "pill"], "default": "rounded",
+        "prefill": [{ "from": "tokens", "radiusRem": true }] },
+      { "id": "accent-derivation", "q": "Where does the accent come from?", "enum": ["from-brand", "from-content", "neutral"], "default": "from-content", "prefill": [] },
+      { "id": "type-family", "q": "Type personality?", "enum": ["geometric", "humanist", "grotesque", "serif-accent"], "default": "geometric", "prefill": [] },
+      { "id": "surface-treatment", "q": "Panel surfaces?", "enum": ["flat", "glass", "gradient", "layered"], "default": "layered",
+        "prefill": [{ "from": "tokens", "has": "glass", "then": "glass" }] }
+    ]},
+    { "id": "interaction", "label": "Interaction", "silent": false, "questions": [
+      { "id": "motion-budget", "q": "Motion appetite?", "enum": ["productive", "expressive"], "default": "expressive",
+        "prefill": [{ "from": "taste", "key": "motionBudget", "default": "expressive" }] },
+      { "id": "hover-richness", "q": "Hover richness?", "enum": ["subtle", "rich"], "default": "rich",
+        "prefill": [{ "from": "taste", "key": "hoverRich", "then": "rich" }] },
+      { "id": "loading-strategy", "q": "How does loading feel?", "enum": ["skeleton", "spinner", "streamed"], "default": "skeleton", "prefill": [] },
+      { "id": "three-d", "q": "3D depth?", "enum": ["none", "tasteful", "hero"], "default": "tasteful",
+        "prefill": [{ "from": "taste", "wants": "3d-tilt", "then": "tasteful" }] },
+      { "id": "interactive-charts", "q": "Chart interactivity?", "enum": ["static", "tooltip", "brush"], "default": "tooltip", "prefill": [] },
+      { "id": "feedback-style", "q": "Action feedback?", "enum": ["toast", "inline", "optimistic"], "default": "optimistic", "prefill": [] },
+      { "id": "delight", "q": "Delight level?", "enum": ["none", "one-moment", "playful"], "default": "one-moment",
+        "prefill": [{ "from": "taste", "key": "delightLevel", "default": "one-moment" }] }
+    ]},
+    { "id": "constraints", "label": "Silent constraints (defaults, not asked)", "silent": true, "questions": [
+      { "id": "a11y-floor", "q": "Accessibility floor", "enum": ["WCAG-AA"], "default": "WCAG-AA", "prefill": [] },
+      { "id": "reduced-motion", "q": "prefers-reduced-motion", "enum": ["respect"], "default": "respect", "prefill": [] },
+      { "id": "contrast-gate", "q": "Per-theme contrast gate", "enum": ["fail-closed"], "default": "fail-closed", "prefill": [] },
+      { "id": "performance", "q": "Performance budget", "enum": ["lcp<2.5s,cls<0.1"], "default": "lcp<2.5s,cls<0.1", "prefill": [] }
+    ]}
+  ]
+}
