@@ -73,5 +73,17 @@ feature-verifier row updated **in the same commit**; `git pull --rebase` before 
 browser leg that did not run** — attach the evidence.
 
 ## Then
-P1-B (harden the red case + persist it as the standing proof) → P1-C (implicit-oracle layer) →
-P1-D (metamorphic/property) → P1-E (mechanical-visual, wiring axe-core + Task-2's computed checks).
+P1-B (the deliberate red case → BLOCK, persist the proof) → P1-C (implicit-oracle layer) →
+P1-D (metamorphic/property) → P1-E (mechanical-visual, **self-contained** — axe-core + own geometry,
+owner ruling 2026-07-28; NOT Task-2's checker).
+
+---
+
+## ✅ RESULT — P1-A DONE + VERIFIED on VAULT7A (2026-07-28)
+`scripts/feature-verify/mapsofbharat-indicator.feature-verify.spec.ts` — **the first browser-driving spec.**
+Ran on VAULT7A against the live MoB app (`:8610`) in real Chromium (`~/.cache/ms-playwright/chromium-1223`).
+- **Verdict APPROVE — 3/3 cases passed.** Report **landed in `feature_verification_reports` id 6** (id 5 was the honest ITERATE from the first run — fail-closed WARN when buffalo's legend rendered continuous, no `data-legend-count`; that WARN is the system working, not a defect).
+- **The load-bearing assertion (case 2) is real 2nd-channel:** clicked CHANGE INDICATOR → picked "Households owning a car" (B); the histogram's per-class counts summed to **733**, exactly the API's `stats_count` (733), and **differed** from A — visible in the screenshot legend (131+148+152+154+148=733). Catches "the UI shows stale/wrong data," not just a 200.
+- **Evidence produced (the point):** trace.zip + video.webm + screenshot, saved to `Desktop/Skills CC/Ottomate/fv-evidence/p1a/`.
+- **Recipe that worked:** scp harness → `/tmp/fv`, `ln -s /mnt/storage/websites/mapsofbharat/node_modules`, browsers already in `~/.cache/ms-playwright`; env `FV_INSTANCE_URL=:8610` (MoB) / `FV_TRACKER_BASE=:8110` (sink) / `FV_PROJECT_SLUG=mapsofbharat`; `POST /api/backup` before the report write.
+- **Selector notes for reuse:** CHANGE INDICATOR = `getByRole('button',{name:/change indicator|browse indicators/i})`; chooser = `getByRole('dialog',{name:/choose an indicator/i})` → category button `/…/i` → metric button `/<name>/i`; data hooks `[data-legend-count]`, `[data-legend-label]`, `[data-scale-toggle]`; the selected-indicator name renders as visible text.
