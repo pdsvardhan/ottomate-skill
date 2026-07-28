@@ -1,0 +1,89 @@
+{
+  "$description": "Phase 2 P2.2 — the chart-by-data dictionary (spec §3 Pillar E). Encodes the FT Visual Vocabulary (open-source, CC-BY; attribute the FT) — 9 data-relationships → recommended chart types — plus a Cleveland–McGill/Mackinlay ENCODING-ACCURACY rank and Datawrapper-style 'avoid' notes. So a data panel picks the RIGHT chart for the RELATIONSHIP, not a default. Chart marks + colour usage are governed downstream by the per-theme contrast gate and 'not colour alone'.",
+  "$source": "FT Visual Vocabulary (github.com/ft-interactive/chart-doctor, CC-BY-4.0) + Datawrapper 'what to avoid'.",
+  "encoding_accuracy": ["position", "length", "angle", "area", "volume", "colour-luminance", "colour-hue"],
+  "global_avoid": ["3D charts (occlusion + perspective distort every value)", "dual y-axes (implies a false correlation)", "truncated bar baselines (bars must start at zero)", "colour as the ONLY carrier of a category"],
+  "relationships": {
+    "change-over-time": {
+      "intent": "emphasise a changing trend over an interval",
+      "charts": [
+        { "id": "line", "encoding": "position", "when": "continuous series, one or few lines", "avoid": "more than ~5 lines (spaghetti) — small-multiple instead" },
+        { "id": "column-time", "encoding": "length", "when": "discrete periods, magnitude matters", "avoid": "too many bars — switch to a line" },
+        { "id": "area", "encoding": "position+area", "when": "a single volume over time", "avoid": "stacked area with many bands (middle bands unreadable)" },
+        { "id": "calendar-heatmap", "encoding": "colour-luminance", "when": "daily values over months/years", "avoid": "a rainbow scale — use a single-hue ramp" },
+        { "id": "candlestick", "encoding": "position", "when": "open/high/low/close price data", "avoid": "using it for non-OHLC data" }
+      ]
+    },
+    "magnitude": {
+      "intent": "size comparisons (absolute, point-in-time)",
+      "charts": [
+        { "id": "bar", "encoding": "length", "when": "compare a value across categories; long labels", "avoid": "a non-zero baseline" },
+        { "id": "column", "encoding": "length", "when": "few categories, short labels", "avoid": "many thin columns" },
+        { "id": "lollipop", "encoding": "position", "when": "many categories, reduce ink", "avoid": "when exact length reading matters (use a bar)" },
+        { "id": "proportional-symbol", "encoding": "area", "when": "magnitude on a map/layout", "avoid": "sizing by radius not area (exaggerates)" }
+      ]
+    },
+    "part-to-whole": {
+      "intent": "how a single total breaks into components",
+      "charts": [
+        { "id": "stacked-bar", "encoding": "length", "when": "few components; compare the total too", "avoid": "more than ~5 segments — middle ones are unreadable" },
+        { "id": "ordered-bar", "encoding": "length", "when": "the parts are also a ranking", "avoid": "non-zero baseline" },
+        { "id": "pie", "encoding": "angle", "when": "≤4 slices of ONE total", "avoid": ">5 slices, 3D, comparing several pies" },
+        { "id": "donut", "encoding": "angle", "when": "≤4 slices with a centred KPI", "avoid": "same as pie" },
+        { "id": "treemap", "encoding": "area", "when": "a hierarchy of many parts", "avoid": "reading precise values (area is imprecise)" },
+        { "id": "waterfall", "encoding": "length", "when": "how a total is built up/drawn down", "avoid": "when order is arbitrary" }
+      ]
+    },
+    "ranking": {
+      "intent": "position in an ordered list matters more than the absolute value",
+      "charts": [
+        { "id": "ordered-bar", "encoding": "length", "when": "rank many items with labels", "avoid": "unsorted bars" },
+        { "id": "ordered-column", "encoding": "length", "when": "few items, short labels", "avoid": "long labels" },
+        { "id": "dot-strip", "encoding": "position", "when": "rank + show the spread", "avoid": "heavy overlap without jitter" },
+        { "id": "slope", "encoding": "position", "when": "rank change between two points", "avoid": "more than a handful of lines" }
+      ]
+    },
+    "deviation": {
+      "intent": "emphasise variation from a fixed reference (zero, a target, an average)",
+      "charts": [
+        { "id": "diverging-bar", "encoding": "length", "when": "+/- from a baseline across categories", "avoid": "a baseline that is not the true reference" },
+        { "id": "diverging-stacked-bar", "encoding": "length", "when": "Likert / sentiment scales", "avoid": "too many segments" },
+        { "id": "surplus-deficit-line", "encoding": "position+area", "when": "over/under a reference over time", "avoid": "hiding the reference line" }
+      ]
+    },
+    "correlation": {
+      "intent": "relationship between two or more variables",
+      "charts": [
+        { "id": "scatter", "encoding": "position", "when": "two continuous variables", "avoid": "implying causation; overplotting" },
+        { "id": "bubble", "encoding": "position+area", "when": "a third variable by size", "avoid": "sizing by radius; too many bubbles" },
+        { "id": "connected-scatter", "encoding": "position", "when": "two variables evolving over time", "avoid": "when the path is confusing" },
+        { "id": "xy-heatmap", "encoding": "colour-luminance", "when": "two categorical dims, one value", "avoid": "a rainbow scale" }
+      ]
+    },
+    "distribution": {
+      "intent": "the values in a dataset and how often they occur",
+      "charts": [
+        { "id": "histogram", "encoding": "length", "when": "one continuous variable", "avoid": "too few/too many bins" },
+        { "id": "boxplot", "encoding": "position", "when": "compare distributions across groups", "avoid": "small n (show the points)" },
+        { "id": "beeswarm", "encoding": "position", "when": "show every point without overlap", "avoid": "very large n (use density)" },
+        { "id": "violin", "encoding": "area", "when": "distribution shape across groups", "avoid": "reading exact counts" }
+      ]
+    },
+    "spatial": {
+      "intent": "precise locations or geographic patterns",
+      "charts": [
+        { "id": "choropleth", "encoding": "colour-luminance", "when": "a rate/ratio by region", "avoid": "raw counts (area confounds); a rainbow scale" },
+        { "id": "proportional-symbol-map", "encoding": "area", "when": "absolute magnitude by place", "avoid": "sizing by radius" },
+        { "id": "flow-map", "encoding": "position+length", "when": "movement between places", "avoid": "too many crossing flows" }
+      ]
+    },
+    "flow": {
+      "intent": "movement/volume between states or conditions",
+      "charts": [
+        { "id": "sankey", "encoding": "length", "when": "flows between stages, conserved volume", "avoid": "too many nodes (hairball)" },
+        { "id": "chord", "encoding": "angle", "when": "flows among a set of entities", "avoid": "many small flows" },
+        { "id": "network", "encoding": "position", "when": "relationships/connections", "avoid": "dense graphs without a layout algorithm" }
+      ]
+    }
+  }
+}
