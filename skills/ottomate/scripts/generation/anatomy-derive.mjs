@@ -44,6 +44,15 @@ export function isTailwindUtility(cls) {
   return /^(flex|grid|table|block|inline|inline-flex|inline-block|hidden|contents|container|absolute|relative|fixed|sticky|static|isolate|float-|clear-|box-|(min-|max-)?[wh]-|size-|-?p[xytrbl]?-|-?m[xytrbl]?-|gap-|gap-[xy]-|space-[xy]-|-?inset-|-?top-|-?right-|-?bottom-|-?left-|-?z-|order-|col-|row-|grid-|auto-|justify-|items-|content-|self-|place-|text-|font-|leading-|tracking-|align-|whitespace-|break-|truncate$|line-clamp-|list-|bg-|from-|via-|to-|border($|-)|rounded($|-)|divide-|ring($|-)|shadow($|-)|opacity-|mix-blend-|backdrop-|blur$|blur-|brightness-|contrast-|drop-shadow($|-)|grayscale$|invert$|saturate-|sepia$|transition($|-)|duration-|ease-|delay-|animate-|scale-|-?rotate-|-?translate-|-?skew-|origin-|transform$|cursor-|select-|resize$|resize-|scroll-|snap-|touch-|will-change-|overflow($|-)|overscroll-|object-|aspect-|columns-|w-full|h-full|w-screen|h-screen|pointer-events-|appearance-|outline($|-)|underline$|overline$|line-through$|no-underline$|uppercase$|lowercase$|capitalize$|normal-case$|italic$|not-italic$|antialiased$|subpixel-antialiased$|tabular-nums$|slashed-zero$|fill-|stroke-|sr-only$|not-sr-only$|flex-|shrink($|-)|grow($|-)|basis-|p-|m-|w-|h-)/.test(c);
 }
 
+// R2.2 (F-4): a camelCase token that the stylesheet does NOT style is a JS ternary variable that leaked
+// through the className regex (isCredit, isPaid, periodOpen), not a CSS class / part. Real CSS classes are
+// kebab-case or lowercase; a genuinely camelCase styled class would appear in the stylesheet's selectors.
+export function isJsIdentifierLeak(cls, cssSelectors = []) {
+  const c = String(cls);
+  if (cssSelectors.includes(c)) return false;                 // it IS styled → treat as a real part
+  return /[a-z][A-Z]/.test(c) || /^(is|has|should|can|will|are|was|did|does)[A-Z]/.test(c);
+}
+
 /** Extract the balanced-paren argument text of every `name(...)` call, for the given helper names. */
 function extractCallArgs(src, names) {
   const out = [];
@@ -163,8 +172,14 @@ export function proposeRecord(ev, { name = 'unnamed' } = {}) {
   const { tier, why } = inferTier(ev);
   // data-role is our own convention and is authoritative when present. Otherwise fall back to class
   // names that the stylesheet actually styles — a class nobody styles is not a part.
-  const styled = uniq((ev.semanticClasses ?? ev.classNames).filter((c) => ev.cssSelectors.includes(c)));
-  const semantic = uniq(ev.semanticClasses ?? ev.classNames.filter((c) => !isTailwindUtility(c)));
+  // R2.2 (F-4): 'group'/'peer' are Tailwind INTERACTION MARKERS, not parts, even though a `.group:hover`
+  // rule makes them appear "styled" — the real cointrail derivation's only "part" was `group`.
+  const MARKERS = new Set(['group', 'peer']);
+  const notPart = (c) => MARKERS.has(c) || isJsIdentifierLeak(c, ev.cssSelectors);
+  const styled = uniq((ev.semanticClasses ?? ev.classNames).filter((c) => ev.cssSelectors.includes(c) && !notPart(c)));
+  // R2.2 (F-4): drop JS-identifier leaks (isCredit/isPaid/periodOpen) and markers — they are not parts.
+  const semantic = uniq((ev.semanticClasses ?? ev.classNames.filter((c) => !isTailwindUtility(c)))
+    .filter((c) => !notPart(c)));
   const children = ev.orchestratedChildren ?? ev.childComponents;
   // Resolve parts FULLY before anything reads them: an earlier draft computed `questions` against a
   // parts list that had not fallen back yet, and every question ended up naming a part that did not
@@ -188,13 +203,19 @@ export function proposeRecord(ev, { name = 'unnamed' } = {}) {
   const scored = questionsForTier(tier).map((q) => ({
     q, hit: (q.evidence_any ?? []).some((k) => haystack.has(k)),
   }));
-  const likely = scored.filter((s) => s.hit).map((s) => s.q);
-  const possible = scored.filter((s) => !s.hit).map((s) => s.q);
+  // R2.2 (F-4): a media question (media-aspect) may only be EVIDENCED when there is an actual media well —
+  // otherwise it is a false axis on a data panel. Without media evidence it can still sit in `possible`,
+  // ranked and visible, but it never counts as a hit that lands it in `chosen`.
+  const hasMedia = (ev.elements ?? []).some((e) => /^(img|video|picture|source|iframe|canvas|svg|model-viewer)$/i.test(e))
+    || [...(ev.classNames ?? []), ...(ev.dataRoles ?? [])].some((c) => /media|thumb|poster|avatar|image|cover|hero|banner/i.test(c));
+  const isMediaQ = (q) => /media|aspect|thumb|cover/i.test(q.id);
+  const likely = scored.filter((s) => s.hit && !(isMediaQ(s.q) && !hasMedia)).map((s) => s.q);
+  const possible = scored.filter((s) => !likely.includes(s.q)).map((s) => s.q);
   // Choose the EVIDENCED questions when any exist; the rest stay in `possible`, ranked and visible,
   // never silently dropped (the module's ethos). Dumping every tier question into `chosen` on weak
   // evidence guaranteed an over-wide round the composition rule then rejected (C12(2) D6) — the honest
   // signal is "few evidenced, low confidence", not "all of them are contested".
-  const chosen = likely.length ? likely : scored.map((s) => s.q);
+  const chosen = likely.length ? likely : scored.filter((s) => !(isMediaQ(s.q) && !hasMedia)).map((s) => s.q);
 
   const partFor = (q) => parts.find((p) => (q.evidence_any ?? []).some((k) => p.toLowerCase().includes(k)))
     ?? parts[0] ?? name;
@@ -213,7 +234,10 @@ export function proposeRecord(ev, { name = 'unnamed' } = {}) {
     questions: chosen.map((q) => ({ q: q.id, part: partFor(q) })),
     likely: likely.map((q) => q.id),
     possible: possible.map((q) => q.id),
-    confidence: ev.dataRoles.length ? 'high' : ev.hasCss ? 'medium' : 'low',
+    // R2.2 (F-4): only data-role earns 'high'; a REAL multi-part anatomy (≥2 styled parts confirmed by the
+    // stylesheet) earns 'medium'; a thin/leaked/marker-only derivation is 'low', NOT 'medium' — an
+    // over-confident "medium" on junk parts is exactly what let the cointrail derivation ship.
+    confidence: ev.dataRoles.length ? 'high' : (styled.length >= 2 && ev.hasCss) ? 'medium' : 'low',
   };
 }
 
