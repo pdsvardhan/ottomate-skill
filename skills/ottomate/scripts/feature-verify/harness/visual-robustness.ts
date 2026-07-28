@@ -57,6 +57,35 @@ export async function checkNoHardClippedText(page: Page): Promise<StateCheck> {
     : { ok: false, detail: `${r.hardClipped.length} hard-clipped element(s): ${r.hardClipped.slice(0, 4).join(' · ')}`, observed: r };
 }
 
+/** P3-A cross-check: re-measure the SPECIFIC elements an AI-judge cited as "overlapping" and report the
+ *  real pairwise intersections. Targeted (only the cited selectors) so it does not false-positive on the
+ *  many legitimately-stacked elements a general collision scan would flag. The judge FLAGS an overlap;
+ *  this is the DOM deciding — an overlap claim with `overlaps: []` is a hallucination and gets discarded
+ *  by `crossCheckSpatialClaims`. */
+export async function measureRegionsOverlap(page: Page, selectors: string[]): Promise<{ overlaps: [string, string, number][]; measured: Record<string, { x: number; y: number; w: number; h: number } | null> }> {
+  return page.evaluate((sels: string[]) => {
+    const box = (s: string) => {
+      const el = document.querySelector(s) as HTMLElement | null;
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0 ? { x: r.x, y: r.y, w: r.width, h: r.height, right: r.right, bottom: r.bottom } : null;
+    };
+    const measured: Record<string, { x: number; y: number; w: number; h: number } | null> = {};
+    const boxes: Record<string, ReturnType<typeof box>> = {};
+    for (const s of sels) { const b = box(s); boxes[s] = b; measured[s] = b ? { x: Math.round(b.x), y: Math.round(b.y), w: Math.round(b.w), h: Math.round(b.h) } : null; }
+    const overlaps: [string, string, number][] = [];
+    for (let i = 0; i < sels.length; i++) for (let j = i + 1; j < sels.length; j++) {
+      const a = boxes[sels[i]], b = boxes[sels[j]];
+      if (!a || !b) continue;
+      const ox = Math.max(0, Math.min(a.right, b.right) - Math.max(a.x, b.x));
+      const oy = Math.max(0, Math.min(a.bottom, b.bottom) - Math.max(a.y, b.y));
+      const area = ox * oy;
+      if (area > 1) overlaps.push([sels[i], sels[j], Math.round(area)]);
+    }
+    return { overlaps, measured };
+  }, selectors);
+}
+
 /** axe-core contrast (self-hosted, deterministic) — the "tags not visible / low contrast" complaint. */
 export async function checkAxeContrast(page: Page): Promise<StateCheck> {
   const results = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
