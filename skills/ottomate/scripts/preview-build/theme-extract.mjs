@@ -33,6 +33,52 @@ function hsvToRgb(h, s, v) {
 const toHex = (r, g, b) => '#' + [r, g, b].map((n) => n.toString(16).padStart(2, '0')).join('').toUpperCase();
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 
+// ── WCAG contrast (C10) ──────────────────────────────────────────────────────
+// Contrast is a function of RELATIVE LUMINANCE, not HSV value — a vivid-but-dark hue (a deep blue at
+// V 0.9) can still fail against a dark surface. This is what A1 §3.10 means by "normalise L".
+export function relLuminance(r, g, b) {
+  const f = (c) => { c /= 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; };
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+}
+export function contrastRatio(l1, l2) {
+  const a = Math.max(l1, l2), b = Math.min(l1, l2);
+  return (a + 0.05) / (b + 0.05);
+}
+export const hexLuminance = (hex) => {
+  const h = String(hex).replace('#', '');
+  return relLuminance(parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16));
+};
+
+/**
+ * Normalise a derived accent so its contrast against the target background is GUARANTEED at derivation
+ * time (C10, owner ruling: dark canvas #101216, floor 3:1). Corrective, not gratuitous — a colour
+ * already inside the band is returned unchanged. Luminance is monotone in HSV value at fixed h,s, so
+ * V is the knob. Chroma is clamped into a band first so the result is neither neon nor muddy.
+ * @returns {{r,g,b,h,s,v, lum, contrast, adjusted:boolean}}
+ */
+export function normaliseForContrast(h, s, v, opts = {}) {
+  const bgLum = opts.bgLuminance ?? relLuminance(0x10, 0x12, 0x16); // #101216
+  const floor = opts.contrastFloor ?? 3.0;
+  const [sLo, sHi] = opts.chromaRange ?? [0.35, 0.9];
+  const Llo = floor * (bgLum + 0.05) - 0.05;        // exact luminance that clears the floor on the bg
+  const Lhi = opts.maxLum ?? 0.75;                   // above this it washes toward white, losing hue
+  const s0 = clamp(s, sLo, sHi);
+  const lumOf = (vv) => { const { r, g, b } = hsvToRgb(h, s0, vv); return relLuminance(r, g, b); };
+
+  let v0 = v, lum = lumOf(v0), adjusted = false;
+  if (lum < Llo) { // too dark for the floor — raise V (monotone) until it clears, with a small margin
+    for (let i = 0; i < 80 && lumOf(v0) < Llo; i++) v0 = Math.min(1, v0 + 0.02);
+    adjusted = true;
+  } else if (lum > Lhi) { // washing out — bring it down into the band
+    for (let i = 0; i < 80 && lumOf(v0) > Lhi; i++) v0 = Math.max(0, v0 - 0.02);
+    adjusted = true;
+  }
+  adjusted = adjusted || s0 !== s;
+  const { r, g, b } = hsvToRgb(h, s0, v0);
+  lum = relLuminance(r, g, b);
+  return { r, g, b, h, s: s0, v: v0, lum, contrast: contrastRatio(lum, bgLum), adjusted };
+}
+
 // ── histogram via ImageMagick ────────────────────────────────────────────────
 function histogram(imgPath) {
   // Quantise to a small palette, print the colour histogram. `%c` + histogram:info:- yields lines like:
@@ -91,12 +137,17 @@ export function extractAccent(imgPath, opts = {}) {
     fallback = 'all-grey-or-dark';
   }
 
-  // Contrast boost: keep the hue, force vivid saturation + a mid-high value.
+  // Contrast-GUARANTEED accent (C10): keep the hue and a vivid-enough saturation, then normalise
+  // LUMINANCE into the band that clears the floor against the target background. HSV value alone does
+  // not guarantee contrast — a dark hue at high V still fails on a dark surface. `vHi`/`borderValRange`
+  // is retained only as the starting point; the normalise is what makes the guarantee.
   const bh = best.h;
-  const bs = clamp(Math.max(best.s, borderSat), 0, 1);
-  const bv = clamp(best.v < vLo ? vLo : best.v > vHi ? vHi : best.v, vLo, vHi);
-  const { r, g, b } = hsvToRgb(bh, bs, bv);
-  return { hex: toHex(r, g, b), raw: best.hex, hsv: { h: bh, s: bs, v: bv }, score: best.score, fallback };
+  const bs = Math.max(best.s, borderSat);
+  const bv = best.v < vLo ? vLo : best.v;
+  const n = normaliseForContrast(bh, bs, bv, {
+    bgLuminance: opts.bgLuminance, contrastFloor: opts.contrastFloor, chromaRange: opts.chromaRange, maxLum: opts.maxLum,
+  });
+  return { hex: toHex(n.r, n.g, n.b), raw: best.hex, hsv: { h: n.h, s: n.s, v: n.v }, score: best.score, fallback, contrast: Number(n.contrast.toFixed(2)) };
 }
 
 // CLI: node theme-extract.mjs <image>  →  prints the accent hex
