@@ -81,34 +81,42 @@ function authHeaders(cfg: FeatureVerifyConfig): Record<string, string> {
   return { Authorization: `Bearer ${cfg.bearerToken}`, 'Content-Type': 'application/json' };
 }
 
+export interface ReportArgs {
+  target_kind: 'stage-3-feature' | 'stage-4-iteration-item' | 'flow';
+  target_id: string;
+  matrix: Matrix;
+  verdict: Verdict;
+  full_report?: unknown;
+}
+
+/** The POST body — shared so the runner (FV_NO_POST) can WRITE it for the skill to post after the judge,
+ *  and postReport can SEND it. Single shape, no drift. */
+export function buildReportBody(cfg: FeatureVerifyConfig, args: ReportArgs) {
+  return {
+    project_slug: cfg.projectSlug,
+    target_kind: args.target_kind,
+    target_id: args.target_id,
+    verifier_session_id: cfg.verifierSessionId,
+    commit_sha: cfg.commitSha,
+    recommendation_overall: args.verdict.recommendation_overall,
+    recommendation_reason: args.verdict.reason,
+    risk_policy: cfg.riskPolicy,
+    mandatory_user_review: args.verdict.mandatory_user_review,
+    case_matrix: args.matrix.results,
+    evidence_root: cfg.evidenceRoot,
+    full_report: args.full_report ?? null,
+  };
+}
+
 /** POST the rich report to the feature verifier's sink. Returns the created row's id. */
 export async function postReport(
   request: APIRequestContext,
   cfg: FeatureVerifyConfig,
-  args: {
-    target_kind: 'stage-3-feature' | 'stage-4-iteration-item' | 'flow';
-    target_id: string;
-    matrix: Matrix;
-    verdict: Verdict;
-    full_report?: unknown;
-  },
+  args: ReportArgs,
 ): Promise<number | null> {
   const res = await request.post(`${cfg.trackerBase}/api/feature-verification-reports`, {
     headers: authHeaders(cfg),
-    data: {
-      project_slug: cfg.projectSlug,
-      target_kind: args.target_kind,
-      target_id: args.target_id,
-      verifier_session_id: cfg.verifierSessionId,
-      commit_sha: cfg.commitSha,
-      recommendation_overall: args.verdict.recommendation_overall,
-      recommendation_reason: args.verdict.reason,
-      risk_policy: cfg.riskPolicy,
-      mandatory_user_review: args.verdict.mandatory_user_review,
-      case_matrix: args.matrix.results,
-      evidence_root: cfg.evidenceRoot,
-      full_report: args.full_report ?? null,
-    },
+    data: buildReportBody(cfg, args),
   });
   if (!res.ok()) throw new Error(`postReport → ${res.status()} ${await res.text()}`);
   const body = (await res.json()) as { report?: { id?: number } };

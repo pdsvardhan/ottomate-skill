@@ -5,7 +5,7 @@
 // verdict path reproduces P1-A's APPROVE. See docs/plans/2026-07-28-task3-P2A/P2B-*-design.md.
 
 import { test, expect, request as playwrightRequest, type APIRequestContext, type Page } from '@playwright/test';
-import { loadConfig, Matrix, postReport, postTestRun, caseEvidenceDir, writeMatrix } from './harness';
+import { loadConfig, Matrix, postReport, postTestRun, buildReportBody, caseEvidenceDir, writeMatrix } from './harness';
 import { loadMatrix } from './harness/matrix.mjs';
 import { shouldPostTestRun } from './harness/orchestrate.mjs';
 import { assessTrust, applyTrust } from './harness/trust-record.mjs';
@@ -90,13 +90,22 @@ test.afterAll(async () => {
     pre_build_authored: !!m.authored?.at_commit,
   });
   verdict = applyTrust(verdict, trust);
-  await postReport(api, cfg, { target_kind: 'stage-3-feature', target_id: m.feature, matrix, verdict, full_report: { trust, tamper } });
+  const reportArgs = { target_kind: 'stage-3-feature' as const, target_id: m.feature, matrix, verdict, full_report: { trust, tamper } };
   await writeMatrix(cfg.evidenceRoot, matrix.results,
     `# feature-verify: ${m.feature} (P2-A runner)\n\n${verdict.recommendation_overall} — ${verdict.reason}\n\ntrust: ${JSON.stringify(trust)}\n\n${matrix.renderTable()}\n`);
-  // P3-C4: the nightly substrate — one test_runs row per app on the scheduled cadence (fail-closed:
-  // result derives from the matrix counts, not any coder-touchable exit code). No-op off schedule.
-  if (shouldPostTestRun(process.env)) {
-    await postTestRun(api, cfg, { matrix, commit_sha: cfg.commitSha ?? 'unknown', triggered_by: 'schedule', notes: `${m.feature} — nightly` });
+  // P3-A hook (a): FV_NO_POST is the INTERACTIVE (skill-session) path — the runner produces the matrix +
+  // evidence but does NOT post; the skill then runs the judge on the screenshots and posts the COMPLETE
+  // report (with judge_verdict merged) via post-report.mjs. The nightly path (FV_NO_POST unset) posts here
+  // as before — the judge needs a Claude sub-agent, which no nightly cron has, so it never runs unattended.
+  if (process.env.FV_NO_POST === '1') {
+    await fs.writeFile(path.join(cfg.evidenceRoot, 'report-payload.json'), JSON.stringify(buildReportBody(cfg, reportArgs), null, 2));
+  } else {
+    await postReport(api, cfg, reportArgs);
+    // P3-C4: the nightly substrate — one test_runs row per app on the scheduled cadence (fail-closed:
+    // result derives from the matrix counts, not any coder-touchable exit code). No-op off schedule.
+    if (shouldPostTestRun(process.env)) {
+      await postTestRun(api, cfg, { matrix, commit_sha: cfg.commitSha ?? 'unknown', triggered_by: 'schedule', notes: `${m.feature} — nightly` });
+    }
   }
   await api.dispose();
 });
