@@ -7,6 +7,12 @@
 > recorded FAIL → `test_runs` failed + BLOCK (the empty-matrix false-green closed). Register row + the
 > stage-3/stage-4.7 docs updated. Next in Phase 3: **P3-A** (AI-visual-judge), then **P3-D** (trajectory
 > monitor). See the SKILL-REGISTER "Feature verifier" row for the full result ledger.
+>
+> **Operational note:** the cron runs from `/opt/homeserver/fv-harness`, a **copy** of
+> `scripts/feature-verify` (with its own `node_modules`; browsers via `~/.cache/ms-playwright`). It is a
+> snapshot — **when the harness code changes, re-sync it**: `cp -a` the new tree over `FV_HOME`
+> (node_modules is preserved) or, better later, make `FV_HOME` a git checkout and add `git pull` to the
+> top of `nightly.sh`. Logs: `/opt/homeserver/ottomate/fv-evidence/logs/nightly-<date>.log`.
 
 The first Phase-3 build (highest leverage: it makes the whole verifier run automatically). Off
 [the Phase-3 plan](2026-07-28-task3-PHASE3-plan.md) §P3-C and the
