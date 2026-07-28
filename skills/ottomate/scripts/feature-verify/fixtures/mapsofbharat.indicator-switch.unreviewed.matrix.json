@@ -1,0 +1,16 @@
+{
+  "feature": "mapsofbharat.indicator-switch",
+  "requirement_ref": "P2-B demo — unreviewed matrix must not gate",
+  "authored": { "from": "locked-AC", "at_commit": "ad15c06", "blind_to_diff": true },
+  "target": { "kind": "flow", "id": "indicator-switch", "base": "FV_INSTANCE_URL" },
+  "parameters": { "from": ["livestock_buffalo"], "to": ["assets_car"] },
+  "cases": [
+    {
+      "id": "c1",
+      "path": "happy",
+      "params": { "from": "livestock_buffalo", "to": "assets_car", "category": "assets" },
+      "oracles": [{ "layer": "system-state", "assert": "mob.indicator-switch-verified" }]
+    }
+  ],
+  "review": { "owner_locked": false, "locked_at": null }
+}
