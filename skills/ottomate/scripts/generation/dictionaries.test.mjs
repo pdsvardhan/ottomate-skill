@@ -5,6 +5,7 @@ import {
   loadMotionPatterns, validateMotionDict, motionPattern, motionByRole, motionByTrigger,
   reducedMotionSwap, motionAffinity, recommendMotion,
   loadChartDict, validateChartDict, chartsForRelationship, bestChart, chartAvoids, DATA_RELATIONSHIPS,
+  loadPatterns, validatePatterns, archetype, sectionsFor, checkCombinations, combinationAdvice,
 } from './dictionaries.mjs';
 
 test('the motion dictionary has the 20 starter patterns and VALIDATES', () => {
@@ -93,4 +94,42 @@ test('chartsForRelationship rejects an unknown relationship; avoids are surfaced
   assert.throws(() => chartsForRelationship('vibes'), /unknown data relationship/);
   const av = chartAvoids('part-to-whole');
   assert.ok(av.global.length > 0 && av.perChart.some((x) => x.id === 'pie' && /slices/.test(x.avoid)));
+});
+
+// ── pattern / combination (P2.3) ──
+test('the pattern graph VALIDATES (archetype layouts/sections resolve; rules are well-formed)', () => {
+  const v = validatePatterns();
+  assert.equal(v.ok, true, v.errors.join('\n'));
+  assert.ok(archetype('dashboard').typical_sections.includes('kpi-row'));
+  assert.ok(sectionsFor('dashboard').some((s) => s.id === 'chart-panel' && Array.isArray(s.good_charts)));
+});
+
+test('an archetype pointing at an unknown section FAILS validation (must-fail)', () => {
+  const bad = { app_archetypes: { x: { layouts: [], typical_sections: ['ghost-section'] } }, layout_templates: {}, section_patterns: {}, combination_rules: [] };
+  assert.equal(validatePatterns(bad).ok, false);
+});
+
+test('a combination rule missing its reason FAILS validation (a rule without a why is not a rule)', () => {
+  const bad = { app_archetypes: {}, layout_templates: {}, section_patterns: {}, combination_rules: [{ a: 'x', b: 'y', relation: 'good' }] };
+  assert.equal(validatePatterns(bad).ok, false);
+});
+
+test('checkCombinations flags an AVOID pair and surfaces GOOD pairs (the good/avoid-together layer)', () => {
+  // ONE glass panel is fine; TWO (nested) is the avoid — occurrence count, not set membership.
+  assert.equal(checkCombinations(['glassmorphism', 'kpi-row', 'chart-panel']).ok, true, 'one glass item → no avoid');
+  const nested = checkCombinations(['glassmorphism', 'glassmorphism']);
+  assert.equal(nested.ok, false, 'two nested glass layers → avoid fires');
+  assert.ok(nested.avoid.some((r) => /mud/.test(r.why)));
+  const clash = checkCombinations(['3d-tilt', 'drag-reorder']);
+  assert.equal(clash.ok, false);
+  assert.ok(clash.avoid.some((r) => /pointer/.test(r.why)));
+  const good = checkCombinations(['kpi-row', 'chart-panel']);
+  assert.ok(good.good.some((r) => r.a === 'kpi-row' && r.b === 'chart-panel'));
+});
+
+test('combinationAdvice returns good/avoid for a single item', () => {
+  const adv = combinationAdvice('kpi-row');
+  assert.ok(adv.good.some((x) => x.with === 'chart-panel'));
+  const tilt = combinationAdvice('3d-tilt');
+  assert.ok(tilt.avoid.some((x) => x.with === 'drag-reorder'));
 });

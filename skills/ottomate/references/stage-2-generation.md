@@ -73,6 +73,14 @@ panel files + config and returns its 6→3 rationale; the main session runs the 
    **Floors are NOT flipped:** the per-theme contrast gate, `prefers-reduced-motion` and feasibility stay
    blocking. Taste raises the aesthetic ceiling; it never lowers the legibility floor. A tell the owner
    did **not** mark wanted (e.g. neumorphism) keeps its base tier.
+9. **The design-intelligence dictionaries (Phase 2, `scripts/generation/dictionaries.mjs`)** — load on
+   activation and use them, don't reinvent: **motion** (`recommendMotion`/`motionAffinity` — 20 patterns,
+   expressive-first for this owner, each with a reduced-motion swap), **chart-by-data**
+   (`chartsForRelationship`/`bestChart`/`chartAvoids` — pick the chart the DATA RELATIONSHIP wants, ranked
+   by encoding accuracy, with the FT/Datawrapper avoid notes), and **pattern/combination**
+   (`sectionsFor`/`checkCombinations`/`combinationAdvice` — the archetype→layout→section graph + the
+   good-together/avoid-together rules). Run `checkCombinations` over the chosen sections/styles/motions and
+   heed the `avoid` warnings before generating.
 
 ## The steps
 

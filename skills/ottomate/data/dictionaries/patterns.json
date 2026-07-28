@@ -1,0 +1,57 @@
+{
+  "$description": "Phase 2 P2.3 — the pattern/combination dictionary (spec §3 Pillar E). The graph the design AI loads on activation: app_archetypes → layout_templates → section_patterns → component_refs (roles that resolve to master_components via the catalog), plus combination_rules ('good together / avoid together' as FIRST-CLASS facts). component_refs are ROLE names, not invented mc-ids — resolution to the 116-row master_components catalog is a separate lookup, so nothing false is asserted here.",
+  "app_archetypes": {
+    "dashboard": { "intent": "monitor + act on live state", "layouts": ["sidebar-shell", "topbar-shell"], "typical_sections": ["filter-bar", "kpi-row", "chart-panel", "data-table", "empty-state"] },
+    "landing": { "intent": "convert a visitor", "layouts": ["hero-stack"], "typical_sections": ["hero", "feature-grid", "social-proof", "cta-band", "footer"] },
+    "feed": { "intent": "browse a stream of items", "layouts": ["topbar-shell"], "typical_sections": ["filter-bar", "card-list", "empty-state"] },
+    "detail-page": { "intent": "everything about one entity", "layouts": ["split-detail"], "typical_sections": ["entity-header", "kpi-row", "chart-panel", "data-table", "activity-log"] },
+    "wizard": { "intent": "complete a multi-step task", "layouts": ["centered-frame"], "typical_sections": ["stepper", "form-panel", "summary"] },
+    "settings": { "intent": "configure preferences", "layouts": ["sidebar-shell"], "typical_sections": ["section-list", "form-panel"] },
+    "auth": { "intent": "sign in / up", "layouts": ["centered-frame"], "typical_sections": ["auth-card"] },
+    "data-explorer": { "intent": "slice + query a dataset", "layouts": ["sidebar-shell"], "typical_sections": ["filter-bar", "chart-panel", "data-table"] }
+  },
+  "layout_templates": {
+    "sidebar-shell": { "structure": "fixed left nav + fluid content", "slots": ["nav", "header", "content"] },
+    "topbar-shell": { "structure": "top nav + fluid content", "slots": ["nav", "content"] },
+    "hero-stack": { "structure": "full-width sections stacked vertically", "slots": ["hero", "sections", "footer"] },
+    "split-detail": { "structure": "primary content + a context rail", "slots": ["main", "rail"] },
+    "centered-frame": { "structure": "a single centred card on a plain field", "slots": ["frame"] }
+  },
+  "section_patterns": {
+    "hero": { "intent": "headline value + a primary CTA", "components": ["display-heading", "subhead", "primary-cta", "media"], "good_motion": ["scroll-reveal", "3d-tilt"] },
+    "kpi-row": { "intent": "a row of headline metrics", "components": ["stat-card", "sparkline-stat"], "good_charts": ["change-over-time", "magnitude"], "good_motion": ["count-up"] },
+    "chart-panel": { "intent": "one focused chart with a title + legend", "components": ["panel", "chart", "legend"], "good_charts": ["change-over-time", "part-to-whole", "correlation", "distribution"], "good_motion": ["chart-tooltip", "chart-brush"] },
+    "data-table": { "intent": "rows of records, sortable/filterable", "components": ["table", "row", "cell", "pagination"], "good_motion": ["list-stagger", "skeleton-to-content"] },
+    "filter-bar": { "intent": "narrow what is shown", "components": ["search", "select", "chip"], "good_motion": ["menu-open"] },
+    "empty-state": { "intent": "guide the first action when there is no data", "components": ["illustration", "headline", "primary-cta"] },
+    "cta-band": { "intent": "a final conversion push", "components": ["headline", "primary-cta"] },
+    "feature-grid": { "intent": "scannable value props", "components": ["feature-card"], "good_motion": ["list-stagger", "hover-elevate"] },
+    "auth-card": { "intent": "credentials entry", "components": ["form-panel", "input", "primary-cta"], "good_motion": ["error-shake", "focus-ring"] },
+    "stepper": { "intent": "show progress through steps", "components": ["step-indicator"], "good_motion": ["tab-slide"] },
+    "card-list": { "intent": "a stream of item cards", "components": ["card"], "good_motion": ["list-stagger", "hover-elevate", "3d-tilt"] },
+    "social-proof": { "intent": "trust via logos / testimonials / stats", "components": ["logo-row", "testimonial-card", "stat-card"], "good_motion": ["scroll-reveal"] },
+    "footer": { "intent": "site-wide nav + legal", "components": ["link-column", "legal-note"] },
+    "entity-header": { "intent": "identify the one entity + primary actions", "components": ["title", "meta", "primary-cta"] },
+    "activity-log": { "intent": "a reverse-chronological event stream", "components": ["timeline", "log-row"], "good_motion": ["streamed-load", "list-stagger"] },
+    "form-panel": { "intent": "grouped inputs with validation", "components": ["input", "select", "primary-cta"], "good_motion": ["error-shake", "focus-ring"] },
+    "summary": { "intent": "review before commit", "components": ["review-list", "primary-cta"] },
+    "section-list": { "intent": "grouped settings sections", "components": ["section-row"] }
+  },
+  "combination_rules": [
+    { "a": "kpi-row", "b": "chart-panel", "relation": "good", "why": "the number and the trend that explains it, read together" },
+    { "a": "kpi-row", "b": "sparkline-stat", "relation": "good", "why": "an at-a-glance trend beside each headline number" },
+    { "a": "hero", "b": "scroll-reveal", "relation": "good", "why": "storytelling as the visitor scrolls (owner taste)" },
+    { "a": "empty-state", "b": "primary-cta", "relation": "good", "why": "an empty screen must offer the first action, not just say 'no data'" },
+    { "a": "filter-bar", "b": "data-table", "relation": "good", "why": "narrow, then read the narrowed rows" },
+    { "a": "auth-card", "b": "error-shake", "relation": "good", "why": "invalid credentials need an unmissable, non-colour-alone cue" },
+    { "a": "carousel", "b": "carousel", "relation": "avoid", "why": "two auto-advancing carousels compete for the same attention and gesture" },
+    { "a": "glassmorphism", "b": "glassmorphism", "relation": "avoid", "why": "nested backdrop-filter surfaces stack into mud and cost GPU (owner loves glass — use ONE layer well)" },
+    { "a": "3d-tilt", "b": "drag-reorder", "relation": "avoid", "why": "tilt-on-hover and drag gestures fight for the same pointer" },
+    { "a": "pie", "b": "many-categories", "relation": "avoid", "why": "angle-encoding fails past ~5 slices — use an ordered bar" },
+    { "a": "dual-y-axis", "b": "correlation-claim", "relation": "avoid", "why": "two axes manufacture a correlation the data may not support" },
+    { "a": "modal-enter", "b": "menu-open", "relation": "avoid", "why": "a menu inside a modal is two overlay layers — flatten to one" },
+    { "a": "success-check", "b": "error-shake", "relation": "avoid", "why": "opposite outcomes should never animate on the same element in one flow" },
+    { "a": "count-up", "b": "kpi-row", "relation": "good", "why": "headline metrics feel alive counting up on mount (owner taste)" },
+    { "a": "feature-grid", "b": "list-stagger", "relation": "good", "why": "the grid assembles with rhythm instead of popping in" }
+  ]
+}

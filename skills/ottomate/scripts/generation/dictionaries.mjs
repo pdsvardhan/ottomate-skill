@@ -110,3 +110,56 @@ export function chartAvoids(relationship, dict = loadChartDict()) {
   const r = dict.relationships?.[relationship];
   return { global: dict.global_avoid ?? [], perChart: (r?.charts ?? []).map((c) => ({ id: c.id, avoid: c.avoid })).filter((x) => x.avoid) };
 }
+
+// ── Pattern / combination dictionary (P2.3) ────────────────────────────────────────────────────────
+export function loadPatterns() { return load('patterns.json'); }
+
+/** Validate the pattern graph: archetype layouts/sections resolve to real ids; combination relations valid. */
+export function validatePatterns(dict = loadPatterns()) {
+  const errors = [];
+  const layouts = new Set(Object.keys(dict.layout_templates ?? {}));
+  const sections = new Set(Object.keys(dict.section_patterns ?? {}));
+  for (const [id, a] of Object.entries(dict.app_archetypes ?? {})) {
+    for (const l of a.layouts ?? []) if (!layouts.has(l)) errors.push(`archetype ${id}: unknown layout "${l}"`);
+    for (const s of a.typical_sections ?? []) if (!sections.has(s)) errors.push(`archetype ${id}: unknown section "${s}"`);
+  }
+  for (const r of dict.combination_rules ?? []) {
+    if (!r.a || !r.b) errors.push('a combination rule is missing a/b');
+    if (r.relation !== 'good' && r.relation !== 'avoid') errors.push(`combination ${r.a}+${r.b}: relation must be good|avoid`);
+    if (!r.why) errors.push(`combination ${r.a}+${r.b}: a rule without a reason is not a rule`);
+  }
+  return { ok: errors.length === 0, errors };
+}
+
+export function archetype(id, dict = loadPatterns()) { return dict.app_archetypes?.[id] ?? null; }
+export function sectionsFor(archetypeId, dict = loadPatterns()) {
+  return (archetype(archetypeId, dict)?.typical_sections ?? []).map((s) => ({ id: s, ...(dict.section_patterns?.[s] ?? {}) }));
+}
+
+/**
+ * Check a SET of chosen items (sections/styles/motions/charts) against combination_rules. Returns the
+ * `good` pairs to lean into and the `avoid` pairs to warn on — the "what's good/avoid together" layer.
+ * @param {string[]} items
+ */
+export function checkCombinations(items = [], dict = loadPatterns()) {
+  // count occurrences, not set membership, so a SELF-pair rule (a===b, e.g. nested glass) fires only when
+  // the item appears twice — a set cannot represent "two of them".
+  const count = new Map();
+  for (const it of items) count.set(it, (count.get(it) ?? 0) + 1);
+  const good = [], avoid = [];
+  for (const r of dict.combination_rules ?? []) {
+    const present = r.a === r.b ? (count.get(r.a) ?? 0) >= 2 : (count.get(r.a) ?? 0) > 0 && (count.get(r.b) ?? 0) > 0;
+    if (present) (r.relation === 'avoid' ? avoid : good).push(r);
+  }
+  return { ok: avoid.length === 0, good, avoid };
+}
+
+/** Everything the rules say about one item (what pairs well with it, what to avoid beside it). */
+export function combinationAdvice(item, dict = loadPatterns()) {
+  const good = [], avoid = [];
+  for (const r of dict.combination_rules ?? []) {
+    const other = r.a === item ? r.b : r.b === item ? r.a : null;
+    if (other) (r.relation === 'avoid' ? avoid : good).push({ with: other, why: r.why });
+  }
+  return { good, avoid };
+}
