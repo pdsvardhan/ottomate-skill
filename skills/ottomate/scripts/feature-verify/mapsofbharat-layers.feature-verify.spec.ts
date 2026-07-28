@@ -9,8 +9,10 @@
 
 import { test, expect, request as playwrightRequest, type APIRequestContext } from '@playwright/test';
 import fc from 'fast-check';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
 import {
-  loadConfig, Matrix, caseEvidenceDir, saveArtifact, writeMatrix, postReport,
+  loadConfig, Matrix, caseEvidenceDir, saveArtifact, writeMatrix, postReport, buildReportBody,
   assertPopulationOk, nonConstancy, checkNoHorizontalOverflow, checkNoHardClippedText, checkAxeContrast,
 } from './harness';
 
@@ -24,9 +26,16 @@ interface MetricData { id: string; name: string; count: number; stats_count: num
 test.beforeAll(async () => { api = await playwrightRequest.newContext(); });
 test.afterAll(async () => {
   const verdict = matrix.verdict(cfg.riskPolicy);
-  await postReport(api, cfg, { target_kind: 'stage-3-feature', target_id: 'feat-mapsofbharat-layers-C-D-E', matrix, verdict });
+  const reportArgs = { target_kind: 'stage-3-feature' as const, target_id: 'feat-mapsofbharat-layers-C-D-E', matrix, verdict };
   await writeMatrix(cfg.evidenceRoot, matrix.results,
     `# feature-verify: mapsofbharat L1/L3/L4 layers (P1-C/D/E)\n\n${verdict.recommendation_overall} — ${verdict.reason}\n\n${matrix.renderTable()}\n`);
+  // FV_NO_POST: the interactive/skill path — defer posting so the skill can fold these layers into one
+  // unified report alongside L2 + judge + trajectory (see run-matrix + post-report.mjs).
+  if (process.env.FV_NO_POST === '1') {
+    await fs.writeFile(path.join(cfg.evidenceRoot, 'report-payload.json'), JSON.stringify(buildReportBody(cfg, reportArgs), null, 2));
+  } else {
+    await postReport(api, cfg, reportArgs);
+  }
   await api.dispose();
 });
 
