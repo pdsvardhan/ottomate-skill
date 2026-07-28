@@ -8,6 +8,17 @@ that *produces* them.
 `routeRungs` — a `component` scope never runs whole-vibe directions. **`ui-mode:none` is the default and
 runs NO round** (build neutral placeholder UI + `data-oid`, design later).
 
+**Decompose-and-ask FIRST — never assume scope (WS1.3, fixes F-15).** On a redesign request, before any
+round: (1) read the target's real source and `decompose({src})` (`scripts/generation/decompose.mjs`) — the
+parts come from the `data-role`/`data-oid` STAMPS, not name-guessing (F-4); (2) fire `scopeQuestion(decomp)`
+as an **`AskUserQuestion`** — the owner explicitly picks WHAT to change and HOW DEEP (whole component / one
+part / one property — F-9 supports granular *and* bold); (3) `requireExplicitScope(choice)` **BLOCKS** if no
+scope was chosen (a round may never run on an assumed scope). Then `axesForScope(decomp, choice)` yields the
+contested axes → `composeRounds` → the round. **Every round leads with the legibility banner (WS1.2, F-17):**
+`bannerFromComposition({composition, currentRound, frozen, variantCount})` (`round-banner.mjs`) states LOUDLY
+what this round decides, what is held, and what is deferred — a deferral sets `assentRequired` and must get a
+yes (no silent round-2). `assertAccounted` guarantees no contested axis is varied/dropped silently.
+
 **Every round runs in a FRESH `Agent` sub-agent** — not inline in a long session (a long session
 produces repetitive designs; the ledger is the memory, the chat is disposable). Assemble its
 self-contained input packet with `buildRoundInput(...)` (`scripts/generation/method-routing.mjs`): it
