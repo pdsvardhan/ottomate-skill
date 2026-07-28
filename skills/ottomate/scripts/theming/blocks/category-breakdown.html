@@ -1,0 +1,97 @@
+<!doctype html>
+<!-- category-breakdown.html — Phase 0 WS0.2c render harness.
+     Renders the token-only Block under the cointrail theme. `?dark=1` toggles cointrail's .dark scheme
+     (its real convention). Data is SYNTHETIC Indian finance data (PII hygiene — never the owner's real
+     transactions). The theme sheet + block css are LINKED (not copied) so what renders is exactly what
+     ban-raw-values.mjs lints and what build-theme.mjs emits — no drift. -->
+<html lang="en" data-theme="cointrail">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>cointrail · category breakdown (token-only Block)</title>
+  <link rel="stylesheet" href="../cointrail.theme.css" />
+  <link rel="stylesheet" href="category-breakdown.block.css" />
+  <style>
+    /* harness-only chrome (NOT part of the Block; the Block is .cb-*). */
+    html, body { margin: 0; }
+    body { background: var(--color-surface-sunken); color: var(--color-on-surface);
+           font-family: system-ui, -apple-system, "Segoe UI", sans-serif; padding: 40px; }
+    .stage { max-width: 380px; margin: 0 auto; }
+    .scheme-tag { font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+                  color: var(--color-on-surface-subtle); margin: 0 0 12px 2px; }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <p class="scheme-tag" id="scheme-tag">cointrail · light</p>
+
+    <section class="cb-panel" data-role="panel" data-oid="cointrail.category-breakdown" aria-label="Category breakdown">
+      <div class="cb-head">
+        <span class="cb-title">Category breakdown</span>
+        <span class="cb-sub">This month</span>
+      </div>
+      <div class="cb-total" data-role="metric" data-count="48250" data-prefix="₹">₹0</div>
+      <div class="cb-delta">▲ 8.2% vs last month</div>
+
+      <div class="cb-list" id="cb-list" data-role="category-list"></div>
+    </section>
+  </div>
+
+  <script>
+    // SYNTHETIC data — realistic Indian spend, not real transactions.
+    const CATS = [
+      { name: 'Groceries',   amount: 14680, cls: 'cb-c1' },
+      { name: 'Dining out',  amount: 10420, cls: 'cb-c2' },
+      { name: 'Transport',   amount:  8130, cls: 'cb-c3' },
+      { name: 'Shopping',    amount:  9200, cls: 'cb-c4' },
+      { name: 'Bills & utilities', amount: 5820, cls: 'cb-c5' },
+    ];
+    const total = CATS.reduce((a, c) => a + c.amount, 0);
+    const fmt = (n) => '₹' + n.toLocaleString('en-IN');
+
+    // `?still=1` = deterministic settled capture (final numbers, no in-flight animation) for screenshot
+    // evidence. Without it, motion is live (bars grow, total counts up) as a real browser would show.
+    const still = new URLSearchParams(location.search).get('still') === '1';
+
+    const list = document.getElementById('cb-list');
+    for (const c of CATS) {
+      const pct = Math.round((c.amount / total) * 100);
+      const row = document.createElement('div');
+      row.className = 'cb-row';
+      row.setAttribute('data-role', 'category-row');
+      row.innerHTML =
+        '<span class="cb-swatch ' + c.cls + '"></span>' +
+        '<span class="cb-label">' + c.name + '</span>' +
+        '<span class="cb-amount">' + fmt(c.amount) + '</span>' +
+        '<div class="cb-barwrap">' +
+          '<div class="cb-track"><div class="cb-fill ' + c.cls + '" data-role="bar" style="--cb-pct:0%"></div></div>' +
+          '<span class="cb-pct">' + pct + '%</span>' +
+        '</div>';
+      list.appendChild(row);
+      const fill = row.querySelector('.cb-fill');
+      if (still) { fill.style.transition = 'none'; fill.style.setProperty('--cb-pct', pct + '%'); }
+      // grow the bar in on load (taste: data feels alive) — width transitions to its real value.
+      else requestAnimationFrame(() => { fill.style.setProperty('--cb-pct', pct + '%'); });
+    }
+
+    // count-up the total (taste: numbers count up on mount), reduced-motion aware.
+    const totalEl = document.querySelector('.cb-total');
+    const reduce = still || matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) { totalEl.textContent = fmt(total); }
+    else {
+      const t0 = performance.now(), dur = 900;
+      (function tick(t) {
+        const p = Math.min((t - t0) / dur, 1);
+        totalEl.textContent = fmt(Math.round(total * (1 - Math.pow(1 - p, 3))));
+        if (p < 1) requestAnimationFrame(tick);
+      })(t0);
+    }
+
+    // scheme toggle for the render harness (?dark=1).
+    if (new URLSearchParams(location.search).get('dark') === '1') {
+      document.documentElement.classList.add('dark');
+      document.getElementById('scheme-tag').textContent = 'cointrail · dark';
+    }
+  </script>
+</body>
+</html>

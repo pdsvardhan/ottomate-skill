@@ -51,6 +51,25 @@ export function roundPaths(manifest) {
   return { rel, relFile: path.posix.join(rel, 'index.html'), url: `/api/previews/${rel}/index.html` };
 }
 
+// WS0.1 (Phase 0, 2026-07-29 — corrects test-finding F-13). The app IS browser-reachable, but the
+// tunnel host is served through Authentik SSO (cloudflared: ottomate.vault7a.xyz → authentik:9000 →
+// the ottomate container on 127.0.0.1:8110). The API base (`--api`) must stay server-side/localhost
+// for the POSTs; the URL PRINTED TO THE OWNER must be the reachable tunnel host, never 127.0.0.1
+// (which is dead from the owner's browser — the exact thing that hid the cointrail round from them).
+// `--public-base` overrides the default for a LAN-only or different-domain deployment.
+export const DEFAULT_PUBLIC_BASE = 'https://ottomate.vault7a.xyz';
+
+/** The owner-openable preview URL (tunnel host + the previews route). Pure, so it is unit-tested. */
+export function publicRoundUrl(manifest, publicBase = DEFAULT_PUBLIC_BASE) {
+  const { url } = roundPaths(manifest);
+  return `${String(publicBase).replace(/\/+$/, '')}${url}`;
+}
+
+/** The owner-openable design-surface URL for a (project, target) — the pick/mix page. */
+export function publicDesignUrl(projectSlug, targetId, publicBase = DEFAULT_PUBLIC_BASE) {
+  return `${String(publicBase).replace(/\/+$/, '')}/projects/${projectSlug}/design/${encodeURIComponent(targetId)}`;
+}
+
 /**
  * PURE. Turn a round manifest into the `proposed` design_decisions payloads.
  *
@@ -189,19 +208,21 @@ async function api(base, token, pathname, init = {}) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.manifest) {
-    console.error('usage: node publish-round.mjs --manifest round.json --previews-dir <dir> --api <base> --token-file <file> [--dry-run] [--replace]');
+    console.error('usage: node publish-round.mjs --manifest round.json --previews-dir <dir> --api <base> --token-file <file> [--public-base https://ottomate.vault7a.xyz] [--dry-run] [--replace]');
     process.exit(1);
   }
   const manifest = JSON.parse(readFileSync(args.manifest, 'utf8'));
   const payloads = buildRoundPayloads(manifest);
   const { relFile, url } = roundPaths(manifest);
 
-  const base = args.api ?? 'http://127.0.0.1:8110';
+  const base = args.api ?? 'http://127.0.0.1:8110';         // API POSTs — server-side, never surfaced
+  const publicBase = args.public_base ?? DEFAULT_PUBLIC_BASE; // what the OWNER opens (WS0.1)
+  const publicUrl = publicRoundUrl(manifest, publicBase);
   const token = args.token ?? (args.token_file ? readFileSync(args.token_file, 'utf8').trim() : null);
 
   console.log(`round: ${manifest.project_slug} / ${manifest.target_id} / r${manifest.round}`);
   console.log(`archetype: ${manifest.archetype} · ${payloads.length} sub-decisions · ${Object.keys(manifest.variants_shown).length} variants`);
-  console.log(`preview:  ${url}`);
+  console.log(`preview:  ${publicUrl}`);
   for (const p of payloads) console.log(`  ${p.axis.padEnd(34)} ${JSON.stringify(p.variants_shown)}`);
 
   if (args.dry_run || args.dryRun) { console.log('\n--dry-run: nothing written.'); return; }
@@ -245,7 +266,8 @@ async function main() {
     created.push(r.body?.decision?.id);
   }
   console.log(`\ncreated ${created.length} decisions: ${created.join(', ')}`);
-  console.log(`open:  ${base}/projects/${manifest.project_slug}/design/${encodeURIComponent(manifest.target_id)}`);
+  console.log(`preview: ${publicUrl}`);
+  console.log(`open:    ${publicDesignUrl(manifest.project_slug, manifest.target_id, publicBase)}`);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

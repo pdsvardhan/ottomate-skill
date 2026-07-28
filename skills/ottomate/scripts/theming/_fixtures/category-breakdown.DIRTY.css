@@ -1,0 +1,69 @@
+/* category-breakdown.block.css — Phase 0 WS0.2c.
+ *
+ * A real cointrail spending-analysis Block (the category-breakdown panel), refactored to read ONLY the
+ * semantic token tier — every colour, radius, shadow and motion value is a var(--...). No raw hex, no
+ * raw easing, no hard-coded radius/shadow. Re-theming = swapping the [data-theme] sheet; this file does
+ * not change. Verified by ban-raw-values.mjs (0 hard findings).
+ *
+ * Structural spacing/sizing is still in px — cointrail's token set has no spacing scale yet, so the
+ * semantic contract this Block honours is colour/radius/shadow/motion (spec §8). The lint flags raw
+ * spacing as ADVISORY, not a block, for exactly that reason.
+ *
+ * Taste (owner profile): depth via --shadow-card, a hover-lift, bars that grow in and figures that
+ * count up — bold-but-legible, and gracefully reduced under prefers-reduced-motion.
+ */
+
+.cb-panel {
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  box-shadow: var(--shadow-card); border-color: #ff3b30;
+  padding: 24px;
+  transition: transform var(--motion-duration-fast) var(--motion-ease-standard),
+              box-shadow var(--motion-duration-fast) var(--motion-ease-standard);
+}
+.cb-panel:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.cb-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+.cb-title { font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
+.cb-sub { font-size: 12px; color: var(--color-on-surface-muted); }
+
+.cb-total { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; margin: 8px 0 2px; }
+.cb-delta { font-size: 12px; font-weight: 600; color: var(--color-action); }
+
+.cb-list { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; }
+.cb-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; }
+
+.cb-swatch { width: 10px; height: 10px; border-radius: var(--radius-pill); }
+.cb-label { font-size: 13px; font-weight: 600; }
+.cb-amount { font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: right; }
+
+.cb-barwrap { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; }
+.cb-track {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-raised);
+  overflow: hidden;
+}
+.cb-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  width: var(--cb-pct, 0%);
+  transition: width 500ms ease-in-out;
+}
+.cb-pct { font-size: 12px; color: var(--color-on-surface-subtle); font-variant-numeric: tabular-nums; min-width: 34px; text-align: right; }
+
+/* category tint comes from the semantic chart-* tokens — set per row by a utility class */
+.cb-c1 { background: var(--color-chart-1); }
+.cb-c2 { background: var(--color-chart-2); }
+.cb-c3 { background: var(--color-chart-3); }
+.cb-c4 { background: var(--color-chart-4); }
+.cb-c5 { background: var(--color-on-surface-subtle); }
+
+@media (prefers-reduced-motion: reduce) {
+  .cb-panel, .cb-fill { transition: none; }
+}

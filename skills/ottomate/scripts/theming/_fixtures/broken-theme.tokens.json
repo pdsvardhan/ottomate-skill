@@ -1,0 +1,38 @@
+{
+  "$description": "MUST-FAIL fixture for contrast-gate.mjs. Its light scheme sets on-surface to a near-white grey that DISAPPEARS on the white surface (~1.2:1) — the exact 'invisible text' class the gate exists to block. Its dark scheme is fine, so the gate must BLOCK on light only and name the scheme. A gate that never fails is not evidence (spec §7).",
+  "$meta": { "theme": "broken", "schemes": ["light", "dark"] },
+  "primitive": {
+    "color": {
+      "white":  { "$type": "color", "$value": "#ffffff" },
+      "ghost":  { "$type": "color", "$value": "#eaeaea" },
+      "slate600": { "$type": "color", "$value": "#475569" },
+      "ink900": { "$type": "color", "$value": "#0e0e18" },
+      "inkfg":  { "$type": "color", "$value": "#f1f5f9" },
+      "slate400": { "$type": "color", "$value": "#94a3b8" }
+    }
+  },
+  "semantic": {
+    "light": {
+      "color": {
+        "surface":          { "$type": "color", "$value": "{primitive.color.white}" },
+        "on-surface":       { "$type": "color", "$value": "{primitive.color.ghost}" },
+        "on-surface-muted": { "$type": "color", "$value": "{primitive.color.slate600}" }
+      }
+    },
+    "dark": {
+      "color": {
+        "surface":          { "$type": "color", "$value": "{primitive.color.ink900}" },
+        "on-surface":       { "$type": "color", "$value": "{primitive.color.inkfg}" },
+        "on-surface-muted": { "$type": "color", "$value": "{primitive.color.slate400}" }
+      }
+    }
+  },
+  "$extensions": {
+    "com.ottomate.contrast": {
+      "pairings": [
+        { "fg": "color.on-surface",       "bg": "color.surface", "kind": "text", "role": "primary text (BROKEN in light)" },
+        { "fg": "color.on-surface-muted", "bg": "color.surface", "kind": "text", "role": "secondary text" }
+      ]
+    }
+  }
+}

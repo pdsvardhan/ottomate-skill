@@ -50,6 +50,18 @@ panel files + config and returns its 6→3 rationale; the main session runs the 
    - **conflict** — two different locked values for the same question on the same archetype → reported,
      **never silently resolved.** The round is where the project settles a disagreement it already has.
    A `proposed` decision elsewhere is context, never an inheritance: a proposal is not an answer.
+8. **The owner's taste (Pillar A, WS0.3)** — pass `taste` (from `loadTaste()`,
+   `scripts/generation/taste-packet.mjs`, which reads `references/taste-profile.md`) and
+   `buildRoundInput` injects a compact `taste` block into the packet: the one-line DNA, `motionBudget`
+   (**expressive** for this owner — real animation on load/hover, not productive-only), the loved
+   directives (3D/tilt, glow/spotlight, animated numbers, gradient text, bento, springy inputs), the
+   avoid-list, and `antiSlopAdvisory:true`. **Ground generation in this** (v0's "grounded skill" model):
+   reach for the loved effects as WANTED, not penalised. **The anti-slop TIER FLIP:** for this owner the
+   aesthetic slop tells (glow / gradient-text / glassmorphism / parallax / bounce) are **advisory, never
+   blocking** (`antiSlopTierFor(tell, baseTier, taste)` returns `'advisory'`) — F-16's concrete fix.
+   **Floors are NOT flipped:** the per-theme contrast gate, `prefers-reduced-motion` and feasibility stay
+   blocking. Taste raises the aesthetic ceiling; it never lowers the legibility floor. A tell the owner
+   did **not** mark wanted (e.g. neumorphism) keeps its base tier.
 
 ## The steps
 

@@ -1,0 +1,150 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "$description": "Ottomate design-system rebuild — Phase 0 pilot theme. cointrail's tokens as a 3-tier DTCG model (primitive -> semantic -> component). GROUNDED in the app's real app/globals.css (2026-07-29), not invented (spec §8 WS0.2 + doctrine grounding rule). ONLY the semantic tier is read by Blocks/Parts; primitives never appear in a component.",
+  "$meta": {
+    "theme": "cointrail",
+    "source": "/mnt/storage/websites/cointrail/app/globals.css",
+    "authored": "2026-07-29",
+    "schemes": ["light", "dark"],
+    "contract": ["color.surface", "color.on-surface", "color.border", "color.action", "radius", "shadow", "motion"]
+  },
+
+  "primitive": {
+    "color": {
+      "white":  { "$type": "color", "$value": "#ffffff" },
+      "slate": {
+        "25":  { "$type": "color", "$value": "#f8f9fc" },
+        "50":  { "$type": "color", "$value": "#f1f5f9" },
+        "200": { "$type": "color", "$value": "#e2e8f0" },
+        "400": { "$type": "color", "$value": "#94a3b8" },
+        "500": { "$type": "color", "$value": "#64748b" },
+        "600": { "$type": "color", "$value": "#475569" },
+        "900": { "$type": "color", "$value": "#0f172a" }
+      },
+      "ink": {
+        "950": { "$type": "color", "$value": "#06060b" },
+        "925": { "$type": "color", "$value": "#0c0c14" },
+        "900": { "$type": "color", "$value": "#0e0e18" },
+        "850": { "$type": "color", "$value": "#14141f" },
+        "800": { "$type": "color", "$value": "#1c1c2e" },
+        "border-subtle": { "$type": "color", "$value": "#141422" },
+        "muted": { "$type": "color", "$value": "#7e8fa6" },
+        "fg":    { "$type": "color", "$value": "#f1f5f9" }
+      },
+      "blue":    { "600": { "$type": "color", "$value": "#1d4ed8" }, "400": { "$type": "color", "$value": "#60a5fa" }, "500": { "$type": "color", "$value": "#3b82f6" } },
+      "emerald": { "500": { "$type": "color", "$value": "#10b981" }, "400": { "$type": "color", "$value": "#34d399" } },
+      "amber":   { "500": { "$type": "color", "$value": "#f59e0b" }, "400": { "$type": "color", "$value": "#fbbf24" } },
+      "rose":    { "500": { "$type": "color", "$value": "#ef4444" }, "400": { "$type": "color", "$value": "#f87171" } }
+    },
+    "dimension": {
+      "radius-sm": { "$type": "dimension", "$value": "0.375rem" },
+      "radius-md": { "$type": "dimension", "$value": "0.75rem" },
+      "radius-lg": { "$type": "dimension", "$value": "1rem" },
+      "radius-pill": { "$type": "dimension", "$value": "9999px" }
+    },
+    "shadow": {
+      "card-light":       { "$type": "shadow", "$value": "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)" },
+      "card-hover-light": { "$type": "shadow", "$value": "0 4px 16px rgba(0,0,0,0.08), 0 8px 32px rgba(0,0,0,0.04)" },
+      "card-dark":        { "$type": "shadow", "$value": "0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2)" },
+      "card-hover-dark":  { "$type": "shadow", "$value": "0 8px 32px rgba(0,0,0,0.4), 0 16px 48px rgba(0,0,0,0.2)" }
+    },
+    "duration": {
+      "fast": { "$type": "duration", "$value": "150ms" },
+      "base": { "$type": "duration", "$value": "300ms" },
+      "slow": { "$type": "duration", "$value": "500ms" }
+    },
+    "cubicBezier": {
+      "standard": { "$type": "cubicBezier", "$value": [0.4, 0, 0.2, 1] },
+      "out":      { "$type": "cubicBezier", "$value": [0, 0, 0.2, 1] }
+    }
+  },
+
+  "semantic": {
+    "light": {
+      "color": {
+        "surface":          { "$type": "color", "$value": "{primitive.color.white}" },
+        "surface-sunken":   { "$type": "color", "$value": "{primitive.color.slate.25}" },
+        "surface-raised":   { "$type": "color", "$value": "{primitive.color.slate.50}" },
+        "on-surface":       { "$type": "color", "$value": "{primitive.color.slate.900}" },
+        "on-surface-muted": { "$type": "color", "$value": "{primitive.color.slate.600}" },
+        "on-surface-subtle":{ "$type": "color", "$value": "{primitive.color.slate.500}" },
+        "border":           { "$type": "color", "$value": "{primitive.color.slate.200}" },
+        "action":           { "$type": "color", "$value": "{primitive.color.blue.600}" },
+        "on-action":        { "$type": "color", "$value": "{primitive.color.white}" },
+        "chart-1":          { "$type": "color", "$value": "{primitive.color.emerald.500}" },
+        "chart-2":          { "$type": "color", "$value": "{primitive.color.blue.600}" },
+        "chart-3":          { "$type": "color", "$value": "{primitive.color.amber.500}" },
+        "chart-4":          { "$type": "color", "$value": "{primitive.color.rose.500}" }
+      },
+      "radius": {
+        "sm": { "$type": "dimension", "$value": "{primitive.dimension.radius-sm}" },
+        "md": { "$type": "dimension", "$value": "{primitive.dimension.radius-md}" },
+        "lg": { "$type": "dimension", "$value": "{primitive.dimension.radius-lg}" },
+        "pill": { "$type": "dimension", "$value": "{primitive.dimension.radius-pill}" }
+      },
+      "shadow": {
+        "card":       { "$type": "shadow", "$value": "{primitive.shadow.card-light}" },
+        "card-hover": { "$type": "shadow", "$value": "{primitive.shadow.card-hover-light}" }
+      },
+      "motion": {
+        "duration-fast": { "$type": "duration", "$value": "{primitive.duration.fast}" },
+        "duration-base": { "$type": "duration", "$value": "{primitive.duration.base}" },
+        "duration-slow": { "$type": "duration", "$value": "{primitive.duration.slow}" },
+        "ease-standard": { "$type": "cubicBezier", "$value": "{primitive.cubicBezier.standard}" },
+        "ease-out":      { "$type": "cubicBezier", "$value": "{primitive.cubicBezier.out}" }
+      }
+    },
+    "dark": {
+      "color": {
+        "surface":          { "$type": "color", "$value": "{primitive.color.ink.900}" },
+        "surface-sunken":   { "$type": "color", "$value": "{primitive.color.ink.950}" },
+        "surface-raised":   { "$type": "color", "$value": "{primitive.color.ink.850}" },
+        "on-surface":       { "$type": "color", "$value": "{primitive.color.ink.fg}" },
+        "on-surface-muted": { "$type": "color", "$value": "{primitive.color.slate.400}" },
+        "on-surface-subtle":{ "$type": "color", "$value": "{primitive.color.ink.muted}" },
+        "border":           { "$type": "color", "$value": "{primitive.color.ink.800}" },
+        "action":           { "$type": "color", "$value": "{primitive.color.blue.400}" },
+        "on-action":        { "$type": "color", "$value": "{primitive.color.ink.950}" },
+        "chart-1":          { "$type": "color", "$value": "{primitive.color.emerald.400}" },
+        "chart-2":          { "$type": "color", "$value": "{primitive.color.blue.400}" },
+        "chart-3":          { "$type": "color", "$value": "{primitive.color.amber.400}" },
+        "chart-4":          { "$type": "color", "$value": "{primitive.color.rose.400}" }
+      },
+      "radius": {
+        "sm": { "$type": "dimension", "$value": "{primitive.dimension.radius-sm}" },
+        "md": { "$type": "dimension", "$value": "{primitive.dimension.radius-md}" },
+        "lg": { "$type": "dimension", "$value": "{primitive.dimension.radius-lg}" },
+        "pill": { "$type": "dimension", "$value": "{primitive.dimension.radius-pill}" }
+      },
+      "shadow": {
+        "card":       { "$type": "shadow", "$value": "{primitive.shadow.card-dark}" },
+        "card-hover": { "$type": "shadow", "$value": "{primitive.shadow.card-hover-dark}" }
+      },
+      "motion": {
+        "duration-fast": { "$type": "duration", "$value": "{primitive.duration.fast}" },
+        "duration-base": { "$type": "duration", "$value": "{primitive.duration.base}" },
+        "duration-slow": { "$type": "duration", "$value": "{primitive.duration.slow}" },
+        "ease-standard": { "$type": "cubicBezier", "$value": "{primitive.cubicBezier.standard}" },
+        "ease-out":      { "$type": "cubicBezier", "$value": "{primitive.cubicBezier.out}" }
+      }
+    }
+  },
+
+  "$extensions": {
+    "com.ottomate.contrast": {
+      "$comment": "The foreground<->background pairings the per-theme contrast gate enforces, per scheme. kind sets the WCAG floor: text=4.5, large=3, ui=3 (WCAG 1.4.11 non-text). decorative/chart are ADVISORY (reported, not fail-closed) — a subtle card border and a data-viz swatch are not text and gating them at 3:1 false-fails legitimate design (the F-7/F-8 'misfire trains you to ignore it' trap). Token paths are relative to semantic.<scheme>.",
+      "pairings": [
+        { "fg": "color.on-surface",        "bg": "color.surface",        "kind": "text", "role": "primary body text on a panel" },
+        { "fg": "color.on-surface-muted",  "bg": "color.surface",        "kind": "text", "role": "secondary text on a panel" },
+        { "fg": "color.on-surface-subtle", "bg": "color.surface",        "kind": "text", "role": "tertiary labels on a panel" },
+        { "fg": "color.on-surface",        "bg": "color.surface-raised", "kind": "text", "role": "text on a raised/hover surface" },
+        { "fg": "color.on-surface-muted",  "bg": "color.surface-sunken", "kind": "text", "role": "text on the page background" },
+        { "fg": "color.on-action",         "bg": "color.action",         "kind": "text", "role": "label on a primary action fill" },
+        { "fg": "color.action",            "bg": "color.surface",        "kind": "text", "role": "action colour used as a link/label on a panel" },
+        { "fg": "color.border",            "bg": "color.surface",        "kind": "decorative", "role": "subtle panel border (advisory)" },
+        { "fg": "color.chart-1",           "bg": "color.surface",        "kind": "chart", "role": "category swatch on a panel (advisory)" },
+        { "fg": "color.chart-4",           "bg": "color.surface",        "kind": "chart", "role": "category swatch on a panel (advisory)" }
+      ]
+    }
+  }
+}

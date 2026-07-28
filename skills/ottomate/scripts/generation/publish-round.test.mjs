@@ -5,7 +5,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildRoundPayloads, roundPaths, safeSegment } from './publish-round.mjs';
+import { buildRoundPayloads, roundPaths, safeSegment, publicRoundUrl, publicDesignUrl, DEFAULT_PUBLIC_BASE } from './publish-round.mjs';
 
 const manifest = {
   project_slug: 'demo',
@@ -81,6 +81,28 @@ test('an unknown archetype is refused', () => {
 test('a round with fewer than 2 variants is refused (G1 §4.4: never 1)', () => {
   const m = { ...manifest, variants_shown: { v1: { 'corner-radius': '4px' } } };
   assert.throws(() => buildRoundPayloads(m), /at least 2 variants/);
+});
+
+// WS0.1 (F-13): the URL the owner is shown must be the reachable tunnel host, never 127.0.0.1.
+test('publicRoundUrl surfaces the reachable tunnel host, not 127.0.0.1', () => {
+  const u = publicRoundUrl(manifest);
+  assert.equal(u, 'https://ottomate.vault7a.xyz/api/previews/design-rounds/demo/demo.media-card/r1/index.html');
+  assert.ok(!/127\.0\.0\.1|localhost/.test(u), 'a reachable URL must not contain a loopback host');
+});
+
+test('publicRoundUrl honours an override base and trims a trailing slash', () => {
+  assert.equal(
+    publicRoundUrl(manifest, 'http://192.168.1.10:8110/'),
+    'http://192.168.1.10:8110/api/previews/design-rounds/demo/demo.media-card/r1/index.html',
+  );
+});
+
+test('publicDesignUrl points at the reachable pick/mix surface, encoding the target', () => {
+  assert.equal(
+    publicDesignUrl('demo', 'demo.media-card'),
+    'https://ottomate.vault7a.xyz/projects/demo/design/demo.media-card',
+  );
+  assert.equal(DEFAULT_PUBLIC_BASE, 'https://ottomate.vault7a.xyz');
 });
 
 test('safeSegment keeps the path under the previews root', () => {

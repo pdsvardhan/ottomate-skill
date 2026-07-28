@@ -11,6 +11,7 @@ import { rejectedByAxis, frozenByAxis } from './ledger-context.mjs';
 import { priorArtByAxis, applyPriorArt } from './prior-art.mjs';
 import { composeRounds } from './round-composition.mjs';
 import { buildStylePriors } from './style-priors.mjs';
+import { buildTastePacket } from './taste-packet.mjs';
 
 // ── 2. scope × entry routing (owner ruling, docs/plans/2026-07-23-task2-remaining-work.md §3) ─────
 
@@ -71,6 +72,7 @@ export const DEFERRAL = {
 export function buildRoundInput({
   anatomy, archetype, contract = {}, profile = 'P1', direction = null, decisions = [],
   projectDecisions = null, targetId = null, diverge = [], scope = 'component', maxAxes = undefined,
+  taste = null,
 }) {
   const arche = anatomy.archetypes?.[archetype];
   if (!arche) throw new Error(`unknown archetype "${archetype}"`);
@@ -92,6 +94,9 @@ export function buildRoundInput({
     stylePriors: null,
     inheritedControls: {},
     priorArtConflicts: [],
+    // WS0.3: the owner's taste is grounding the generator reads (v0's "grounded skill" model). When a
+    // parsed taste profile is supplied it rides in the packet; anti-slop is advisory for this owner.
+    taste: taste ? buildTastePacket(taste) : null,
   };
   const withPriorArt = (projectDecisions && targetId)
     ? { ...applyPriorArt(base, priorArtByAxis(projectDecisions, { targetId, archetype, subDecisions: arche.sub_decisions }), { diverge }),

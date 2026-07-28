@@ -4,6 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { routeRungs, routeEntry, buildRoundInput, stage3DesignGate, DEFERRAL } from './method-routing.mjs';
 import { loadAnatomy } from './picks-to-ledger.mjs';
+import { loadTaste } from './taste-packet.mjs';
 
 const A = loadAnatomy();
 
@@ -61,6 +62,18 @@ test('with no decisions (gen-1) every sub-decision is contested and nothing is f
   const inp = buildRoundInput({ anatomy: A, archetype: 'button', decisions: [] });
   assert.equal(inp.contested.length, A.archetypes.button.sub_decisions.length);
   assert.deepEqual(inp.frozen, {});
+});
+
+// WS0.3: the taste profile rides in the packet when supplied, and is null otherwise (no silent default).
+test('buildRoundInput injects the taste block when a profile is supplied', () => {
+  const withTaste = buildRoundInput({ anatomy: A, archetype: 'button', decisions: [], taste: loadTaste() });
+  assert.ok(withTaste.taste, 'the packet carries a taste block');
+  assert.equal(withTaste.taste.motionBudget, 'expressive');
+  assert.equal(withTaste.taste.antiSlopAdvisory, true, 'anti-slop is advisory for this owner');
+  assert.ok(withTaste.taste.wantedTells.includes('glow'));
+
+  const without = buildRoundInput({ anatomy: A, archetype: 'button', decisions: [] });
+  assert.equal(without.taste, null, 'no taste supplied → no taste block (never invented)');
 });
 
 // ── Stage-3 design-lock gate ─────────────────────────────────────────────────────
