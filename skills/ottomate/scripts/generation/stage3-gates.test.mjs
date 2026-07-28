@@ -3,7 +3,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { contextGate, coreMechanicGate, preRoundGates, formatGates, CONTEXT_KEYS, primaryDecisionGate, pressureTest } from './pre-round-gates.mjs';
+import { contextGate, coreMechanicGate, preRoundGates, formatGates, CONTEXT_KEYS, primaryDecisionGate, pressureTest, contextProfile } from './pre-round-gates.mjs';
 import { catalogCandidates, checkSourcePolicy, formatSource } from './catalog-source.mjs';
 
 const FULL = { context: { audience: 'solo owner', use_cases: ['browse', 'request'], brand_tone: 'calm, dense', primary_screen: '/find' } };
@@ -191,4 +191,22 @@ test('MUST FAIL — a check that RAN and failed blocks presentation, naming it',
   const p = pressureTest({ checks: { contrast: { state: 'failed', detail: '3.2:1' }, 'reduced-motion': { state: 'ran' }, 'colour-budget': { state: 'ran' } } });
   assert.equal(p.verdict, 'block');
   assert.deepEqual(p.failed, ['contrast']);
+});
+
+// #319 — contextProfile reads the captured audience profile without ever blocking or inventing one.
+test('contextProfile returns a valid stored profile', () => {
+  assert.equal(contextProfile({ context: { profile: 'P3' } }), 'P3');
+  assert.equal(contextProfile({ profile: 'P2' }), 'P2'); // bare context blob too
+});
+
+test('contextProfile returns null for unset/invalid (so the caller suggests, never asserts)', () => {
+  assert.equal(contextProfile({ context: {} }), null);
+  assert.equal(contextProfile({ context: { profile: 'P9' } }), null);
+  assert.equal(contextProfile(null), null);
+});
+
+test('MUST NOT block — profile is not a CONTEXT_KEY, so a round without it still passes the gate', () => {
+  assert.equal(CONTEXT_KEYS.includes('profile'), false);
+  const FULL = { context: { audience: 'me', use_cases: ['x'], brand_tone: 'calm', primary_screen: 'desktop' } };
+  assert.equal(contextGate({ ledger: FULL }).verdict, 'pass'); // no profile, still passes
 });

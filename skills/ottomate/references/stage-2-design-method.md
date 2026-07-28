@@ -82,6 +82,13 @@ axis/level** — both cheap to fix with the rules below (retrospective folded in
 Acquire, up front (short structured interview or a saved project profile):
 - **audience** · **use-cases** · **brand-tone** · **primary screen** (e.g. "owner on a 27″ 4K first,
   family on laptops second" → tune density + layout for 4K first).
+- **audience profile P1/P2/P3** (#319) — ask it here too, in plain words: *just me / a demo* (P1) ·
+  *small team / internal* (P2) · *shipped, external users* (P3). This is the field `resolveFloor(profile)`
+  binds, so it decides which floor rules are hard vs advisory. Store it at `design_ledger.context.profile`
+  and read it back with `contextProfile(ledger)` (`pre-round-gates.mjs`); an unset profile falls back to
+  `P1` and is **never** a blocker (not a CONTEXT_KEY). The Ottomate app's design index surfaces a
+  *suggestion* from the project's signals (`suggestProfile`, `lib/audience-profile.ts`) — suggest-only,
+  owner-set always wins.
 
 Code tells you *what* was built, not *who it's for* or *how it should feel*. Persist to the design
 ledger's `context` block (`stage-2-ui-master-plan.md` → `design_ledger`). Missing context = STOP.

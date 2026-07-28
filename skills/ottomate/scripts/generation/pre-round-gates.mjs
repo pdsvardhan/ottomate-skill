@@ -65,6 +65,17 @@ export function contextGate({ ledger = null, entry = 'stage-2', profile = 'P1', 
   return { verdict: 'block', missing, why };
 }
 
+// #319 — the audience profile (P1/P2/P3) that resolveFloor(profile) binds. Captured alongside the four
+// context answers and stored at design_ledger.context.profile. Deliberately NOT a CONTEXT_KEY: a missing
+// profile must never BLOCK a round — it falls back to P1 (the owner's own). And never invented: an unset
+// or invalid value returns null so the caller can SUGGEST (the app surfaces suggestProfile's guess with
+// evidence) rather than assert one. Owner-set always wins; the backfill is suggest-only.
+export const AUDIENCE_PROFILES = ['P1', 'P2', 'P3'];
+export function contextProfile(ledger = null) {
+  const ctx = ledger?.context ?? ledger ?? {};
+  return AUDIENCE_PROFILES.includes(ctx.profile) ? ctx.profile : null;
+}
+
 /**
  * C7. At page or site scope, a locked rung-1 (mechanic) decision must exist first.
  * @param {object} o
