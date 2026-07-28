@@ -1,5 +1,13 @@
 # Task 3 · P3-C — gate-wiring + cadence + flake-control + reporting (plan, 2026-07-28, Track B)
 
+> **STATUS: DONE + VERIFIED on VAULT7A 2026-07-29.** All four sub-units built, 54/54 pure suite green.
+> The nightly cron (`30 3 * * * /opt/homeserver/fv-harness/nightly.sh`) is installed + validated
+> end-to-end. Verified live both ways on Maps of Bharat: a healthy nightly → `test_runs` passed
+> (schedule) + persistent trace/video + a run-log delta + report APPROVE (id 16); MoB at a dead port →
+> recorded FAIL → `test_runs` failed + BLOCK (the empty-matrix false-green closed). Register row + the
+> stage-3/stage-4.7 docs updated. Next in Phase 3: **P3-A** (AI-visual-judge), then **P3-D** (trajectory
+> monitor). See the SKILL-REGISTER "Feature verifier" row for the full result ledger.
+
 The first Phase-3 build (highest leverage: it makes the whole verifier run automatically). Off
 [the Phase-3 plan](2026-07-28-task3-PHASE3-plan.md) §P3-C and the
 [implementation plan](2026-07-28-task3-IMPLEMENTATION-PLAN.md) §Cadence. Owner decision already

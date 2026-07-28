@@ -66,6 +66,33 @@ Advisory-only for pure-backend/no-UI internal changes (still welcome, never bloc
 > **id 10 ITERATE** (unreviewed downgrade) / the two-phase symptom demo (RED→GREEN). Design + plans:
 > `docs/plans/2026-07-28-task3-P2{A,B}-*`.
 
+> **Cadence + gate wiring (P3-C, DONE + verified on VAULT7A 2026-07-29).** The verifier now runs
+> **automatically** and scales to the change. The status bullet above ("Nightly CI is not wired") is
+> **resolved**: `postTestRun()` is wired and a **VAULT7A cron runs the full matrix nightly at 03:30**
+> (`/opt/homeserver/fv-harness/nightly.sh` → `run.mjs nightly`; pairs with app to-do #289).
+> - **Change-tier spine** (`harness/change-tier.mjs`): verification scales to the *kinds* of impacted
+>   files — **T0** backend/copy (L1+L2) · **T1** style (+L4 scoped) · **T2** component (+L4 full+L3, judge
+>   glance) · **T3** page/redesign (everything, full judge). `inferTier` is max-wins + **fail-closed**
+>   (an unknown/empty diff → T3, verify the most); owner override honoured. `layersForTier` feeds both the
+>   deterministic runner and the P3-A judge gate.
+> - **Cadence:** **nightly** = full matrix across every app in `data/feature-verify-apps.json`, schedule
+>   cadence, evidence **persisted** to a dated dir (`/opt/homeserver/ottomate/fv-evidence/<date>/…`);
+>   **on-commit** = impacted **app only** (`impacted.mjs` slug-by-repo-path + a matrix's `covers:[globs]`),
+>   `/tmp` evidence; **on-fix** = the reproduce-symptom two-phase. The orchestrator is `run.mjs`
+>   (`nightly | commit | fix`).
+> - **Reporting tail** (`harness/{delta,run-log,action-log}.mjs`): `action_log` populated per case, a
+>   **JSONL run-log** (one line/run), **delta-vs-previous** (new_failures/fixed/still_failing/appeared/
+>   disappeared) with known-flaky reds surfaced (not alarmed).
+> - **Flake control** (`harness/flake-control.md`): the official Playwright Docker image pins
+>   browser+OS+fonts; time/animation frozen per-spec; Testcontainers for L2 disposable DBs; `retries:0`
+>   gate default (`FV_RETRIES=1` opt-in nightly surfacing, <2% quarantine).
+> - **Fail-closed hardening:** a driver that THROWS (app down, selector gone, timeout) is now a **recorded
+>   FAIL**, never an un-recorded case that would leave the matrix empty and read as "all 0 passed".
+>   **Verified both ways on MoB:** a healthy nightly → `test_runs` `passed` (schedule) + persistent
+>   trace/video + a run-log delta (report APPROVE); MoB pointed at a dead port → recorded FAIL →
+>   `test_runs` `failed` + BLOCK (the false-green closed). Plan+results:
+>   `docs/plans/2026-07-28-task3-P3C-gate-wiring-plan.md`.
+
 ## Why it exists (the gap the code verifier can't close)
 
 The code verifier's tests are **coder-authored, happy-path, derived from ACs the coder/skill
@@ -207,8 +234,8 @@ The harness posts all three via `scripts/feature-verify/harness/report.ts`.
 Per-test unique working dirs + seeded state; freeze time/animations (Playwright **Clock API**);
 stable fonts; tag genuinely external-dependency cases honestly. **No self-healing selectors on
 the gate** — they can silently heal over a real regression. Use `getByRole` / `getByTestId` /
-**`[data-oid]`** (Task 1's provenance stamp doubles as the stable selector — see
-`stage-3-codegen.md`) / ARIA snapshots.
+ARIA snapshots. (**`data-oid` is DEAD** — `selectors.ts` `oid()` is dead code with zero call sites;
+do not reach for the provenance stamp as a selector.)
 
 ## Sample data / fixtures
 

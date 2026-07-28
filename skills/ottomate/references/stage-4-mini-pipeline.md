@@ -214,6 +214,11 @@ with a `reproduce_symptom` case: the runner confirms it RED on the pre-fix state
 claimed fix (SWE-bench FAIL_TO_PASS + a PASS_TO_PASS sweep), and downgrades any run that is not
 owner-reviewed / untampered / claim-blind to advisory (never a silent APPROVE). See
 `references/stage-3-feature-verifier.md` + `docs/plans/2026-07-28-task3-P2{A,B}-*`.**
+**Cadence (P3-C, 2026-07-29):** verification scales to the change-tier (T0 backend/copy → T3
+new-page/redesign, inferred from the impacted files). This per-item Stage-4.7 run is the **on-fix /
+on-commit** leg (impacted app only); a **VAULT7A cron also runs the full matrix nightly at 03:30**
+across every app in `data/feature-verify-apps.json` (`run.mjs` orchestrates all three, `postTestRun`
+wired). See `docs/plans/2026-07-28-task3-P3C-gate-wiring-plan.md`.
 
 ### 4.7b — Graduation offer (Stage 4 S10, 2026-07-27)
 

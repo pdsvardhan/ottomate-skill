@@ -7,7 +7,8 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
-export const PERSIST_ROOT = '/opt/homeserver/ottomate/fv-evidence';
+// Overridable so the cron (and a test run) can point the durable store at a writable location.
+export const PERSIST_ROOT = process.env.FV_PERSIST_ROOT ?? '/opt/homeserver/ottomate/fv-evidence';
 const TMP_ROOT = '/tmp/fv-evidence';
 
 // Runs whose evidence is worth keeping: the nightly trend + every owner-reported-fix (its RED→GREEN proof).
