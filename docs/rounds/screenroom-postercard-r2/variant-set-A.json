@@ -75,6 +75,10 @@
         "media-aspect": "2/3",
         "title-placement": "below-media",
         "meta-density": "2-line"
+      },
+      "source": {
+        "kind": "bespoke",
+        "why": "No media-card catalog candidate for this archetype/tier (the gate reports 'candidates: none'); authored bespoke to Screenroom's real tokens (--au #e9b84c on --card #101216)."
       }
     },
     {
@@ -87,6 +91,10 @@
         "media-aspect": "2/3",
         "title-placement": "overlay",
         "meta-density": "1-line"
+      },
+      "source": {
+        "kind": "bespoke",
+        "why": "No media-card catalog candidate for this archetype/tier (the gate reports 'candidates: none'); authored bespoke to Screenroom's real tokens (--au #e9b84c on --card #101216)."
       }
     },
     {
@@ -99,10 +107,15 @@
         "media-aspect": "16/9",
         "title-placement": "below-media",
         "meta-density": "3-line"
+      },
+      "source": {
+        "kind": "bespoke",
+        "why": "No media-card catalog candidate for this archetype/tier (the gate reports 'candidates: none'); authored bespoke to Screenroom's real tokens (--au #e9b84c on --card #101216)."
       }
     }
   ],
   "shuffleSeed": 20260727,
   "output": "screenroom-postercard-r1.html",
-  "manifest": "screenroom-postercard-r1.manifest.json"
+  "manifest": "screenroom-postercard-r1.manifest.json",
+  "colorBudget": 4
 }

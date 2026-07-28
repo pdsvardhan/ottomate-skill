@@ -26,8 +26,15 @@
     "focus-ring": "2px solid gold, outline + outline-offset (never box-shadow-only)"
   },
   "contract": {
-    "animation_vocab": ["transform", "opacity"],
-    "forbidden": ["parallax", "bounce", "gradient-text"]
+    "animation_vocab": [
+      "transform",
+      "opacity"
+    ],
+    "forbidden": [
+      "parallax",
+      "bounce",
+      "gradient-text"
+    ]
   },
   "variants": [
     {
@@ -41,6 +48,10 @@
         "accent-usage": "ownership-chip-only",
         "badge-style": "hairline-outline",
         "meta-density": "2-line"
+      },
+      "source": {
+        "kind": "bespoke",
+        "why": "No media-card catalog candidate for this archetype/tier (the gate reports 'candidates: none'); authored bespoke to Screenroom's real tokens (--au #e9b84c on --card #101216)."
       }
     },
     {
@@ -54,6 +65,10 @@
         "accent-usage": "chip-and-meter",
         "badge-style": "pill-solid",
         "meta-density": "3-line"
+      },
+      "source": {
+        "kind": "bespoke",
+        "why": "No media-card catalog candidate for this archetype/tier (the gate reports 'candidates: none'); authored bespoke to Screenroom's real tokens (--au #e9b84c on --card #101216)."
       }
     },
     {
@@ -67,10 +82,15 @@
         "accent-usage": "edge-on-hover",
         "badge-style": "corner-ribbon",
         "meta-density": "1-line"
+      },
+      "source": {
+        "kind": "bespoke",
+        "why": "No media-card catalog candidate for this archetype/tier (the gate reports 'candidates: none'); authored bespoke to Screenroom's real tokens (--au #e9b84c on --card #101216)."
       }
     }
   ],
   "shuffleSeed": 20260727,
   "output": "screenroom-postercard-r1.html",
-  "manifest": "screenroom-postercard-r1.manifest.json"
+  "manifest": "screenroom-postercard-r1.manifest.json",
+  "colorBudget": 4
 }
