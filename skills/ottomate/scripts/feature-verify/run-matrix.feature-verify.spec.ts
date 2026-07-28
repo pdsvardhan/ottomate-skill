@@ -10,6 +10,7 @@ import { loadMatrix } from './harness/matrix.mjs';
 import { assessTrust, applyTrust } from './harness/trust-record.mjs';
 import { assertUntampered } from './harness/tamper-guard.mjs';
 import { symptomVerdict } from './harness/reproduce-symptom.mjs';
+import { ActionLog } from './harness/action-log.mjs';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
@@ -20,12 +21,13 @@ let api: APIRequestContext;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let m: any;
 
-type Check = { ok: boolean; detail: string; observed?: unknown };
+type Check = { ok: boolean; detail: string; observed?: unknown; action_log?: unknown };
 // The held-out assertion REGISTRY — the verifier OWNS these; the matrix references them by NAME only,
 // so a project's coder cannot rewrite the assertion. Feature drivers live here, in the plugin.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const REGISTRY: Record<string, (page: Page, api: APIRequestContext, params: any) => Promise<Check>> = {
   'mob.indicator-switch-verified': async (page, api, params) => {
+    const log = new ActionLog();
     const A = params.from, B = params.to;
     const fetchM = async (id: string) => (await (await api.get(`${cfg.instanceUrl}/api/metrics/${id}?level=district`)).json()) as { name: string; stats_count: number };
     const dA = await fetchM(A); const dB = await fetchM(B);
@@ -39,19 +41,24 @@ const REGISTRY: Record<string, (page: Page, api: APIRequestContext, params: any)
     page.on('pageerror', (e) => errs.push(e.message));
     page.on('console', (mm) => { if (mm.type() === 'error') errs.push(mm.text()); });
     await page.emulateMedia({ reducedMotion: 'reduce' });
+    log.step('goto', { url: `/?m=${A}&lvl=district` });
     await page.goto(`/?m=${A}&lvl=district`);
     await page.addStyleTag({ content: '*,*::before,*::after{transition:none!important;animation:none!important}' });
     await expect(page.getByText(dA.name).first()).toBeVisible({ timeout: 20_000 });
+    log.step('click', { role: 'button', name: 'change indicator' });
     await page.getByRole('button', { name: /change indicator|browse indicators/i }).click();
     const dlg = page.getByRole('dialog', { name: /choose an indicator/i });
     await expect(dlg).toBeVisible();
+    log.step('pick-category', { category: params.category });
     await dlg.getByRole('button', { name: new RegExp(params.category, 'i') }).first().click();
+    log.step('pick-indicator', { indicator: dB.name });
     await dlg.getByRole('button', { name: new RegExp(dB.name, 'i') }).first().click();
     await expect(page).toHaveURL(new RegExp(`[?&]m=${B}(&|$)`), { timeout: 20_000 });
     await expect(page.getByText(dB.name).first()).toBeVisible();
     const sumB = await legendSum();
+    log.step('assert-legend-sum', { sumB, stats_count: dB.stats_count });
     const ok = sumB === dB.stats_count && errs.length === 0;
-    return { ok, detail: `switch ${A}→${B}: legend sum ${sumB} vs api stats_count ${dB.stats_count}; console errors ${errs.length}`, observed: { sumB, stats_count: dB.stats_count, errors: errs } };
+    return { ok, detail: `switch ${A}→${B}: legend sum ${sumB} vs api stats_count ${dB.stats_count}; console errors ${errs.length}`, observed: { sumB, stats_count: dB.stats_count, errors: errs }, action_log: log.toJSON() };
   },
   // Reproduce-symptom demo control: the app has no real bug, so the "break" is a labelled flag
   // (FV_SIMULATE_BROKEN=1) — RED in the pre-fix phase, GREEN post-fix. Proves the two-phase orchestration.
@@ -127,7 +134,7 @@ test('run the declarative matrix (data-driven)', async ({ page }) => {
         continue;
       }
       const r = await fn(page, api, c.params ?? {});
-      matrix.record({ case: `${c.id}: ${o.assert}`, variant: c.path, axis: o.layer, system_state: r.observed ?? r, outcome: r.ok ? 'pass' : 'fail', evidence: { dir } });
+      matrix.record({ case: `${c.id}: ${o.assert}`, variant: c.path, axis: o.layer, system_state: r.observed ?? r, action_log: r.action_log, outcome: r.ok ? 'pass' : 'fail', evidence: { dir } });
     }
   }
   expect(matrix.counts().fail, 'no case should fail on the working feature').toBe(0);
