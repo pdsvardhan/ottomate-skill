@@ -39,6 +39,13 @@ Read the disposable instance's state **through its own API**, never a second DB 
 Maps of Bharat is read-mostly (indicator → stats), so no L2 disposable DB is wired for it yet — stated
 honestly; the pattern is here for the first write-heavy feature (e.g. the music-upload flow).
 
+**Built + demonstrated (2026-07-29):** `harness/disposable-db.mjs` — `withDisposablePostgres(fn)` (starts a
+throwaway Postgres, hands `fn` its connection, always tears down) + `disposableDbEnv(conn)` (maps the
+connection to the app-under-test's env). Proven live on VAULT7A (`disposable-db.demo.mjs`): a Telugu +
+emoji title round-tripped byte-identical through a REAL throwaway Postgres, container torn down — the L2
+disposable-dependency mechanism is ready to back a write-heavy feature's system-state check. Deps
+(`@testcontainers/postgresql` + `pg`) are in `package.json`; the run host needs Docker.
+
 ## 4. Retries — 0 by default, opt-in surfacing for the nightly
 `retries:0` is the gate default: a deterministic gate must not flake-pass. `FV_RETRIES=1` is an opt-in
 for the **unattended nightly** that would rather surface-and-quarantine a flake than fail the whole

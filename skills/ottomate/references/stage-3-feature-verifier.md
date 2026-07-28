@@ -195,6 +195,13 @@ Not open-ended wandering; the high-value jobs, run each build:
 Every finding is written as a Playwright spec and folded into the deterministic matrix, so the
 next run reruns it deterministically.
 
+**Built as a concrete hook (2026-07-29):** `harness/explorer.mjs` — `explorerPlaybook()` (the fixed 5
+categories + probes) + `nastyInputCatalog()` (the input classes; concrete values from `unicode.ts`) +
+`freezeAsCase(finding)` (turns a discovered finding into a **runnable matrix case**, category→path mapped;
+a finding with no registered assertion is frozen `needs_assert:true` = fail-closed placeholder, **never a
+silent pass**) + `mergeFrozenCases` (a rerun re-freezes the same finding, deduped). So an Explorer finding
+persists as a matrix case the data-driven runner reruns. 7 unit tests.
+
 ### 5. Judge (Claude, advisory) — subjective cells only
 
 For cells that are genuinely a judgement ("does the recommended metadata look sensible?",
