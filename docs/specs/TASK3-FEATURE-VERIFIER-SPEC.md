@@ -14,6 +14,74 @@
 
 ---
 
+## AMENDMENT — 2026-07-28 (Track B, owner-approved). Scope broadened + architecture refined by deep research.
+
+> This section **amends** §3 (scope), §4 (architecture), §5C (case-gen), §9 (selectors), §11 (anti-gaslight)
+> below, which are **preserved unchanged** for history. Where they conflict, **this amendment governs.**
+> Full detail: [`docs/plans/2026-07-28-task3-IMPLEMENTATION-PLAN.md`](../plans/2026-07-28-task3-IMPLEMENTATION-PLAN.md)
+> + research [`docs/research/task3/{T1,T2,T3}`](../research/task3/).
+
+**Why amended.** The owner broadened the verifier's remit, and a deep 3-track research sweep (visual
+acceptance/VLM-judge · the test-oracle problem · agentic-verification/reward-hacking) both **validated the
+original spec** (Playwright-anchored deterministic gate, AI advisory-only, fail-closed, no-SaaS) **and
+sharpened it**. Net changes:
+
+1. **Scope broadened to a commit-time TRUTH gate.** The verifier now proves that whatever the coding agent
+   claims it built/fixed is actually true on the live site — **data correct, visuals as designed, matching
+   the requirement** — across every case worth imagining. §3's non-goal *"not a substitute for design
+   taste (Task 2)"* is **narrowed**: design/visual **correctness** is now in scope as a deterministic layer
+   (overflow, clipping, collision, contrast, target-size, on-spec fidelity); only **holistic taste** stays
+   advisory and Task-2's domain. Runs whenever the agent commits, and whenever the owner reports an issue
+   and the agent claims a fix.
+
+2. **Architecture: the "three layers" (§4) become SEVEN, fail-closed.** Deterministic HARD-GATE layers
+   L1–L6 + one ADVISORY model layer L7:
+   - **L1 Implicit-oracle** — no 4xx/5xx/console/job-orphan, over the whole population.
+   - **L2 System-state** — DB row via API · file on disk · async job done — + a differential recompute.
+   - **L3 Metamorphic/property** — relations that need no known-correct value (`fast-check`).
+   - **L4 Mechanical-visual** — overflow/clip/collision/contrast/target-size/pseudo-loc/stress.
+   - **L5 Reference-fidelity** — Design2Code metrics, when a target design image exists.
+   - **L6 Pixel-regression** — **WARN**; **missing baseline ⇒ FAIL**, never auto-bless.
+   - **L7 AI-judge** — **ADVISORY only, can fail but never bless**; blind to claims; reference-anchored;
+     forced grounding cross-checked against L2/L4; disagreement→human. Justified by research: VLMs are ~58%
+     at geometry and below-random at design quality, so math/DOM gate and the model only advises.
+
+3. **The case-matrix generator gains architectural independence (the anti-gaslight core; refines §5C).**
+   The verifier authors its checks in a **fresh context blind to the coder's diff and "I fixed X" claims**,
+   from the **pinned requirement** only (LLM oracles otherwise bless the bug). Recipe: EP/BVA values → path
+   templates (happy/error/edge/permission/concurrency/persistence) → layered oracles → **pairwise covering
+   array** (NIST ACTS or MS PICT — free) → risk-order → owner reviews the matrix **once** → Claude
+   *instantiates structured templates*, never free-forms the oracle. For every owner-reported fix, the
+   verifier first writes a **reproduce-symptom** check (RED on the pre-fix state, GREEN after — the
+   SWE-bench FAIL_TO_PASS pattern) + a PASS_TO_PASS sweep of adjacent behavior.
+
+4. **Reward-hacking is documented, and dictates fail-closed (strengthens §11).** Agents fake green via
+   `exit(0)`, `raise SkipTest`, `__eq__`→True, patching the test-report object, reading expected values
+   from test files, memorizing tests — **all by making the check not really run.** Therefore: the verifier
+   **owns and runs its own assertions** (never a coder exit-code/report), verdicts are `PASS/FAIL/UNMEASURED`
+   with **UNMEASURED ⇒ FAIL**, checks live **held-out** from the build agent, and a **harness-tamper
+   tripwire** re-derives assertions if verifier/config files were touched.
+
+5. **`data-oid` is DEAD (corrects §9).** The owner withdrew stamping 2026-07-27 (`grep -rc data-oid` → 0).
+   Selectors are `getByRole`/`getByTestId`/ARIA — **not** `data-oid`; the "one instrumentation, two
+   consumers" claim in §9 no longer holds.
+
+6. **Dependency ruling (refines D3/§4/§8).** Free/OSS deps are fine; **no paid SaaS**. **IN:** `axe-core`
+   (the contrast/target-size engine for L4 — catches the owner's own "tags not visible / low contrast"),
+   **Testcontainers** (disposable real DB for L2), `fast-check`, ACTS/PICT. **OUT:** Lighthouse-CI (perf
+   not needed); Lost Pixel as a primary path (pixel-regression is L6 WARN-only via Playwright's built-in
+   `toHaveScreenshot`).
+
+7. **Canvas/WebGL/3D is out of scope** (accepted) — DOM controls + data only, never the map/3D canvas paint.
+
+**Confirmed first target (owner, 2026-07-28):** Phase 1 (P1-A) drives **Maps of Bharat**, the
+**indicator → dataset → on-page-stats** control flow (DOM + data, not the map canvas).
+
+**Build-order note:** the §Status line ("Task 1 → Task 3 → Task 2") is historical — Task 2 is built; Task 3
+is now in active build per the implementation plan.
+
+---
+
 ## 1. Problem & goal
 
 The existing verifier (Stage 3.5) proves the **code**: files exist, no stubs, tests pass, each acceptance criterion has a test. But those tests are **coder-authored, happy-path, derived from ACs the coder/skill wrote** — so nothing *independently* drives the **real** feature with **nasty real inputs** and checks the **real effect** (the file that landed on disk with its Telugu tag intact, the DB row, the media rescan). A code verifier will green-light an upload whose button 500s, whose progress bar lies, or that transliterates non-ASCII filenames — because the *code* looked fine.

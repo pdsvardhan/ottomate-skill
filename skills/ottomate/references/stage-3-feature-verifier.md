@@ -38,6 +38,18 @@ Advisory-only for pure-backend/no-UI internal changes (still welcome, never bloc
 >
 > **To reach APPROVE:** one real browser-driving spec producing surviving trace + screenshot
 > evidence, at least one deliberately red case with its proof persisted, and a scheduled nightly entry.
+>
+> **UPDATE 2026-07-28 (Track B) — research-grounded re-plan.** A deep 3-track sweep + owner-approved
+> re-plan now define the target: a **7-layer, fail-closed, claim-blind gate** (L1 implicit · L2
+> system-state · L3 metamorphic/property · L4 mechanical-visual · L5 reference-fidelity · L6 pixel-WARN ·
+> L7 AI-judge-advisory), fed by an **independence-preserving case-matrix generator** (blind to the coder's
+> diff; the SWE-bench reproduce-symptom rule for fixes). Scope broadened to a **commit-time truth gate**
+> (data + visual + claimed-fix). See [`docs/plans/2026-07-28-task3-IMPLEMENTATION-PLAN.md`](../../../docs/plans/2026-07-28-task3-IMPLEMENTATION-PLAN.md),
+> research [`docs/research/task3/`](../../../docs/research/task3/), and the amended
+> [spec](../../../docs/specs/TASK3-FEATURE-VERIFIER-SPEC.md). **Resolved since the status above:** axe-core
+> + Testcontainers + fast-check are **IN** (owner-approved, for L4/L2/L3); **`data-oid` is confirmed DEAD**
+> (`oid()` is dead code — use `getByRole`/`getByTestId`); **Lighthouse-CI is OUT** (perf not needed). First
+> build: **P1-A, the browser leg on Maps of Bharat** (indicator→dataset→stats).
 
 ## Why it exists (the gap the code verifier can't close)
 
