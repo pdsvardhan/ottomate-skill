@@ -1,5 +1,12 @@
 # Task 3 — Phase 3 plan (2026-07-28, Track B)
 
+> **STATUS 2026-07-29: Phase 3 BUILT.** **P3-C** (gate-wiring/cadence/cron/reporting) — verified live on
+> VAULT7A, nightly cron installed. **P3-A** (AI-visual-judge) — built + demonstrated live on MoB. **P3-D**
+> (trajectory monitor) — built. **P3-B** — struck by the owner. Full pure suite 67/67. See the per-unit
+> plan docs (`2026-07-28-task3-P3{C,A}-*`) + the SKILL-REGISTER "Feature verifier" row. Remaining Task-3
+> tails = the two skill-level dispatch hooks (the judge post-run pass; the trajectory hand-off) — the
+> guardrail harness is ready + demonstrated, not yet auto-wired into the skill flow.
+
 The tail of the [implementation re-plan](2026-07-28-task3-IMPLEMENTATION-PLAN.md), after Phase 1 (P1-A…E)
 and Phase 2 (P2-A + P2-B) were built + verified. Owner decisions taken 2026-07-28.
 

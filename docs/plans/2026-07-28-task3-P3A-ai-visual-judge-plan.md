@@ -1,5 +1,15 @@
 # Task 3 · P3-A — AI-visual-judge (advisory, fail-closed) · plan (2026-07-28, Track B)
 
+> **STATUS: BUILT + DEMONSTRATED LIVE 2026-07-29.** `harness/ai-judge.mjs` (+8 tests) · rubric
+> `data/feature-verify-judge-rubric.md` · prompt `prompts/feature-verifier-judge-prompt.md` ·
+> `measureRegionsOverlap` added to L4. A fresh judge sub-agent judged a real MoB screenshot (blind to any
+> diff) → `intentional:clean` · a `contrast:warn` **corroborated** by L4's real axe flag ·
+> `nothing-broken:clean`; an injected **fabricated "overlap" was discarded** by the DOM cross-check;
+> verdict advisory (band warn, `gating:false`). Method-doc §5 + register updated. **Remaining tail:** the
+> automatic in-run dispatch is skill-orchestrated (a Playwright spec can't spawn a Claude agent) — the
+> guardrail harness is unit-tested and the dispatch demonstrated; wiring the skill's post-run judge step
+> into the runner flow is the integration point. **Then P3-D (built) closes Phase 3.**
+
 The second Phase-3 build, after [P3-C](2026-07-28-task3-P3C-gate-wiring-plan.md). Off the
 [Phase-3 plan](2026-07-28-task3-PHASE3-plan.md) §P3-A + the [implementation plan](2026-07-28-task3-IMPLEMENTATION-PLAN.md)
 L7. **The judge can flag/warn, it can never bless.** Grounded in the research: VLMs are ~58% at geometry
