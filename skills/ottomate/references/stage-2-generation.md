@@ -182,6 +182,10 @@ server has `@playwright` + chromium; run `scripts/design-check/run-computed.mjs 
 - **`computed-axis-divergence`** — the stylistic-bundle backstop: the panels' resolved-style signatures
   must actually differ. This is what the source structural check cannot see (it's blind to CSS values),
   so declare a stylistic bundle `kind:"stylistic"` at the gate and let THIS confirm real divergence.
+- **Light AND dark both render (C8, AC4).** Collect the computed records **once per
+  `prefers-color-scheme`** and call `assertBothSchemes({light, dark})` from `design-check/scheme-check.mjs`.
+  A design that clears contrast in light but fails in dark is half-broken; **both schemes must be
+  measured** (a scheme not measured is not a scheme that passed) and the failing scheme is named.
 
 **Ask on primary (C6, AC7).** Before recording a **foundational** sub-decision — or one
 `round-composition.mjs` flagged for **promotion** — call `primaryDecisionGate({ decision, ownerChoice,
