@@ -144,6 +144,12 @@ const NS_EXTRACTORS = {
 function blockSvgIdCollision(variants, rule) {
   const labels = Object.keys(variants);
   if (labels.length < 2) return ok('single variant — no cross-variant collision possible');
+  // R4.3 (F-7): each variant that renders inside its OWN declarative shadow root scopes its ids / classes /
+  // keyframes — a shared name does NOT collide with another shadow root's. The harness uses exactly this
+  // isolation, so the check was flagging harmless shared classes. Only a collision where at least one owner
+  // is NOT isolated can actually override across the document.
+  const isolated = {};
+  for (const label of labels) isolated[label] = /shadowrootmode|shadowroot\b|attachshadow|vs-shadow-host/i.test(variants[label]);
   const collisions = [];
   for (const ns of rule.params.namespaces) {
     const extract = NS_EXTRACTORS[ns];
@@ -156,7 +162,7 @@ function blockSvgIdCollision(variants, rule) {
       }
     }
     for (const [name, who] of owners) {
-      if (who.length > 1) collisions.push(`${ns} "${name}" declared by ${who.join(' + ')}`);
+      if (who.length > 1 && !who.every((l) => isolated[l])) collisions.push(`${ns} "${name}" declared by ${who.join(' + ')}`);
     }
   }
   return collisions.length
@@ -326,8 +332,18 @@ function advErrorCopy(src, rule) {
 function advImplementationVocabulary(src, rule) {
   const text = visibleText(src);
   const found = hits(text, rule.params.patterns, 'g');
-  return found.length
-    ? no(`implementation vocabulary leaked into user-facing copy: ${[...new Set(found)].slice(0, 6).join(', ')}`)
+  // R4.1 (F-7): a bare 3-digit number that is a CURRENCY AMOUNT (₹428, $500, 1,403) is not an HTTP status
+  // code. It matched the numeric "status code" pattern purely by shape, flagging real spend figures. Drop
+  // numeric matches that read as money; a genuine non-monetary "500" still flags.
+  const isMonetary = (tok) => {
+    const t = tok.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('[₹$€£]\\s?' + t).test(text)                    // ₹428 / $500
+      || new RegExp('[\\d,.]' + t + '\\b').test(text)                  // part of 1,428 / 12.403
+      || new RegExp('\\b' + t + '\\s?(rupees|dollars|inr|usd|eur|gbp)', 'i').test(text);
+  };
+  const real = [...new Set(found)].filter((m) => !(/^\d+$/.test(m) && isMonetary(m)));
+  return real.length
+    ? no(`implementation vocabulary leaked into user-facing copy: ${real.slice(0, 6).join(', ')}`)
     : ok('no implementation vocabulary in visible copy');
 }
 
@@ -477,6 +493,19 @@ const DUR_RE = /^-?\d*\.?\d+m?s$/;
 const HEX_RE = /^#[0-9a-fA-F]{3,8}$/;
 const DRIFT_EXEMPT = new Set(['0', '0px', '1px', '100%', 'auto', 'none', '0s', '0ms']);
 
+// R4.2: the design-token CLASS a CSS property belongs to — so a radius token and a spacing value that
+// merely share a number are not mistaken for the same thing.
+function propClass(prop) {
+  const p = String(prop).toLowerCase();
+  if (/radius/.test(p)) return 'radius';
+  if (/^(padding|margin|gap|row-gap|column-gap|inset|top|right|bottom|left)/.test(p)) return 'spacing';
+  if (/shadow/.test(p)) return 'shadow';
+  if (/duration|delay/.test(p)) return 'duration';
+  if (/(^|-)color$|^background$|^fill$|^stroke$/.test(p)) return 'colour';
+  if (/font-size|line-height|^width$|^height$|letter-spacing/.test(p)) return 'size';
+  return 'other';
+}
+
 function advRawValueDrift(src) {
   const css = collectStyleCss(src);
   if (!css.trim()) return ok('no stylesheet');
@@ -488,6 +517,16 @@ function advRawValueDrift(src) {
     if (!v.startsWith('var(') && (LENGTH_RE.test(v) || DUR_RE.test(v) || HEX_RE.test(v))) byValue.set(v.toLowerCase(), name);
   }
   if (byValue.size === 0) return ok('no literal-valued tokens to drift from');
+  // R4.2 (F-7): drift is real only when a raw value duplicates a token OF THE SAME PROPERTY CLASS. A
+  // `padding: 8px` that coincides with a radius token (`--pr: 8px`) is NUMERIC COINCIDENCE, not drift —
+  // that misfire flagged real spacing as "duplicating the radius token". Classify each token by the
+  // property it is USED on (`prop: var(--token)`), and only flag a raw value on a matching class.
+  const tokenUsedClass = new Map();
+  for (const m of css.matchAll(/([a-z-]+)\s*:\s*[^;{}]*var\(\s*(--[\w-]+)/gi)) {
+    const name = m[2];
+    if (!tokenUsedClass.has(name)) tokenUsedClass.set(name, new Set());
+    tokenUsedClass.get(name).add(propClass(m[1].trim()));
+  }
   const hits2 = [];
   // scan non-token declarations for a literal equal to a token's value
   for (const m of css.matchAll(/(?:^|[;{])\s*([a-z-]+)\s*:\s*([^;}]+)/gi)) {
@@ -496,7 +535,12 @@ function advRawValueDrift(src) {
     for (const tok of val.split(/\s+/)) {
       const t = tok.trim().toLowerCase();
       if (DRIFT_EXEMPT.has(t)) continue;
-      if (byValue.has(t)) hits2.push(`${prop}: ${tok} duplicates ${byValue.get(t)} — route it through the token`);
+      if (!byValue.has(t)) continue;
+      const name = byValue.get(t);
+      const usedOn = tokenUsedClass.get(name);
+      // if the token is used on a KNOWN class and this declaration is a DIFFERENT class → coincidence, skip.
+      if (usedOn && usedOn.size && !usedOn.has(propClass(prop))) continue;
+      hits2.push(`${prop}: ${tok} duplicates ${name} — route it through the token`);
     }
   }
   return hits2.length ? no([...new Set(hits2)].slice(0, 5).join('; ')) : ok('no raw values duplicate a token');
