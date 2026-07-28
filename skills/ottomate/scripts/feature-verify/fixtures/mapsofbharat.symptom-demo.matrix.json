@@ -1,0 +1,18 @@
+{
+  "feature": "mapsofbharat.symptom-demo",
+  "requirement_ref": "bug-report: reproduce-symptom two-phase demo",
+  "authored": { "from": "bug-report", "at_commit": "aaf6d34", "blind_to_diff": true },
+  "target": { "kind": "flow", "id": "symptom", "base": "FV_INSTANCE_URL" },
+  "parameters": {},
+  "cases": [
+    {
+      "id": "sym1",
+      "path": "error",
+      "reproduce_symptom": true,
+      "symptom_assert": "demo.controllable-symptom",
+      "pass_to_pass": [],
+      "oracles": [{ "layer": "system-state", "assert": "demo.controllable-symptom" }]
+    }
+  ],
+  "review": { "owner_locked": true, "locked_at": "2026-07-28" }
+}

@@ -9,6 +9,9 @@ import { loadConfig, Matrix, postReport, caseEvidenceDir, writeMatrix } from './
 import { loadMatrix } from './harness/matrix.mjs';
 import { assessTrust, applyTrust } from './harness/trust-record.mjs';
 import { assertUntampered } from './harness/tamper-guard.mjs';
+import { symptomVerdict } from './harness/reproduce-symptom.mjs';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
 
 const cfg = loadConfig();
 const matrix = new Matrix();
@@ -50,7 +53,16 @@ const REGISTRY: Record<string, (page: Page, api: APIRequestContext, params: any)
     const ok = sumB === dB.stats_count && errs.length === 0;
     return { ok, detail: `switch ${A}→${B}: legend sum ${sumB} vs api stats_count ${dB.stats_count}; console errors ${errs.length}`, observed: { sumB, stats_count: dB.stats_count, errors: errs } };
   },
+  // Reproduce-symptom demo control: the app has no real bug, so the "break" is a labelled flag
+  // (FV_SIMULATE_BROKEN=1) — RED in the pre-fix phase, GREEN post-fix. Proves the two-phase orchestration.
+  'demo.controllable-symptom': async () => ({
+    ok: process.env.FV_SIMULATE_BROKEN !== '1',
+    detail: process.env.FV_SIMULATE_BROKEN === '1' ? 'simulated broken (RED) — the pre-fix state' : 'working (GREEN) — the post-fix state',
+  }),
 };
+
+const PHASE = process.env.FV_PHASE ?? 'both';
+const STORE = process.env.FV_SYMPTOM_STORE ?? '/tmp/fv/symptom-baselines';
 
 test.beforeAll(async () => { api = await playwrightRequest.newContext(); m = await loadMatrix(MATRIX_FILE); });
 
@@ -79,6 +91,35 @@ test.afterAll(async () => {
 test('run the declarative matrix (data-driven)', async ({ page }) => {
   for (const c of m.cases) {
     const dir = await caseEvidenceDir(cfg.evidenceRoot, c.id);
+
+    // P2-B reproduce-symptom (two-phase): RED pre-fix → GREEN post-fix + PASS_TO_PASS (SWE-bench). The
+    // pre-fix RED is stored so the post-fix run can prove the assertion actually caught the bug.
+    if (c.reproduce_symptom) {
+      const fn = c.symptom_assert ? REGISTRY[c.symptom_assert] : undefined;
+      const storeFile = path.join(STORE, `${m.feature}-${c.id}`.replace(/[^\w.-]/g, '_') + '.json');
+      if (!fn) { matrix.record({ case: `${c.id}: ${c.symptom_assert}`, outcome: 'skipped', system_state: { note: 'no registered symptom assertion' }, evidence: { dir } }); continue; }
+      if (PHASE === 'pre') {
+        const r = await fn(page, api, c.params ?? {});
+        const preFixRed = !r.ok;
+        await fs.mkdir(STORE, { recursive: true });
+        await fs.writeFile(storeFile, JSON.stringify({ preFixRed, detail: r.detail }));
+        matrix.record({ case: `${c.id}: symptom reproduced pre-fix`, variant: 'reproduce-symptom', axis: 'FAIL_TO_PASS', system_state: { preFixRed, detail: r.detail }, outcome: preFixRed ? 'pass' : 'warn', evidence: { dir } });
+      } else if (PHASE === 'post') {
+        let preFixRed = false;
+        try { preFixRed = JSON.parse(await fs.readFile(storeFile, 'utf8')).preFixRed; } catch { /* no baseline recorded */ }
+        const r = await fn(page, api, c.params ?? {});
+        const passToPass: boolean[] = [];
+        for (const ref of c.pass_to_pass ?? []) {
+          const pc = m.cases.find((x: { id: string }) => x.id === ref);
+          const pf = pc?.oracles?.[0]?.assert ? REGISTRY[pc.oracles[0].assert] : undefined;
+          passToPass.push(pf ? (await pf(page, api, pc.params ?? {})).ok : false);
+        }
+        const v = symptomVerdict({ preFixRed, postFixGreen: r.ok, passToPass });
+        matrix.record({ case: `${c.id}: reproduce-symptom (RED→GREEN)`, variant: 'reproduce-symptom', axis: 'FAIL_TO_PASS+PASS_TO_PASS', system_state: { preFixRed, postFixGreen: r.ok, passToPass, verdict: v }, outcome: v.outcome, evidence: { dir } });
+      }
+      continue;
+    }
+
     for (const o of c.oracles) {
       const fn = o.assert ? REGISTRY[o.assert] : undefined;
       if (!fn) { // fail-closed: an unknown assertion is UNMEASURED, never a pass

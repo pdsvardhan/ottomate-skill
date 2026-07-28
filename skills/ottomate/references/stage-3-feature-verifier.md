@@ -51,6 +51,21 @@ Advisory-only for pure-backend/no-UI internal changes (still welcome, never bloc
 > (`oid()` is dead code — use `getByRole`/`getByTestId`); **Lighthouse-CI is OUT** (perf not needed). First
 > build: **P1-A, the browser leg on Maps of Bharat** (indicator→dataset→stats).
 
+> **The case-matrix generator + runner (P2-A/P2-B, built + verified 2026-07-28).** At **spec-lock** (ACs
+> locked, before the coder builds), a **claim-blind sub-agent** (`prompts/feature-verifier-matrix-prompt.md`)
+> authors a declarative **matrix file** in the project (`design/feature-verify/<feature>.matrix.json`):
+> `gen-matrix.mjs` scaffolds it (EP/BVA → the six path templates → **pairwise** bound → risk-order), and the
+> sub-agent fills each case's oracles from the registered P1 layers — **never inventing assertions**. The
+> owner reviews + locks it. At **verify**, the data-driven runner `run-matrix.feature-verify.spec.ts`
+> executes each case against the running app via a **held-out assertion registry** (the verifier owns the
+> assert logic; the matrix only references it by name), then the **trust record** (`trust-record.mjs`) +
+> **tamper tripwire** (`tamper-guard.mjs`) gate: a run that is not claim-blind + held-out + owner-reviewed +
+> untampered + pre-build-authored is **downgraded to advisory (ITERATE), never a silent APPROVE**. For an
+> owner-reported bug, a `reproduce_symptom` case is confirmed **RED pre-fix → GREEN after** the claimed fix
+> (`reproduce-symptom.mjs`). Verified on MoB: reports **id 9 APPROVE** (reproduces P1-A from the file) /
+> **id 10 ITERATE** (unreviewed downgrade) / the two-phase symptom demo (RED→GREEN). Design + plans:
+> `docs/plans/2026-07-28-task3-P2{A,B}-*`.
+
 ## Why it exists (the gap the code verifier can't close)
 
 The code verifier's tests are **coder-authored, happy-path, derived from ACs the coder/skill

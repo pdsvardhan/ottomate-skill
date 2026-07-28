@@ -209,6 +209,11 @@ pass/fail to `flow_test_runs` via `POST /api/flows/<id>/test` `ran_by:'automated
 "done" only when **both** verifiers are green (block cv/public, warn personal — adr-014). Advisory
 (never blocking) for pure-backend/no-UI items. AI Explorer/Judge (Claude, in-session) never gate;
 fail-closed (a skipped/mocked case is never green). The owner reviews the case matrix before the run.
+**For an owner-reported bug (P2-B, 2026-07-28), the matrix is authored from the bug report — claim-blind —
+with a `reproduce_symptom` case: the runner confirms it RED on the pre-fix state and GREEN after the
+claimed fix (SWE-bench FAIL_TO_PASS + a PASS_TO_PASS sweep), and downgrades any run that is not
+owner-reviewed / untampered / claim-blind to advisory (never a silent APPROVE). See
+`references/stage-3-feature-verifier.md` + `docs/plans/2026-07-28-task3-P2{A,B}-*`.**
 
 ### 4.7b — Graduation offer (Stage 4 S10, 2026-07-27)
 
