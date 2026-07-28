@@ -98,10 +98,29 @@ export function resolveDecision(d, { registry = questionRegistry(), sourceLoader
   const base = { id: d.id, axis: d.axis, target_id: d.target_id, question, value: String(d.chosen_value), round: d.round ?? null };
   const q = registry[question];
 
-  // 1. Registry HIT — the ordinary path, unchanged.
+  // 1. Registry HIT.
   if (q) {
     const row = { ...base, channel: q.channel, scope_hint: q.scope_hint, derived: false };
-    return q.token ? { kind: 'token', row: { ...row, token: tokenName(q.token, d.target_id) } } : { kind: 'structural', row };
+    // R6 (F-12): a token-mapped question mints a TOKEN only when the chosen value is a real CSS value. An
+    // ENUM value ("flat-hairline", "hairline-rule") is not valid as `--x: <value>`; the looksLikeCssValue
+    // guard now gates the REGISTERED path too, so an enum routes to a STRUCTURAL record instead of minting
+    // an invalid custom property. A CSS-shaped value (radius "6px") still mints a token.
+    if (q.token && looksLikeCssValue(d.chosen_value)) {
+      return { kind: 'token', row: { ...row, token: tokenName(q.token, d.target_id) } };
+    }
+    if (q.token) {
+      return {
+        kind: 'structural',
+        row: {
+          ...row,
+          evidence: {
+            how: 'enum-value-structural',
+            why: `"${question}" maps to token ${q.token}, but the chosen value "${d.chosen_value}" is an enum, not a CSS value — recorded as a structural decision, never minted as an invalid --custom-property`,
+          },
+        },
+      };
+    }
+    return { kind: 'structural', row };
   }
 
   // 2. Registry MISS on a page-scope OR non-CSS-shaped decision → verbatim STRUCTURAL record.
