@@ -89,16 +89,31 @@ export function publicDesignUrl(projectSlug, targetId, publicBase = DEFAULT_PUBL
  * @param {object} [anatomy]
  * @returns {Array<object>} one POST payload per sub-decision offered in this round
  */
+/**
+ * R5 (F-11): resolve the round's anatomy from the REGISTRY (fast-path) OR from an inline decomposed
+ * anatomy the manifest carries (`anatomy_inline` from decompose.mjs). This is what lets a NOVEL / not-yet-
+ * registered component publish a round without temp registry surgery — its axes trace to its stamped/derived
+ * parts instead of a component-anatomy.json entry. Doctrine rule 40 still holds: below, an axis that traces
+ * to NEITHER the registry nor the inline anatomy is refused.
+ * @returns {{tier:string, sub_decisions:Array<{id:string, hint?:string}>}}
+ */
+export function resolveArchetype(manifest, anatomy = resolveAnatomy()) {
+  const registered = anatomy.archetypes?.[manifest.archetype];
+  if (registered) return registered;
+  const inline = manifest.anatomy_inline;
+  if (inline && Array.isArray(inline.sub_decisions) && inline.sub_decisions.length) {
+    return { tier: inline.tier ?? 'composite', sub_decisions: inline.sub_decisions, required_states: inline.required_states ?? ['rest'], _inline: true };
+  }
+  throw new Error(`unknown archetype "${manifest.archetype}" and no manifest.anatomy_inline — register it, or pass the decomposed anatomy (decompose.mjs → anatomy_inline). Known: ${Object.keys(anatomy.archetypes ?? {}).join(', ')}`);
+}
+
 export function buildRoundPayloads(manifest, anatomy = resolveAnatomy()) {
   const {
     target_id, archetype, round, variants_shown,
     target_kind, rung, profile = 'P1', constraints = null, session_id = null,
   } = manifest;
 
-  const arche = anatomy.archetypes?.[archetype];
-  if (!arche) {
-    throw new Error(`unknown archetype "${archetype}" (known: ${Object.keys(anatomy.archetypes ?? {}).join(', ')})`);
-  }
+  const arche = resolveArchetype(manifest, anatomy);
   if (!variants_shown || typeof variants_shown !== 'object') {
     throw new Error('manifest.variants_shown is required — { slot: { subDecisionId: value } }');
   }

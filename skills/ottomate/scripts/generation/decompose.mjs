@@ -102,6 +102,20 @@ export function requireExplicitScope(ownerChoiceId = null) {
   };
 }
 
+/**
+ * R5 (F-11): build the INLINE ANATOMY a round carries so a novel/unregistered component can publish
+ * without registry surgery. The scope's axes become the sub_decisions; publish-round's resolveArchetype
+ * reads this when the archetype is not in component-anatomy.json.
+ * @returns {{tier:string, sub_decisions:Array<{id,hint}>}}
+ */
+export function anatomyForScope(decomposition, choiceId) {
+  const axes = axesForScope(decomposition, choiceId);
+  return {
+    tier: 'composite',
+    sub_decisions: axes.map((a) => ({ id: a.id, hint: `${a.part} · ${a.channel}` })),
+  };
+}
+
 /** Turn the owner's chosen scope into the round's contested axes (id + channel), for composeRounds. */
 export function axesForScope(decomposition, choiceId) {
   const choice = scopeChoices(decomposition).find((c) => c.id === choiceId);
