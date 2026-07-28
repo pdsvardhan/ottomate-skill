@@ -1,0 +1,12 @@
+{
+  "name": "ottomate-feature-verify",
+  "private": true,
+  "type": "module",
+  "description": "Task-3 feature verifier harness (Playwright + fast-check + axe-core). Self-contained: scp this dir to /tmp/fv on VAULT7A, then `npm install` (browsers are cached in ~/.cache/ms-playwright). @playwright/test is pinned to match those cached browsers.",
+  "devDependencies": {
+    "@playwright/test": "1.60.0",
+    "@axe-core/playwright": "^4",
+    "axe-core": "^4",
+    "fast-check": "^3"
+  }
+}
