@@ -32,6 +32,7 @@ import { fileURLToPath } from 'node:url';
 import { resolveAnatomy, rungForTier } from './anatomy.mjs';
 import { resolveLabels, buildShown } from './variant-slots.mjs';
 import { prePublishGates, formatPrePublish } from './pre-publish-gates.mjs';
+import { buildRoundJsonExtras } from './emit-round-json.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 // Two files since U1 (2026-07-27); anatomy.mjs resolves them to the pre-split shape.
@@ -257,8 +258,14 @@ async function main() {
   // T4: the filter over-generates 6 and keeps 3, and the three it discards used to vanish — so the
   // filter was unauditable and the next round could not learn from what was thrown away. They are
   // recorded here, beside the preview, in the file publish-round already wrote. No schema change.
-  const record = { ...manifest, filter: summariseFilter(manifest) };
+  // R1.1: auto-emit the live grid + banner. `variant_files:[{label,path}]` are copied beside index.html
+  // and recorded as `variant_previews`; `banner` (buildBanner inputs) becomes a self-styled banner. Both
+  // optional — a legacy round with neither still publishes and falls back to the single index.html iframe.
+  const extras = buildRoundJsonExtras(manifest, path.dirname(dest), { themeFile, resolveRel: fromManifest });
+  const record = { ...manifest, ...extras, filter: summariseFilter(manifest) };
   writeFileSync(path.join(path.dirname(dest), 'round.json'), JSON.stringify(record, null, 2));
+  if (extras.variant_previews) console.log(`  live grid: ${extras.variant_previews.length} interactive variant(s) — ${extras.variant_previews.map((v) => v.file).join(', ')}`);
+  if (extras.banner) console.log('  legibility banner: emitted');
   if (record.filter.missing) console.warn(`  note: ${record.filter.missing}`);
   console.log(`\nwrote ${dest} (${(readFileSync(dest).length / 1024).toFixed(1)} KB)`);
 
