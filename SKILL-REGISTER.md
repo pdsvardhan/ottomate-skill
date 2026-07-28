@@ -1,14 +1,14 @@
 # Skill register — what exists, what governs it, what is actually enforced
 
-> **Resuming work?** Read **`docs/plans/2026-07-28-SESSION-HANDOFF.md`** first, then this file —
-> together they are the complete entry point. The work queue is
-> `docs/plans/2026-07-27-PRE-STAGE4-PLANS.md`. Do not bulk-read `docs/research/`.
+> **Resuming work?** Read **`docs/plans/2026-07-28-SESSION-HANDOFF.md`** (v2) first, then this file —
+> together they are the complete entry point. Do not bulk-read `docs/research/`.
 >
-> **The complete outstanding backlog, one list, marked by kind of work needed:**
-> `docs/plans/2026-07-27-OUTSTANDING-WORK.md`. **Running Task 3 in a separate session?** Start from
-> `docs/plans/2026-07-27-TASK3-PARALLEL-SESSION-BRIEF.md` — it is self-contained and carries the
-> file-ownership map that keeps two sessions from colliding.
-> *(The 2026-07-23 handoff is superseded and kept only for history.)*
+> **TWO PARALLEL TRACKS (owner runs both):** **Track A — Task 2 verification + testing** →
+> `docs/plans/2026-07-28-TASK2-FINAL-TEST-PLAN.md` (the test pass) + a requirements-traceability audit;
+> Task 2 BUILD is complete. **Track B — Task 3 feature verifier** → `docs/plans/2026-07-28-TASK3-BRIEF.md`
+> (self-contained). The handoff carries the **file-ownership map** that keeps the two from colliding —
+> read it before either session writes. Older backlog: `docs/plans/2026-07-27-OUTSTANDING-WORK.md`.
+> *(The 2026-07-23 and 2026-07-27 handoffs/briefs are superseded, kept for history.)*
 
 **The single index of the Ottomate skill.** Structure · systems · rules · intelligence · improvements.
 Created 2026-07-23 because knowledge had scattered across ~40 files with no index — which is how an
