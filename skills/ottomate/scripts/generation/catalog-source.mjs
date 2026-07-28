@@ -108,6 +108,38 @@ export function checkSourcePolicy(variants = [], { policy = 'library-first', can
   return { pass: problems.length === 0, problems, notes };
 }
 
+/**
+ * R7 (standing defect D-8): a round must PROVE it consulted the catalog, not merely assert a bespoke
+ * reason. When catalog candidates existed for the target, each bespoke variant must record WHICH mc-ids it
+ * weighed (`source.weighed_against`) — otherwise "nothing in the catalog fit" is an unaudited claim. Returns
+ * an auditable `consultation` record for round.json, plus the blocking problems.
+ * @returns {{ok:boolean, problems:string[], consultation:object}}
+ */
+export function catalogConsultationProof(variants = [], candidates = []) {
+  const candidateIds = candidates.map((c) => c.id);
+  const problems = [];
+  const consultation = { candidates_available: candidateIds, per_variant: [] };
+  for (const v of variants) {
+    const src = v.source ?? {};
+    const entry = { label: v.label, kind: src.kind ?? null };
+    if (src.kind === 'catalog') {
+      entry.mc_id = src.mc_id ?? null;
+    } else if (src.kind === 'bespoke') {
+      entry.why = src.why ?? null;
+      entry.weighed_against = Array.isArray(src.weighed_against) ? src.weighed_against : [];
+      // D-8: if candidates existed, a bespoke variant must record which it weighed — proof, not assertion.
+      if (candidateIds.length && entry.weighed_against.length === 0) {
+        problems.push(`variant "${v.label}" is bespoke but records NO catalog consultation — list the mc-ids you weighed (source.weighed_against) so the ${candidateIds.length} candidate(s) are provably considered, not ignored (D-8)`);
+      }
+      // an id that was never a candidate is a fabricated consultation — also caught.
+      const phantom = entry.weighed_against.filter((id) => candidateIds.length && !candidateIds.includes(id));
+      if (phantom.length) problems.push(`variant "${v.label}" claims to have weighed ${phantom.join(', ')}, which were not catalog candidates for this target`);
+    }
+    consultation.per_variant.push(entry);
+  }
+  return { ok: problems.length === 0, problems, consultation };
+}
+
 export function formatSource(result, candidates = []) {
   const l = [`source policy: ${result.pass ? 'PASS' : 'FAIL'}`];
   for (const p of result.problems) l.push(`  BLOCK ${p}`);
