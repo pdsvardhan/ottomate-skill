@@ -53,3 +53,23 @@ test('chroma is clamped into the band — a near-grey accent is pushed to a mini
   const n = normaliseForContrast(40, 0.05, 0.6, { chromaRange: [0.35, 0.9] });
   assert.ok(n.s >= 0.35);
 });
+
+// D-1 (2026-07-28) — the final-test-pass regression: two REAL radarr poster raws (#64, #78) are so
+// saturated + dark that raising V alone caps out at 2.8:1. The desaturation fallback must clear 3:1.
+test('D-1 — a saturated deep-indigo poster raw that V-raising could not fix now clears 3:1', () => {
+  for (const [name, hex] of [['#64', 0x16145c], ['#78', 0x15125e]]) {
+    const r = (hex >> 16) & 255, g = (hex >> 8) & 255, b = hex & 255;
+    const before = contrastRatio(relLuminance(r, g, b), hexLuminance('#101216'));
+    assert.ok(before < 3, `${name} raw should fail before (got ${before.toFixed(2)})`);
+    const { h, s, v } = rgbToHsv(r, g, b);
+    const n = normaliseForContrast(h, s, v);
+    assert.ok(n.contrast >= 3, `${name} clears 3:1 after (got ${n.contrast.toFixed(2)})`);
+    assert.ok(n.s < s, `${name} was desaturated to reach the floor (s ${s.toFixed(2)} -> ${n.s.toFixed(2)})`);
+  }
+});
+
+test('D-1 — the desaturation fallback still leaves gold #e9b84c untouched (never fires unnecessarily)', () => {
+  const { h, s, v } = rgbToHsv(0xe9, 0xb8, 0x4c);
+  const n = normaliseForContrast(h, s, v);
+  assert.equal(n.s, Math.min(Math.max(s, 0.35), 0.9), 'saturation only clamped to the band, never desaturated');
+});

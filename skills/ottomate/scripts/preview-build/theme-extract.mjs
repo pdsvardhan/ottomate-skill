@@ -62,15 +62,20 @@ export function normaliseForContrast(h, s, v, opts = {}) {
   const [sLo, sHi] = opts.chromaRange ?? [0.35, 0.9];
   const Llo = floor * (bgLum + 0.05) - 0.05;        // exact luminance that clears the floor on the bg
   const Lhi = opts.maxLum ?? 0.75;                   // above this it washes toward white, losing hue
-  const s0 = clamp(s, sLo, sHi);
-  const lumOf = (vv) => { const { r, g, b } = hsvToRgb(h, s0, vv); return relLuminance(r, g, b); };
+  let s0 = clamp(s, sLo, sHi);
+  const lumAt = (ss, vv) => { const { r, g, b } = hsvToRgb(h, ss, vv); return relLuminance(r, g, b); };
 
-  let v0 = v, lum = lumOf(v0), adjusted = false;
-  if (lum < Llo) { // too dark for the floor — raise V (monotone) until it clears, with a small margin
-    for (let i = 0; i < 80 && lumOf(v0) < Llo; i++) v0 = Math.min(1, v0 + 0.02);
+  let v0 = v, lum = lumAt(s0, v0), adjusted = false;
+  if (lum < Llo) { // too dark for the floor — first raise V (keeps saturation) until it clears
+    for (let i = 0; i < 80 && lumAt(s0, v0) < Llo; i++) v0 = Math.min(1, v0 + 0.02);
+    // D-1 (2026-07-28, final-test-pass fix): a highly-saturated hue can cap its luminance at V=1 and
+    // STILL sit below the floor — 2/349 real posters (deep indigo) did exactly this at 2.8:1. Lowering
+    // saturation raises luminance monotonically toward the neutral, so desaturate the rest of the way.
+    // Runs ONLY after raising V was insufficient, so a well-behaved accent (gold) never desaturates.
+    for (let i = 0; i < 80 && lumAt(s0, v0) < Llo; i++) s0 = Math.max(0, s0 - 0.02);
     adjusted = true;
   } else if (lum > Lhi) { // washing out — bring it down into the band
-    for (let i = 0; i < 80 && lumOf(v0) > Lhi; i++) v0 = Math.max(0, v0 - 0.02);
+    for (let i = 0; i < 80 && lumAt(s0, v0) > Lhi; i++) v0 = Math.max(0, v0 - 0.02);
     adjusted = true;
   }
   adjusted = adjusted || s0 !== s;

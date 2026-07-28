@@ -130,6 +130,31 @@ export function shuffle(arr, seed) {
   return a;
 }
 
+/**
+ * D-3 (2026-07-28, owner ruling) — profile-gated computed-at-publish. When the computed checks did NOT
+ * run (no Chromium / `computed.cwd` unset), the same philosophy as the floor applies: HARD for external
+ * audiences, advisory for the owner's own projects. P2/P3 (team/shipped) MUST NOT publish a round whose
+ * contrast / colour-budget / coherence were never checked; P1 (owner-only) may, but is loudly flagged.
+ * Pure + exported so the decision is unit-tested without spawning the whole build.
+ * @returns {{block:boolean, warn:boolean, why:string}}
+ */
+export function computedGate(state, profile = 'P1') {
+  if (state === 'ran') return { block: false, warn: false, why: 'computed checks ran' };
+  if (profile === 'P2' || profile === 'P3') {
+    return {
+      block: true, warn: false,
+      why: `Computed checks ${state} and profile is ${profile}: a round for a team/shipped audience MUST NOT `
+        + 'publish unchecked. Run where Chromium resolves (VAULT7A: set computed.cwd=/opt/homeserver/ottomate). '
+        + 'NOTHING should be published.',
+    };
+  }
+  return {
+    block: false, warn: true,
+    why: `Computed checks ${state} — publishing is ALLOWED at P1 (owner-only), but this round ships WITHOUT `
+      + 'contrast / colour-budget / coherence verified. Re-run on VAULT7A before any wider (P2/P3) audience.',
+  };
+}
+
 function main() {
   const configPath = process.argv[2];
   if (!configPath) { console.error('usage: node build-variant-set.mjs <variant-set.json>'); process.exit(1); }
@@ -305,12 +330,17 @@ function main() {
   // It cannot be silently omitted: with no Chromium it reports UNAVAILABLE, never a pass.
   const computed = runComputedPass(outHtml, { cwd: cfg.computed?.cwd ?? null, profile: cfg.audienceProfile ?? 'P1' });
   console.log(formatComputed(computed, cfg.audienceProfile ?? 'P1'));
+  const profile = cfg.audienceProfile ?? 'P1';
   if (computed.state === 'ran') {
-    const blocking = blockingFindings(computed.findings, { profile: cfg.audienceProfile ?? 'P1' });
+    const blocking = blockingFindings(computed.findings, { profile });
     if (blocking.length) {
       console.error('\nThe page was written but MUST NOT be presented — a computed rule blocks it. Fix and rerun.');
       process.exit(2);
     }
+  } else {
+    const gate = computedGate(computed.state, profile);
+    if (gate.block) { console.error('\n' + gate.why); process.exit(2); }
+    if (gate.warn) console.warn('\n⚠ ' + gate.why);
   }
 
   // The artifact path was RETIRED 2026-07-27 (owner decision): a round is published into the

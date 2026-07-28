@@ -1,7 +1,7 @@
 // C7 — the colour budget must be STATED (AC9). run: node --test colour-budget.test.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { validateColourBudget } from './build-variant-set.mjs';
+import { validateColourBudget, computedGate } from './build-variant-set.mjs';
 
 test('MUST FAIL — a config with no colorBudget is refused', () => {
   const r = validateColourBudget({});
@@ -31,4 +31,27 @@ test('MUST FAIL — unconstrained WITHOUT a why is not a stated choice', () => {
 
 test('accepts the British spelling too', () => {
   assert.equal(validateColourBudget({ colourBudget: 3 }).ok, true);
+});
+
+// D-3 — profile-gated computed-at-publish (owner ruling 2026-07-28).
+test('D-3 — a computed pass that RAN never blocks on availability grounds', () => {
+  assert.equal(computedGate('ran', 'P3').block, false);
+  assert.equal(computedGate('ran', 'P1').warn, false);
+});
+
+test('D-3 MUST BLOCK — an unavailable/failed computed pass blocks P2 and P3 (team/shipped, unchecked)', () => {
+  for (const state of ['unavailable', 'failed']) {
+    for (const profile of ['P2', 'P3']) {
+      const g = computedGate(state, profile);
+      assert.equal(g.block, true, `${state}@${profile} must block`);
+      assert.match(g.why, /MUST NOT\s+publish unchecked/);
+    }
+  }
+});
+
+test('D-3 — at P1 (owner-only) an un-run computed pass is ALLOWED but loudly warned, never blocked', () => {
+  const g = computedGate('unavailable', 'P1');
+  assert.equal(g.block, false);
+  assert.equal(g.warn, true);
+  assert.match(g.why, /ALLOWED at P1/);
 });

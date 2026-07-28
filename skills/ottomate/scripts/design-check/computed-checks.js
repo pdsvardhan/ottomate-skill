@@ -40,6 +40,19 @@
     const a = toLab(rgb1), b = toLab(rgb2);
     return Math.sqrt((a.L - b.L) ** 2 + (a.a - b.a) ** 2 + (a.bb - b.bb) ** 2);
   }
+  // Hue in degrees (0..359). D-2: the colour budget counts distinct ACCENT HUES — one accent used at
+  // several opacities/tints is one accent on a few surfaces, exactly what the budget allows.
+  function hueOf(r, gg, b) {
+    r /= 255; gg /= 255; b /= 255;
+    const max = Math.max(r, gg, b), min = Math.min(r, gg, b), d = max - min;
+    if (d === 0) return 0;
+    let h;
+    if (max === r) h = ((gg - b) / d) % 6;
+    else if (max === gg) h = (b - r) / d + 2;
+    else h = (r - gg) / d + 4;
+    h *= 60;
+    return h < 0 ? h + 360 : h;
+  }
 
   // ── style vector + distance (for the appearance-divergence backstop) ────────────────────────────
   const VECTOR_PROPS = ['borderRadius', 'boxShadow', 'backgroundColor', 'color', 'padding', 'borderWidth', 'borderStyle', 'fontFamily', 'fontSize', 'fontWeight', 'letterSpacing', 'textTransform'];
@@ -198,16 +211,22 @@
           const sat = max === 0 ? 0 : (max - min) / max;
           // A neutral is not part of the budget; a saturated colour is.
           if (sat < 0.25 || max < 40) continue;
-          accentish.set(v, (accentish.get(v) || 0) + 1);
+          // D-2 (2026-07-28): key by HUE bucket, NOT the full rgba string. Keying by string counted one
+          // accent hue at N opacities (rgba(gold,.1), rgba(gold,.45)) as N distinct accents and
+          // false-blocked a single-hue design. 15° buckets keep genuinely different hues apart.
+          const bucket = Math.round(hueOf(r, g, b) / 15) % 24;
+          const cur = accentish.get(bucket);
+          if (cur) cur.count += 1;
+          else accentish.set(bucket, { count: 1, sample: v });
         }
       }
-      const distinct = [...accentish.keys()];
+      const distinct = [...accentish.values()];
       findings.colourBudget.push({
         label, distinctAccents: distinct.length, budget,
-        surfaces: [...accentish.entries()].reduce((a, [, n]) => a + n, 0),
+        surfaces: distinct.reduce((a, x) => a + x.count, 0),
         withinBudget: distinct.length <= budget,
         monochrome: distinct.length === 0,
-        colours: distinct.slice(0, 8),
+        colours: distinct.slice(0, 8).map((x) => x.sample),
       });
     }
     // 5. ELEMENT RECORDS (C6 batch 3) — collect, do not judge. The rules themselves are pure
