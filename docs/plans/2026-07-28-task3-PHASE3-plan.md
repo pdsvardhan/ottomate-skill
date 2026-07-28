@@ -3,9 +3,11 @@
 > **STATUS 2026-07-29: Phase 3 BUILT.** **P3-C** (gate-wiring/cadence/cron/reporting) — verified live on
 > VAULT7A, nightly cron installed. **P3-A** (AI-visual-judge) — built + demonstrated live on MoB. **P3-D**
 > (trajectory monitor) — built. **P3-B** — struck by the owner. Full pure suite 67/67. See the per-unit
-> plan docs (`2026-07-28-task3-P3{C,A}-*`) + the SKILL-REGISTER "Feature verifier" row. Remaining Task-3
-> tails = the two skill-level dispatch hooks (the judge post-run pass; the trajectory hand-off) — the
-> guardrail harness is ready + demonstrated, not yet auto-wired into the skill flow.
+> plan docs (`2026-07-28-task3-P3{C,A}-*`) + the SKILL-REGISTER "Feature verifier" row. **Both skill
+> dispatch hooks WIRED + demonstrated live 2026-07-29** (judge auto on every T2+ via `FV_NO_POST` +
+> `judge-dispatch.mjs` + `post-report.mjs`; trajectory from the coder sub-agent's output) and **both
+> cleanups done** (#289 3-crons→1 nightly wrapper; `test_runs` DELETE route shipped + #116 pruned).
+> **Phase 3 fully closed** — only Testcontainers-L2 stays deferred (awaits a write-heavy feature).
 
 The tail of the [implementation re-plan](2026-07-28-task3-IMPLEMENTATION-PLAN.md), after Phase 1 (P1-A…E)
 and Phase 2 (P2-A + P2-B) were built + verified. Owner decisions taken 2026-07-28.
