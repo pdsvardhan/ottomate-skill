@@ -1,0 +1,11 @@
+{
+  "_note": "P3-C4 app manifest for the feature verifier's nightly cron + on-commit orchestrator. One entry per app that has a browser-driving matrix. instance_url = the running app the specs drive; repo_root = where a commit diff is read from; matrix_files = the reviewed/locked matrices to run (paths relative to scripts/feature-verify/). On-commit selection also reads each app's design/feature-verify/*.matrix.json in repo_root and honours their covers globs. Today only Maps of Bharat has a browser matrix; add apps here as they grow one.",
+  "apps": [
+    {
+      "slug": "mapsofbharat",
+      "instance_url": "http://127.0.0.1:8610",
+      "repo_root": "/mnt/storage/websites/mapsofbharat",
+      "matrix_files": ["fixtures/mapsofbharat.indicator-switch.matrix.json"]
+    }
+  ]
+}

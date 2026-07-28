@@ -22,6 +22,8 @@ export function runLogEntry(x) {
     counts: { total: c.total ?? 0, pass: c.pass ?? 0, fail: c.fail ?? 0, warn: c.warn ?? 0, skipped: c.skipped ?? 0 },
     verdict: x.verdict ?? null,
     delta: x.delta ?? null,
+    // compact per-case outcomes so future deltas + flakyCases() have history without the full evidence
+    results: (x.results ?? []).map((r) => ({ case: r.case, outcome: r.outcome })),
     evidence_dir: x.evidence_dir ?? null,
   };
 }

@@ -5,8 +5,9 @@
 // verdict path reproduces P1-A's APPROVE. See docs/plans/2026-07-28-task3-P2A/P2B-*-design.md.
 
 import { test, expect, request as playwrightRequest, type APIRequestContext, type Page } from '@playwright/test';
-import { loadConfig, Matrix, postReport, caseEvidenceDir, writeMatrix } from './harness';
+import { loadConfig, Matrix, postReport, postTestRun, caseEvidenceDir, writeMatrix } from './harness';
 import { loadMatrix } from './harness/matrix.mjs';
+import { shouldPostTestRun } from './harness/orchestrate.mjs';
 import { assessTrust, applyTrust } from './harness/trust-record.mjs';
 import { assertUntampered } from './harness/tamper-guard.mjs';
 import { symptomVerdict } from './harness/reproduce-symptom.mjs';
@@ -92,6 +93,11 @@ test.afterAll(async () => {
   await postReport(api, cfg, { target_kind: 'stage-3-feature', target_id: m.feature, matrix, verdict, full_report: { trust, tamper } });
   await writeMatrix(cfg.evidenceRoot, matrix.results,
     `# feature-verify: ${m.feature} (P2-A runner)\n\n${verdict.recommendation_overall} — ${verdict.reason}\n\ntrust: ${JSON.stringify(trust)}\n\n${matrix.renderTable()}\n`);
+  // P3-C4: the nightly substrate — one test_runs row per app on the scheduled cadence (fail-closed:
+  // result derives from the matrix counts, not any coder-touchable exit code). No-op off schedule.
+  if (shouldPostTestRun(process.env)) {
+    await postTestRun(api, cfg, { matrix, commit_sha: cfg.commitSha ?? 'unknown', triggered_by: 'schedule', notes: `${m.feature} — nightly` });
+  }
   await api.dispose();
 });
 
@@ -133,7 +139,15 @@ test('run the declarative matrix (data-driven)', async ({ page }) => {
         matrix.record({ case: `${c.id}: ${o.assert ?? o.layer}`, variant: c.path, axis: o.layer, outcome: 'skipped', system_state: { note: `no registered assertion "${o.assert}"` }, evidence: { dir } });
         continue;
       }
-      const r = await fn(page, api, c.params ?? {});
+      // fail-closed: a driver that THROWS (app down, selector gone, timeout) is a recorded FAIL, never
+      // an un-recorded case that would leave the matrix empty and read as "all 0 passed" (P3-C4).
+      let r: Check;
+      try {
+        r = await fn(page, api, c.params ?? {});
+      } catch (err) {
+        matrix.record({ case: `${c.id}: ${o.assert}`, variant: c.path, axis: o.layer, system_state: { error: String((err as Error)?.message ?? err) }, outcome: 'fail', evidence: { dir } });
+        continue;
+      }
       matrix.record({ case: `${c.id}: ${o.assert}`, variant: c.path, axis: o.layer, system_state: r.observed ?? r, action_log: r.action_log, outcome: r.ok ? 'pass' : 'fail', evidence: { dir } });
     }
   }
