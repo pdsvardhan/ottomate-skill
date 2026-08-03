@@ -40,7 +40,7 @@ If two documents disagree, follow this order AND tell the user about the drift. 
 | 2 — UI + tech | `stage-2-ui-master-plan.md` → `stage-2-design-method.md` (the A→B→C visual loop) → **`stage-2-generation.md` (the producer: anatomy → over-generate 6 → filter 3 → harness config; run in a FRESH sub-agent)** → `stage-2-components.md` → `stage-2-tech-architecture.md` |
 | 3 — build | `stage-3-scaffolding.md` → `stage-3-pipeline-setup.md` → (Type 2 only: `stage-3-reformat.md`) → `stage-3-codegen.md` → `stage-3-verifier.md` → `stage-3-feature-verifier.md` (user-facing features) → `stage-3-testing.md` |
 | 4 — iterate | `stage-4-mini-pipeline.md` |
-| cross-cutting | `output-style.md` (always — includes the trigger-phrase table, merged 2026-07-02); `task-tracking.md` (per-project Ottomate to-dos — read at load, updated at wrap); `ledger-writes.md` (when posting claims/artifacts/test runs); `anti-gaslight-rules.md` (rule definitions); `pack-up-ritual.md` (at wrap) |
+| cross-cutting | `output-style.md` (always — includes the trigger-phrase table, merged 2026-07-02); `task-tracking.md` (per-project Ottomate to-dos — read at load, updated at wrap); `ledger-writes.md` (when posting claims/artifacts/test runs); `anti-gaslight-rules.md` (rule definitions); `documentation-standard.md` (what docs a project keeps, their formats, and the R-DOC-* freshness rules — load when authoring/reconciling docs or at 4.8); `pack-up-ritual.md` (at wrap) |
 
 Do not preload anything else. Superseded references live in `_archive/references/` — never load them.
 

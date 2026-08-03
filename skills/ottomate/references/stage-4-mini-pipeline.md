@@ -270,6 +270,13 @@ When all items are verified:
    - **modified feature / flow / page** → update the corresponding doc sections so the rendered overview/features/flows/pages/architecture match the new DB state.
    - **re-wire / revamp / scope-shift** → confirm an ADR exists (id `adr-NNN-<slug>`, rule 14) and curate it for display (rule 17: recruiter title + `curated` + cat-tag or hide).
    - Then run the milestone mirror (step 1b above already did `mirror:write`); verify the YAML + repo docs reflect the reconcile before notifying.
+   - **Enforced, not prose (Phase 4, 2026-08-04):** this reconcile is no longer trust-based. Follow
+     `references/documentation-standard.md` (the layered doc model + rules R-DOC-*). On a **doc-gated**
+     project (`projects.doc_gate='block'`) the integrate call itself **refuses** if a `feature_modification`
+     / `flow_modification` didn't update its target's spec (D2 spec-sync, R-DOC-10). Then run the doc-lint
+     (`scripts/doc-lint/run.mjs --project <slug>`: Vale retired-terms + lychee links) and confirm
+     `GET /api/anti-gaslight/violations?project_slug=<slug>` is free of HARD `dead-capability` /
+     `unbacked-pass` before notifying. `stale-spec` is advisory.
 5. Notify user with **Trace Report**:
 
 ```
