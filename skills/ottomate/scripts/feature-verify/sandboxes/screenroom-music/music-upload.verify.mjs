@@ -25,7 +25,7 @@ const landed = () => sh(`find ${MUSIC} -type f 2>/dev/null`).split('\n').filter(
 const ndSearch = async (q) => { const r = await (await fetch(`${ND}/rest/search3?query=${encodeURIComponent(q)}&${ndAuth}`)).json(); return r['subsonic-response']?.searchResult3?.song || []; };
 const upload = async (rels) => { const fd = new FormData(); for (const rel of rels) { const b = await readFile(`${C}/${rel}`); fd.append('files', new Blob([b]), rel); } fd.append('relativePaths', JSON.stringify(rels)); const res = await fetch(SR + '/api/music/upload', { method: 'POST', body: fd }); return { status: res.status, json: await res.json().catch(() => ({})) }; };
 const scan = async (f) => await (await fetch(SR + '/api/music/scan', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ path: f, recursive: true }) })).json();
-const toCommit = (f) => { const t = f.tags || {}; const o = { srcPath: f.srcPath, language: f.detectedLang, artist: t.artist, album: t.album, title: t.title, trackNumber: t.trackNumber, extension: (f.filename || '').split('.').pop(), albumArtist: t.albumArtist, lyrics: f.lyrics }; if (f.detectedLang === 'other') o.genre = t.genre; return o; };
+const toCommit = (f) => { const t = f.tags || {}; const o = { srcPath: f.srcPath, language: f.detectedLang, artist: t.artist, artists: t.artists, album: t.album, title: t.title, trackNumber: t.trackNumber, extension: (f.filename || '').split('.').pop(), albumArtist: t.albumArtist, lyrics: f.lyrics }; if (f.detectedLang === 'other') o.genre = t.genre; return o; };
 const commit = async (files, extra = {}) => await (await fetch(SR + '/api/music/commit', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ files, triggerRescan: true, ...extra }) })).json();
 const R = []; const rec = (c, layer, ok, detail) => { R.push({ case: c, layer, outcome: ok ? 'pass' : 'fail', detail }); console.log((ok ? 'PASS' : 'FAIL').padEnd(5), `[${layer}]`, c, '-', detail); };
 const clean = (s) => (s || '').split(' (')[0].trim();
@@ -82,6 +82,24 @@ rec('no-tags: scan flags low/absent metadata', 'L1', lowconf, `detected.title=${
 const chosen = { srcPath: f5.srcPath, language: 'english', artist: 'FV Tester', album: 'FV Sandbox Album', title: 'No Tags Test', albumArtist: 'FV Tester', extension: 'flac' };
 const c5 = await commit([chosen]); const nt = landed().find(p => /No Tags Test/.test(p)); const t5 = nt ? ff(nt) : {};
 rec('no-tags: chosen metadata persists on commit', 'L2', c5.moved >= 1 && t5.title === 'No Tags Test' && t5.artist === 'FV Tester', `landed ${nt ? nt.replace(MUSIC, '') : 'MISSING'} title=${t5.title}`);
+
+// ── Phase 6 — feat.-grouping (edge #126): a real multi-track album (Son of Satyamurthy,
+//    7 tracks, ALBUMARTIST=Devi Sri Prasad, varied per-track ARTIST incl. a ;-multi one).
+//    Assert they group into ONE folder by album-artist, and the ;-track keeps BOTH singers. ──
+sh(`rm -rf ${MUSIC}/* 2>/dev/null; true`);
+sh(`cp "${LIB}/telugu/Son of Satyamurthy"/*.flac "${C}/" 2>/dev/null; true`);
+const sosRels = sh(`cd "${LIB}/telugu/Son of Satyamurthy" && ls *.flac 2>/dev/null`).split('\n').filter(Boolean);
+const u6 = await upload(sosRels);
+const s6 = await scan(u6.json.folderPath);
+const c6 = await commit(s6.files.map(toCommit));
+const L6 = landed(); const L6t = L6.map(p => ({ p, t: ff(p) }));
+const dirs = new Set(L6.map(p => p.replace(/\/[^/]+$/, ''))); const theDir = [...dirs][0] || '';
+rec('feat-grouping: varied-artist tracks land in ONE folder (conservation)', 'L3', dirs.size === 1 && L6.length === sosRels.length, `moved ${c6.moved} landed ${L6.length}/${sosRels.length} in ${dirs.size} dir(s)`);
+rec('feat-grouping: one folder <lang>/Devi Sri Prasad/Son of Satyamurthy', 'L2', /\/Devi Sri Prasad\/Son of Satyamurthy$/.test(theDir), theDir.replace(MUSIC, '') || '(none)');
+const aaSet = new Set(L6t.map(x => x.t.album_artist || x.t.albumartist));
+rec('feat-grouping: album-artist constant = Devi Sri Prasad', 'correctness', aaSet.size === 1 && aaSet.has('Devi Sri Prasad'), [...aaSet].join(' | ') || '(none)');
+const multi = L6t.find(x => /Sagar/i.test(x.t.artist || ''));
+rec('feat-grouping: ;-multi-artist track keeps both singers', 'correctness', !!multi && /Sagar/i.test(multi.t.artist || '') && /Manasi/i.test(multi.t.artist || ''), multi ? `artist=${multi.t.artist}` : 'Sagar track not found');
 
 // ── verdict ──
 const fails = R.filter(r => r.outcome === 'fail').length;

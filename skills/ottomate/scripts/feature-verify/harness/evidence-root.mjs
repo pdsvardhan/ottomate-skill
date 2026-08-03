@@ -11,8 +11,9 @@ import path from 'node:path';
 export const PERSIST_ROOT = process.env.FV_PERSIST_ROOT ?? '/opt/homeserver/ottomate/fv-evidence';
 const TMP_ROOT = '/tmp/fv-evidence';
 
-// Runs whose evidence is worth keeping: the nightly trend + every owner-reported-fix (its RED→GREEN proof).
-const PERSISTENT_MODES = new Set(['nightly', 'fix']);
+// Runs whose evidence is worth keeping: the nightly trend, every owner-reported-fix (its RED→GREEN
+// proof), and a manual whole-site verification (full-site) — all deliberate, all worth re-opening later.
+const PERSISTENT_MODES = new Set(['nightly', 'fix', 'full-site']);
 
 /**
  * The evidence root for one run: `<persist>/<yyyy-mm-dd>/<mode>-<session>` for scheduled/fix runs,

@@ -58,3 +58,72 @@ export function planCommit(args) {
   }));
   return { app, tier: tier.tier, tierReason: tier.reason, unknown: tier.unknown, layers, units };
 }
+
+/**
+ * Write-heavy flows need their OWN disposable instance (a real sandbox: screenroom+Navidrome, a fresh
+ * DB, scratch dirs); read-only flows can share one live instance. A flow whose linked test lives under a
+ * `sandboxes/` dir is write-heavy by construction (that's what the sandbox harness IS); an explicit
+ * opts.writeHeavyFlows (Set or array of flow ids) overrides; everything else is treated as read-only.
+ */
+export function classifyInstance(flow, opts = {}) {
+  const wh = opts.writeHeavyFlows;
+  const id = flow?.id;
+  const inSet = wh && (typeof wh.has === 'function' ? wh.has(id) : Array.isArray(wh) && wh.includes(id));
+  if (inSet) return 'disposable';
+  if (/\/sandboxes\//.test(flow?.linked_playwright_test ?? '')) return 'disposable';
+  return 'shared';
+}
+
+const PRIORITY_RANK = { critical: 0, important: 1, 'nice-to-have': 2 };
+
+/**
+ * Full-site: the REGISTRY-DRIVEN planner (Phase 2a). Input is the tracker's flows across all projects
+ * (fetched by run.mjs — the planner stays pure). One run-unit per flow that HAS a linked test; a flow
+ * with NO linked test is surfaced as a GAP, never a silent pass. Write-heavy flows are tagged for a
+ * disposable instance, read-only for a shared one. Units are risk-ordered (critical → important → rest).
+ * opts.projects filters to a subset (per-project "Verify"). Evidence persists (full-site is deliberate).
+ */
+export function planFullSite(flows, opts = {}) {
+  const date = opts.date ?? new Date().toISOString().slice(0, 10);
+  const session = opts.session ?? `full-site-${Date.now()}`;
+  const projectFilter = opts.projects ? new Set(opts.projects) : null;
+  const inScope = (f) => !projectFilter || projectFilter.has(f.project_slug);
+  const units = [];
+  const gaps = [];
+  for (const flow of flows ?? []) {
+    if (!inScope(flow)) continue;
+    if (!flow.linked_playwright_test) {
+      gaps.push({ project: flow.project_slug, flowId: flow.id, title: flow.title, reason: 'no-linked-test' });
+      continue;
+    }
+    const instance = classifyInstance(flow, opts);
+    units.push({
+      project: flow.project_slug,
+      flowId: flow.id,
+      testFile: flow.linked_playwright_test,
+      instance,
+      priority: flow.priority ?? 'important',
+      mode: 'full-site',
+      triggeredBy: opts.triggeredBy ?? 'manual',
+      lastStatus: flow.test_status ?? 'not-tested',
+      evidenceRoot: evidenceRootFor({
+        mode: 'full-site', date,
+        session: `${session}-${flow.project_slug}-${flow.id}`,
+        persistRoot: opts.persistRoot, tmpRoot: opts.tmpRoot,
+      }),
+    });
+  }
+  units.sort((a, b) => (PRIORITY_RANK[a.priority] ?? 1) - (PRIORITY_RANK[b.priority] ?? 1));
+  const disposable = units.filter((u) => u.instance === 'disposable').length;
+  return {
+    units,
+    gaps,
+    summary: {
+      total_flows: (flows ?? []).filter(inScope).length,
+      runnable: units.length,
+      gaps: gaps.length,
+      disposable,
+      shared: units.length - disposable,
+    },
+  };
+}

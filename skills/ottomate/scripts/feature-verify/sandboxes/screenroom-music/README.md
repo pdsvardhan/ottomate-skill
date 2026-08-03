@@ -31,7 +31,7 @@ second channels the coder can't fake: the **filesystem** (landed path + `ffprobe
 response**, and **live Navidrome `search3`**. Fail-closed. On finish it posts a report keyed to
 `target_id:flow-music-upload` and drives `flow.test_status` (unless `FV_NO_POST=1`).
 
-## The matrix (19 cases)
+## The matrix (23 cases)
 - **Happy path (L1/L2/L3 + correctness)** — 5 blessed songs across languages (Eng/Telugu/Hindi/Tamil/Eng)
   upload → scan → commit → land at the right path with correct tags → **found via live Navidrome**;
   conservation 5→5. (14 cases: upload · scan · commit · conservation · correctness×5 · navidrome-visible×5.)
@@ -40,20 +40,23 @@ response**, and **live Navidrome `search3`**. Fail-closed. On finish it posts a 
 - **Corrupt FLAC** (L1 fail-closed) — the integrity gate rejects it; nothing lands.
 - **No-tags → attach** (L1/L2) — a tag-stripped file scans as low-confidence; user-chosen metadata
   persists on commit.
+- **feat.-grouping** (edge #126, 4 cases: L3/L2/correctness×2) — a real 7-track album (**Son of
+  Satyamurthy**, `ALBUMARTIST=Devi Sri Prasad`, seven *different* per-track artists incl. a `;`-multi one)
+  → all seven land in **ONE** folder `telugu/Devi Sri Prasad/Son of Satyamurthy`, album-artist constant,
+  and the `;`-multi-artist track (`Sagar;M.M. Manasi`) keeps **both** singers. Exercises the multi-artist
+  fix + album-artist grouping together.
 
-## Findings from the first real run (2026-08-03)
-- **DEFECT (owner-confirmed):** a `;`-separated multi-artist tag (`S.P. Balasubrahmanyam;S. Janaki`) lands
-  crediting **only the first artist** — the 2nd credited singer is dropped (scan's `ScanFile.artist` is
-  single-valued). Verdict **BLOCK**, report keyed to the flow, `flow.test_status → failing`. Fix belongs in
-  screenroom (`app/api/music/scan/route.ts` tag extraction → preserve all artists as standard repeated
-  ARTIST tags).
-- **Registry gap:** `feature.test_status` ("derived AND of linked flows") is **documented but not
-  implemented** — nothing computes it; the coverage endpoint reads the stored value. Feature roll-up needs
-  the derivation coded (Phase-2 coverage-mechanism work).
+## Findings (2026-08-03)
+- **DEFECT (owner-confirmed) — FIXED + DEPLOYED.** A track with multiple `ARTIST` Vorbis comments (e.g.
+  `S.P. Balasubrahmanyam` + `S. Janaki` on Indhuvadana) landed crediting **only the first**: scan read
+  `music-metadata`'s `common.artist` (the FIRST value) and ignored the `common.artists` array. First run
+  → **BLOCK** (report 32), `flow.test_status → failing`. **Fix (screenroom `728f207`):** scan captures
+  `common.artists` (splits `;` too), commit carries the list, `writeTags` writes **repeated ARTIST tags**.
+  Re-verified **APPROVE 23/23** on the deployed image → **report 33**, `flow.test_status → passing`.
+- **Registry gap — FIXED.** `feature.test_status` ("derived AND of linked flows") was documented but never
+  computed. Now derived on every flow-test write + a `POST /api/coverage/recompute` backfill (tracker
+  `37b3fc5`); `feat-music-upload` rolls up to `passing`.
 
 ## TODO / follow-ups
-- **`feat.`-grouping** edge case (edge #126): needs a multi-track album where track-artists vary but the
-  album-artist is constant, to assert they land in ONE folder. Only a single `feat.` track is present
-  locally; add when a suitable 2+-track album exists.
 - Fold the sandbox lifecycle + driver into the main harness orchestrator so Phase-2's full-site runner
-  reuses it (currently invoked directly).
+  (`planFullSite` in `harness/orchestrate.mjs`) reuses it (currently invoked directly).
