@@ -1,0 +1,4 @@
+# Retired terms for leaploop — flagged in any hand-written doc (R-DOC-2).
+# One term (regex, case-insensitive via Vale) per non-comment line.
+# Seeded from dropped feature feat-telegram-push + adr-010 (telegram dropped).
+Telegram
