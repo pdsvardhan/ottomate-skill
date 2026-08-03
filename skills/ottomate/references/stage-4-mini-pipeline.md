@@ -272,9 +272,17 @@ When all items are verified:
    - Then run the milestone mirror (step 1b above already did `mirror:write`); verify the YAML + repo docs reflect the reconcile before notifying.
    - **Enforced, not prose (Phase 4, 2026-08-04):** this reconcile is no longer trust-based. Follow
      `references/documentation-standard.md` (the layered doc model + rules R-DOC-*). On a **doc-gated**
-     project (`projects.doc_gate='block'`) the integrate call itself **refuses** if a `feature_modification`
-     / `flow_modification` didn't update its target's spec (D2 spec-sync, R-DOC-10). Then run the doc-lint
-     (`scripts/doc-lint/run.mjs --project <slug>`: Vale retired-terms + lychee links) and confirm
+     project (`projects.doc_gate='block'`) the integrate call itself **refuses** unless every
+     **behaviour-changing** item left a spec update behind — `feature_modification`, `flow_modification`,
+     **`bug`, `re_wire`, `revamp`** (D2 spec-sync, R-DOC-10). A feature/flow target must have its spec
+     touched this iteration (updated_at ≥ lock); a project-wide re_wire/revamp must have touched *some*
+     feature/flow spec. **Turn the change into the spec:** a fixed bug becomes a new/edited acceptance
+     criterion (as the music-upload multi-artist defect became AC 540); a re-wire updates the affected
+     features/flows + an ADR. **Cosmetic escape hatch** (typo/colour/copy that changes NO behaviour): set
+     the item's `proposed_change.spec_impact='none'` with a reason in `notes` — the classifier should set
+     this at 4.2 for genuinely cosmetic items so the gate doesn't false-block. Then regenerate the reference
+     (`scripts/generation/gen-reference-docs.mjs --project <slug>`), run the doc-lint
+     (`scripts/doc-lint/run.mjs --project <slug>`: Vale retired-terms + lychee links), and confirm
      `GET /api/anti-gaslight/violations?project_slug=<slug>` is free of HARD `dead-capability` /
      `unbacked-pass` before notifying. `stale-spec` is advisory.
 5. Notify user with **Trace Report**:
