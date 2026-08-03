@@ -23,7 +23,7 @@ Advisory-only for pure-backend/no-UI internal changes (still welcome, never bloc
 >   advisory**. **`data-oid` is DEAD** (`oid()` removed from guidance).
 > - **Independence machinery** — the case-matrix generator (claim-blind), the held-out assertion
 >   registry, the trust record + tamper tripwire, and the reproduce-symptom two-phase (RED→GREEN).
-> - **Runs automatically** — `postTestRun` wired; a **VAULT7A nightly cron at 03:30** runs the full
+> - **Runs automatically** — `postTestRun` wired; a **VAULT7A nightly cron at 02:30** runs the full
 >   matrix; change-tier scales effort; the reporting tail (delta/JSONL/action_log) + durable dated
 >   evidence are live. Fail-closed hardened (a throwing driver is a recorded FAIL, not an empty-matrix
 >   false-green).
@@ -62,8 +62,11 @@ Advisory-only for pure-backend/no-UI internal changes (still welcome, never bloc
 
 > **Cadence + gate wiring (P3-C, DONE + verified on VAULT7A 2026-07-29).** The verifier now runs
 > **automatically** and scales to the change. The status bullet above ("Nightly CI is not wired") is
-> **resolved**: `postTestRun()` is wired and a **VAULT7A cron runs the full matrix nightly at 03:30**
-> (`/opt/homeserver/fv-harness/nightly.sh` → `run.mjs nightly`; pairs with app to-do #289).
+> **resolved**: `postTestRun()` is wired and a **VAULT7A cron runs the full matrix nightly at 02:30**
+> via the **consolidated `#289` wrapper `/opt/homeserver/scripts/ottomate-nightly.sh`** (crontab `30 2 * * *`
+> → backup → `/opt/homeserver/fv-harness/nightly.sh` → `run.mjs nightly` → preview rebuild; #289 folded the
+> old separate 02:30-backup / 03:30-fv / 04:30-preview crons into one). (Doc-debt repaid 2026-08-04: earlier
+> revisions of this file said "03:30" and a direct fv-harness call — the live crontab is authoritative.)
 > - **Change-tier spine** (`harness/change-tier.mjs`): verification scales to the *kinds* of impacted
 >   files — **T0** backend/copy (L1+L2) · **T1** style (+L4 scoped) · **T2** component (+L4 full+L3, judge
 >   glance) · **T3** page/redesign (everything, full judge). `inferTier` is max-wins + **fail-closed**
@@ -310,6 +313,57 @@ The skill **asks** (AskUserQuestion) for domain data it can't synthesize.
 - Verdict → skill action mirrors the code verifier: `APPROVE` → proceed; `ITERATE` (< 3) →
   auto-fix loop; `ITERATE` (≥ 3) → escalate; `BLOCK + mandatory_user_review` → HALT, show the
   exact proof (the saved bytes / the crash), owner decides.
+
+## The registry ship-gate (Phase 3, 2026-08-04) — "register + verify or you can't ship"
+
+The per-feature verdict above answers *"did THIS feature pass?"*. Phase 3 adds the **standing,
+whole-project** guarantee: on a **gated** project you cannot mark a user-facing feature shipped
+(deploy / integrate) unless it is (i) **registered** as a flow, (ii) **linked to a test**, and
+(iii) **passing a verifier APPROVE against the deploying commit**. Enforcement is a per-project
+**ramp** (`projects.verify_gate ∈ {off,warn,block}`, migration 0012) so "hard everywhere" rolls
+out app-by-app instead of blocking all 8+ on day one.
+
+- **Two READ-ONLY signals the 3→deploy step (and 4.8 integrate) MUST consult for the deploying commit:**
+  1. `GET /api/anti-gaslight/violations?project_slug=<slug>` — refuse on any **HARD** violation.
+     The Phase-3 rules `unverified-ship` (**R6**) and `unreconciled-claim` (**R7**) live here
+     alongside R1–R5 (see `anti-gaslight-rules.md`). They are HARD on a `'block'` project, SOFT
+     on `'warn'`, and emit nothing on `'off'`.
+  2. `GET /api/verify/gate?project_slug=<slug>&commit_sha=<deploying commit>` — require `ok:true`.
+     **Commit-specific**: each done ui/hybrid feature's linked flows each need an APPROVE
+     `feature_verification_reports` row at *that* `commit_sha` (keyed on `target_id` + APPROVE +
+     `commit_sha`, never `target_kind` — reports in practice carry `stage-3-feature`). A stale
+     APPROVE at an old commit does NOT count; `no-flow` / `no-test` / `no-approve-at-commit` are
+     the `blocking` reasons. `off`/`warn` → `ok:true` (advisory `warnings` only).
+- **CLI:** `node scripts/feature-verify/deploy-gate.mjs --project <slug> --commit <sha>` runs both
+  and **exits 3 (blocked) / 0 (clear)** — a drop-in pre-deploy shell hook. Env `FV_TRACKER_BASE`
+  (default `127.0.0.1:8110`), `FV_BEARER_TOKEN` optional (both GETs are open). The **primary**
+  enforcement is the skill step; the CLI is the mechanical belt-and-braces.
+- **Auto-reconcile (R7's other half):** posting an **APPROVE** `feature_verification_report` for a
+  flow now flips that flow's linked features' latest `unreconciled` `feature_claims` row to
+  `reconciled_with='verified'` (`lib/claim-reconcile.ts`; also backfilled by
+  `POST /api/coverage/recompute`). So a passing verifier both clears R7 and proves the flow — the
+  ledger reconciles itself instead of drifting.
+- **Ramp state (2026-08-04):** `screenroom='block'` (Phase-1/2 backfilled + gate PROVEN, see below);
+  every other project `'off'`. As Phase 4 backfills an app (flows/tests/APPROVE reports registered),
+  flip it `'off' → 'warn' → 'block'`. Target: `'block'` everywhere.
+
+### Standing coverage wiring this gate reads (built BP-1..BP-5, 2026-08-03; doc-debt repaid here)
+
+The gate consumes signals produced by the Phase-1/2 machinery — documented here so the wiring is not
+folklore:
+- **`flows.linked_playwright_test`** is written when a flow's test path is registered; a flow with
+  it NULL/'' is a coverage **GAP** (surfaced by `/coverage`, BP-5) and R6 reason `no-test`.
+- **`feature_verification_reports` are keyed to the FLOW** (`target_id = flow id`); `GET
+  ?project_slug&target_id&latest=1` reads the latest verdict; the commit gate matches `commit_sha`.
+- **`flows.test_status`** is set by the per-flow test writer (`POST /api/flows/[id]/test`,
+  `ran_by:'automated'`), which also feeds `flow_test_runs` (the existing E2E-green gate).
+- **`features.test_status` is DERIVED** — the AND-of-linked-flows roll-up (`lib/feature-rollup.ts`,
+  BP-2): cascaded on each flow-test write and re-derivable in bulk via `POST /api/coverage/recompute`.
+  R6 reason `not-passing` fires when this ≠ `passing`.
+- **`/coverage` (BP-5)** renders real per-flow/per-feature status + **GAPS** + last verdict.
+- **Verify-site queue (BP-4)** — `planFullSite` enqueues every flow; a host runner drains it, runs
+  the disposable-sandbox verifier, and POSTs APPROVE reports — i.e. it is the machine that produces
+  the very APPROVE@commit rows `/api/verify/gate` requires.
 
 ## How to dispatch (independent sub-agent — blind to coder claims)
 

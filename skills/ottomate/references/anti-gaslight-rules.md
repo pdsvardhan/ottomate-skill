@@ -21,11 +21,14 @@ The substrate that catches scope drift, silent additions, missing verification, 
 | 5b — Deploy gap | `untested-deploys` (HARD) | Live |
 | 6 — Phase order violations | — | Prose-only |
 | 7 — Stale verifier | `stale-verification` (SOFT) | Live |
+| 8 — Unverified ship (registry ship-gate) | `unverified-ship` (HARD on `block`, SOFT on `warn`) | Live (Phase 3, ramp-gated — fires only on `projects.verify_gate != 'off'`) |
+| 9 — Unreconciled claim (gated) | `unreconciled-claim` (HARD on `block`, SOFT on `warn`) | Live (Phase 3, ramp-gated) |
 
 **When rules fire:**
 - Every stage transition (SO1 verification, Stage 2 verification, Stage 3 deploy gate, Stage 4 verifier-result/integrate) — HARD halt on any rule violation
 - Every pack-up — SOFT warning if any violations detected
 - Every `/ottomate <slug>` invocation — INFO surfaces unresolved violations as a session-start warning
+- **Rules 8 + 9 are ramp-gated (Phase 3):** they emit nothing on a project whose `projects.verify_gate = 'off'` (the default), are **SOFT** on `'warn'`, and **HARD** on `'block'`. This is how the registry ship-gate rolls out app-by-app (`stage-3-feature-verifier.md`). The Stage-3→deploy step also runs the commit-specific `GET /api/verify/gate?project_slug&commit_sha` alongside this endpoint.
 
 **Severity:**
 - HARD = stage transition refused; user must fix
@@ -147,6 +150,34 @@ Valid feature chain: `PROPOSED → SPECCED → BUILD_READY → BUILDING → VERI
 **Live check:** rule `stale-verification` in `GET /api/anti-gaslight/violations`.
 
 **Remediation:** re-run the verifier on edited features even when the iteration item didn't directly target them (regression risk).
+
+---
+
+## Rule 8 — Unverified ship (the registry ship-gate) — Phase 3, ramp-gated
+
+**What:** On a **gated** project (`projects.verify_gate != 'off'`), a **user-facing** feature (`type IN ('ui','hybrid')`) at `status='done'` that is not shippable-with-evidence — it (a) has **no** registered flow (`no-flow`), (b) has a linked flow whose `linked_playwright_test` is NULL/'' (`no-test`), or (c) has a rolled-up `features.test_status != 'passing'` (`not-passing`). Each item carries `{feature_id, project_slug, reason, severity}`.
+
+**Why:** "Register + verify or you can't ship." A done user-facing feature with no flow / no test / not-passing is a completion claim with no objective backing — the exact gaslight surface this system removes, now enforced at the ship boundary rather than trusted.
+
+**Severity:** **HARD** on a `'block'` project (the deploy gate refuses); **SOFT** on `'warn'`; nothing on `'off'`.
+
+**Live check:** rule `unverified-ship` in `GET /api/anti-gaslight/violations`. Complemented at deploy time by the commit-specific `GET /api/verify/gate?project_slug&commit_sha` (a stale APPROVE at an old commit doesn't count).
+
+**Remediation:** register a flow, link a Playwright test, and get a feature-verifier **APPROVE** against the deploying commit — then the roll-up flips `passing` and the rule clears.
+
+---
+
+## Rule 9 — Unreconciled claim (gated) — Phase 3, ramp-gated
+
+**What:** On a gated project, a feature carrying a `feature_claims` row still `reconciled_with='unreconciled'` — a "done" assertion that was recorded but never reconciled against a verifier. Complements Rule 1 (`unclaimed-done`, which catches done-with-**no** claim at all).
+
+**Why:** The claim ledger exists so every "done" is reconciled with a verdict; an unreconciled claim on a project we've committed to gating is an un-closed loop.
+
+**Severity:** **HARD** on `'block'`, **SOFT** on `'warn'`, nothing on `'off'`.
+
+**Live check:** rule `unreconciled-claim` in `GET /api/anti-gaslight/violations`.
+
+**Feeding it / auto-clear:** posting an **APPROVE** `feature_verification_report` for a flow auto-reconciles its linked features' latest unreconciled claim to `verified` (`lib/claim-reconcile.ts`; backfilled by `POST /api/coverage/recompute`). So the standing fix is: run the verifier and let it pass.
 
 ---
 

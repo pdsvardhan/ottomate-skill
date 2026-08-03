@@ -1,12 +1,13 @@
 # API inventory (generated)
 
-> Generated 2026-07-16T16:20:13+05:30 by `scripts/generate-api-inventory.sh` from route code.
+> Generated 2026-08-04T00:59:39+05:30 by `scripts/generate-api-inventory.sh` from route code.
 > Path/method/auth existence here outranks any prose doc. Do not hand-edit.
 
 | route | methods | bearer-auth |
 |---|---|---|
 | `/api/[...notfound]` | GET POST PATCH PUT DELETE HEAD | no |
 | `/api/anti-gaslight/violations` | GET | no |
+| `/api/asset/[...path]` | GET | no |
 | `/api/audit/[slug]` | GET | no |
 | `/api/backup` | POST GET | yes |
 | `/api/component-feedback` | GET POST | yes |
@@ -15,12 +16,16 @@
 | `/api/components/[id]` | GET PATCH DELETE | yes |
 | `/api/components/[id]/variants/[variantId]` | PATCH DELETE | yes |
 | `/api/components/[id]/variants` | GET POST | yes |
+| `/api/coverage/recompute` | POST | yes |
 | `/api/coverage` | GET | no |
 | `/api/deploy-artifacts` | GET POST | yes |
+| `/api/design-decisions/[id]` | GET PATCH DELETE | yes |
 | `/api/drift/[id]/resolve` | POST | yes |
 | `/api/drift` | GET POST | yes |
 | `/api/external-task-completed` | POST | yes |
 | `/api/feature-claims` | GET POST PATCH | yes |
+| `/api/feature-verification-reports/[id]` | GET DELETE | yes |
+| `/api/feature-verification-reports` | GET POST | yes |
 | `/api/flows/[id]/test` | POST | yes |
 | `/api/graph/[slug]` | GET | no |
 | `/api/health` | GET | no |
@@ -60,6 +65,7 @@
 | `/api/projects/[slug]/data-contracts` | GET PUT | yes |
 | `/api/projects/[slug]/data-sources/[id]` | GET PATCH DELETE | yes |
 | `/api/projects/[slug]/data-sources` | GET POST | yes |
+| `/api/projects/[slug]/design-decisions` | GET POST | yes |
 | `/api/projects/[slug]/features/[id]/acceptance-criteria/[itemId]` | PATCH DELETE | yes |
 | `/api/projects/[slug]/features/[id]/acceptance-criteria` | GET POST | yes |
 | `/api/projects/[slug]/features/[id]/links/dependencies/[depId]` | PUT DELETE | yes |
@@ -89,6 +95,7 @@
 | `/api/projects/[slug]/pages` | GET POST | yes |
 | `/api/projects/[slug]/policies` | GET PUT | yes |
 | `/api/projects/[slug]/public-docs` | GET POST | yes |
+| `/api/projects/[slug]/reports/import-visual-qa` | POST | yes |
 | `/api/projects/[slug]/reports` | GET POST | yes |
 | `/api/projects/[slug]/risk-instances/[id]/links/features/[featureId]` | PUT DELETE | yes |
 | `/api/projects/[slug]/risk-instances/[id]/links/pages/[pageId]` | PUT DELETE | yes |
@@ -108,14 +115,20 @@
 | `/api/projects/[slug]/yaml-mirror` | GET | no |
 | `/api/projects` | GET POST | yes |
 | `/api/reports/[id]/classify` | POST | yes |
+| `/api/reports/[id]` | GET DELETE | yes |
 | `/api/risks-heatmap` | GET | no |
 | `/api/sanity-check` | GET | no |
 | `/api/search` | GET | no |
 | `/api/skill-events` | POST GET | yes |
+| `/api/test-runs/[id]` | DELETE | yes |
 | `/api/test-runs` | GET POST | yes |
 | `/api/todos/[id]` | PATCH DELETE | yes |
 | `/api/verification-reports` | GET POST | yes |
+| `/api/verify/[id]` | GET | no |
+| `/api/verify/gate` | GET | no |
+| `/api/verify/project/[slug]` | POST | yes |
+| `/api/verify/site` | POST | yes |
 
-Total route files: 110. Mutating routes WITHOUT bearer auth: 1 (must be 0 or each one justified below).
+Total route files: 123. Mutating routes WITHOUT bearer auth: 1 (must be 0 or each one justified below).
 
 - UNAUTHENTICATED MUTATION: `/api/[...notfound]`
