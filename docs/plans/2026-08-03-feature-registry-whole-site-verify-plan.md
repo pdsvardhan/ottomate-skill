@@ -1,9 +1,17 @@
 # Feature Registry + Whole-Site Feature-Verifier — PLAN (2026-08-03)
 
-**Status: PHASE 1 DONE + PROVEN (2026-08-03); Phases 2–4 pending.** This is the research-backed, phased
-build for turning the feature verifier from "one proven flow (Maps of Bharat)" into "a registry-driven
-inspector that can verify the whole site on a manual trigger, blocks unregistered/unverified features from
-shipping, and keeps the docs honest against reality."
+**Status: PHASES 1 + 2 DONE + DEPLOYED (2026-08-03); Phase 3 PLANNED IN DETAIL; Phase 4 pending.** This is
+the research-backed, phased build for turning the feature verifier from "one proven flow (Maps of Bharat)"
+into "a registry-driven inspector that can verify the whole site on a manual trigger, blocks
+unregistered/unverified features from shipping, and keeps the docs honest against reality."
+
+> **Phase 2 complete (2026-08-03).** Multi-artist defect fixed-live (screenroom `728f207`, report 33) ·
+> `feature.test_status` roll-up deployed (tracker `37b3fc5`) · `planFullSite` built + tested (plugin
+> `22a5f9e`, 12/12) · `/coverage` revived from real data + gaps (tracker `c0303b6`) · Verify-site async queue
+> + button deployed + demonstrated end-to-end (tracker `1ad4fa5` + plugin `9149d8d`: 118 flows planned, 115
+> gaps, music-upload APPROVE 23/23 → report 34 → run `done`). **Phase 3 (the hard ship-gate) has a complete,
+> executable plan: `docs/plans/2026-08-03-feature-registry-PHASE3-plan.md`.** Resume via
+> `docs/plans/2026-08-03-feature-registry-NEXT-SESSION.md`.
 
 > **Phase 1 complete** — the screenroom `flow-music-upload` was verified end-to-end on a reusable
 > disposable sandbox, the loop closed into the registry (report keyed to the flow · `test_status` driven ·

@@ -1,84 +1,77 @@
-# Feature-Registry build — NEXT-SESSION HANDOFF (2026-08-03)
+# Feature-Registry build — NEXT-SESSION HANDOFF (updated 2026-08-03, Phase 2 complete)
 
-**Start here.** This is the frictionless entry point to continue the feature-registry + whole-site
-feature-verifier build. Everything below is real, on-disk, and verified this session.
+**Start here.** Frictionless entry point to continue the feature-registry + whole-site feature-verifier
+build. **Phases 1 + 2 are DONE, DEPLOYED, and VERIFIED. Next up: Phase 3 (the hard ship-gate) — a complete,
+executable plan already exists.** Everything below is real, on-disk, and verified.
 
 ## Read in this order
 1. **This doc** — where we are + how to resume.
-2. `docs/plans/2026-08-03-feature-registry-whole-site-verify-plan.md` — the 4-phase plan (Phase 1 now DONE).
-3. Memory `ottomate-feature-registry-plan-2026-08-03.md` — full session detail + owner decisions.
+2. **`docs/plans/2026-08-03-feature-registry-PHASE3-plan.md`** — the complete Phase-3 build plan (execute it).
+3. `docs/plans/2026-08-03-feature-registry-whole-site-verify-plan.md` — the original 4-phase plan (Phases 1+2 done).
+4. Memory `ottomate-feature-registry-plan-2026-08-03.md` — full session detail + owner decisions.
 
 ## Where we are (one paragraph)
-**Phase 1 is DONE and proven.** We built a reusable disposable-sandbox verifier for screenroom's
-`flow-music-upload`, ran it on a throwaway instance (never touching the live library), and **closed the
-loop into the tracker registry**. On its first real run it **caught a genuine, owner-confirmed defect** (a
-`;`-separated duet lands crediting only the first artist). The reusable pattern is ready for **Phase 2**
-(the registry-driven full-site runner + in-app dashboard).
+**Phase 1 (prove one flow end-to-end on a disposable sandbox) and Phase 2 (roll-up + full-site runner +
+in-app Verify-site + coverage revival) are complete.** The music-upload multi-artist defect was fixed and
+**deployed live**; `feature.test_status` now derives from linked flows; `/coverage` shows real data + gaps;
+`planFullSite` plans the whole site; and the **"Verify site" queue works end-to-end** (enqueue → host runner
+drains → runs the sandbox → posts results → status done). **Phase 3** makes it impossible to ship an
+unregistered/unverified user-facing feature — and ~80% of that machinery (the anti-gaslight rule engine + the
+stage-transition gate + the commit-specific report signal) **already exists**, so Phase 3 is EXTEND + WIRE +
+PROVE. **Nothing is left half-done; the tree is clean.**
 
-## Owner decisions (locked, 2026-08-03)
-- Isolation = **disposable sandbox instance** (done for screenroom).
-- Run source = **registry-driven + in-app UI** (Phase 2).
-- Ship gate = **hard everywhere**, activated per-project as Phase 4 backfills each (Phase 3).
-- Multi-artist drop = **a real defect** (preserve all artists); verifier oracle stays strict.
+## What shipped this session (all committed + pushed + deployed)
+| Item | Result | Commit |
+|---|---|---|
+| BP-0 multi-artist fix | live `screenroom:latest`; report **33** APPROVE 23/23; `flow → passing` | screenroom `728f207` |
+| BP-1 feat-grouping | real *Son of Satyamurthy* 7→1 folder, `;`-track keeps both | plugin `22a5f9e` |
+| BP-2 `feature.test_status` roll-up | cascade + `POST /api/coverage/recompute`; **65** features; `feat-music-upload → passing` | tracker `37b3fc5` |
+| BP-3 `planFullSite` | registry-driven planner; gaps ≠ silent pass; **12/12** tests | plugin `22a5f9e` |
+| BP-5 `/coverage` revived | real flow/feature status + **gaps** + last-verdict | tracker `c0303b6` |
+| BP-4 Verify-site queue+button | **demoed:** 118 flows / 115 gaps / music-upload APPROVE 23/23 → report **34** → `done` | tracker `1ad4fa5`, plugin `9149d8d` |
+| Register currency | feature-registry row marked Phase-2-complete | plugin `7655ab2` |
 
-## What's built (on disk, PERSISTENT)
-Reusable harness — `skills/ottomate/scripts/feature-verify/sandboxes/screenroom-music/`:
-- `up.sh` / `down.sh` — idempotent bring-up / teardown of the disposable sandbox (screenroom + real
-  disposable Navidrome + Jellyfin stub on a private net, scratch dirs, admin-by-default). `down.sh` cleans
-  the Navidrome-owned scratch via a root container.
-- `stub.mjs` — Jellyfin/Subsonic stub (dedup + refresh + `/__log`).
-- `music-upload.verify.mjs` — the driver: drives the REAL routes `POST /api/music/{upload,scan,commit}`,
-  asserts via **filesystem** (landed path + `ffprobe` tags) + **commit response** + **live Navidrome
-  `search3`**. 19 cases (happy×5 langs + conservation + duplicate + non-audio + corrupt + no-tags→attach).
-  On finish posts a report keyed to the flow + drives `flow.test_status` (skip with `FV_NO_POST=1`).
-- `README.md` — topology, cases, findings, TODOs.
+## Current registry state (PERSISTENT — real data, do NOT prune)
+- Flow `flow-music-upload`: **`test_status: passing`**, `linked_playwright_test` = the sandbox path, `last_tested` set.
+- Feature `feat-music-upload`: **`test_status: passing`** (rolled up), AC `id 540` present.
+- Reports: **32 BLOCK** (historical, the caught defect), **33 APPROVE** (`728f207`), **34 APPROVE** (Verify-site run). All KEEP.
+- A demo verify-run file `data/verify-queue/vr-1785776069283-*.json` (status `done`) — harmless, keep or delete.
 
-## Current registry state (PERSISTENT in the tracker :8110 — kept as real data)
-- Flow `flow-music-upload`: **`test_status: failing`**, `linked_playwright_test` populated,
-  `last_tested_date` set.
-- Report **id 32**: `target_id: flow-music-upload`, **BLOCK**, 17-case matrix + the finding. (A later
-  formalized run used `FV_NO_POST=1`, so 32 is the canonical result.)
-- Feature `feat-music-upload`: **AC id 540** "All credited artists are preserved…" added (the defect as a
-  requirement). Feature is at the **5-AC cap**.
-- Link `flow-music-upload → feat-music-upload` created.
-- Screenroom HEAD at run: `adce73e`.
+## What Phase 3 is (and why it's small) — full plan in the PHASE3 doc
+Make "register + verify or you can't ship" **hard, per-project (ramp)**. It EXTENDS what exists:
+- `GET /api/anti-gaslight/violations` is a live SQLite rule engine (R1–R5) — **add R6 `unverified-ship`
+  + R7 `unreconciled-claim`** in the same pattern.
+- The stage-transition gate already *"refuses on any HARD violation"* — the new rules just plug in.
+- `feature_verification_reports.commit_sha` + `target_id` give the **commit-specific** signal — add a small
+  read-only `GET /api/verify/gate?project_slug&commit_sha` the deploy step consults.
+- Add a `projects.verify_gate ∈ {off,warn,block}` column (migration **`0012`**, idx 7) for the ramp; arm
+  **screenroom = 'block'** first. **Prove the gate BLOCKS** (P3-E), then set the register `Enforced? = yes`.
 
-## How to resume the sandbox (VAULT7A)
-The box's `/tmp/sr-*` is ephemeral (cleaned this session). Re-stage from the plugin:
+Execute **P3-0 → P3-E** from the PHASE3 plan (each item has files · acceptance · a must-FAIL test).
+
+## How to resume the sandbox (if a Phase-3 test needs a live verify run)
+The box's `/tmp/sr-harness` is ephemeral. Re-stage from the plugin:
 ```bash
+ssh pdsv@192.168.1.10 "rm -rf /tmp/sr-harness"
 scp -r skills/ottomate/scripts/feature-verify/sandboxes/screenroom-music pdsv@192.168.1.10:/tmp/sr-harness
-ssh pdsv@192.168.1.10 "cd /tmp/sr-harness && sed -i 's/\r$//' *.sh *.mjs && chmod +x *.sh && ./up.sh"
-ssh pdsv@192.168.1.10 "cd /tmp/sr-harness && FV_NO_POST=1 node music-upload.verify.mjs"   # verify only
-ssh pdsv@192.168.1.10 "cd /tmp/sr-harness && ./down.sh"                                     # teardown
+ssh pdsv@192.168.1.10 "cd /tmp/sr-harness && sed -i 's/\r$//' *.sh *.mjs && chmod +x *.sh && SR_IMAGE=screenroom-app:latest ./up.sh"
+ssh pdsv@192.168.1.10 "cd /tmp/sr-harness && FV_NO_POST=1 node music-upload.verify.mjs"   # verify only (no registry write)
+ssh pdsv@192.168.1.10 "cd /tmp/sr-harness && ./down.sh"                                    # teardown
 ```
-Env for a real (posting) run: `FV_BEARER_TOKEN=$(cat /opt/homeserver/ottomate/.token)`,
-`FV_COMMIT_SHA=$(git -C /mnt/storage/websites/screenroom rev-parse --short HEAD)`. **POST `/api/backup`
-before any posting run.** screenroom repo = `/mnt/storage/websites/screenroom`; image `screenroom-app:latest`.
+For the whole-site queue runner: `scp -r skills/ottomate/scripts/feature-verify/harness
+pdsv@192.168.1.10:/tmp/fv-harness` then `FV_BEARER_TOKEN=$(cat /opt/homeserver/ottomate/.token) node
+/tmp/fv-harness/queue-runner.mjs`. **`POST /api/backup` before any run that posts.**
 
-## Findings this session (both real)
-1. **DEFECT (owner-confirmed):** `;`-multi-artist tag → only the first artist lands. Fix in **screenroom**
-   `app/api/music/scan/route.ts` tag extraction (preserve all artists as repeated ARTIST tags). NOT a
-   verifier change.
-2. **Registry-mechanism gap:** `feature.test_status` ("derived AND of linked flows") is **documented but
-   never implemented** — nothing computes it. The `/coverage` endpoint reads the *stored* value (it does
-   show the failing FLOW correctly). Implementing the derivation is Phase-2 work.
+## Environment quick-ref (VAULT7A)
+`ssh pdsv@192.168.1.10` (key-only) · **tracker** `ottomate` :8110 (source `/opt/homeserver/ottomate` =
+`/mnt/storage/websites/ottomate` bind-mount, branch `ws1.1-live-preview`, image `ottomate-ottomate`, DB
+`./data/ottomate.db`, deploy = backup → `docker compose build ottomate && up -d`) · **screenroom** :8504
+(repo `/mnt/storage/websites/screenroom` has OWNER WIP → build `:latest` from a `git worktree`, `up -d
+--no-build`) · Navidrome :4533 (library `/mnt/storage/media/music`). **ONE DOOR** (all DB via the API) ·
+**backup-before-writes** · **commit only my files** · prune ONLY synthetic rows · git pull --rebase / stage
+explicitly before any push · **heredoc-with-`()` over ssh breaks** (avoid parens in commit messages).
 
-## Remaining follow-ups (documented; none block Phase 2)
-1. The multi-artist **defect fix** in screenroom (above).
-2. **Implement `feature.test_status` derivation** (Phase-2 coverage/cascade).
-3. **`feat.`-grouping** edge case — needs a multi-track album with a `feat.` (none local).
-4. **Commit + register currency** (do these together, per the register's same-commit rule): stage the new
-   `sandboxes/screenroom-music/**` files EXPLICITLY (not `git add -A`); update the SKILL-REGISTER
-   feature-verifier row (or add a feature-registry row) noting Phase-1 proven + the harness path; `git pull
-   --rebase` first. **Nothing is committed yet.**
-
-## Then: Phase 2
-Per the plan doc — the registry-driven `full-site` run mode (`planFullSite` enumerating tracker flows →
-their linked matrices), the in-app "Verify site" button + API, and reviving `/coverage` from real reports.
-The screenroom-music sandbox is the reusable template: write-heavy flows get a disposable instance; read-only
-flows can share one.
-
-## Environment quick-ref
-VAULT7A `ssh pdsv@192.168.1.10` (key-only) · tracker :8110 · screenroom :8504 (repo `/mnt/storage/websites/screenroom`) ·
-Navidrome :4533 (library `/mnt/storage/media/music`) · ONE DOOR (all DB via the API) · backup-before-writes ·
-prune only SYNTHETIC rows (report 32 + flow-failing are REAL, keep them).
+## Doc-debt to repay in Phase 3 (Workstream D, small)
+- Nightly cron: docs say **03:30**, reality is **`30 2`** (#289) → fix `stage-3-feature-verifier.md`.
+- Document the now-built wiring: `linked_playwright_test` writer · reports keyed to `target_id=flow` ·
+  driven `test_status` · the BP-2 roll-up · BP-5 coverage · BP-4 verify queue.
