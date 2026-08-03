@@ -1,5 +1,19 @@
 # Feature-Registry build — NEXT-SESSION HANDOFF (updated 2026-08-03, Phase 2 complete)
 
+> ## ⛳ UPDATE 2026-08-04 — PHASE 3 IS DONE, DEPLOYED, PROVEN, PUSHED. Next up: **Phase 4**.
+> The hard "register + verify or you can't ship" gate is LIVE + ENFORCED (register `Enforced? = yes`, test P3-E).
+> Shipped: **P3-0** `projects.verify_gate {off,warn,block}` (migration `0012`, screenroom armed `block`) · **P3-A**
+> rule `unverified-ship` · **P3-B** rule `unreconciled-claim` + auto-reconcile on APPROVE (`lib/claim-reconcile.ts`) ·
+> **P3-C** `GET /api/verify/gate?project_slug&commit_sha` (commit-specific) + CLI `scripts/feature-verify/deploy-gate.mjs` ·
+> **P3-D** SKILL/verifier/anti-gaslight docs wired + API inventory regenerated + cron doc-debt repaid (02:30/#289).
+> **Tracker deploy `83ffbf6`** (migration applied on boot, health clean) · **plugin `d224ee8`**.
+> **P3-E proof:** disposable gated project went BLOCK→CLEAR (R6+R7 HARD, `verify/gate ok:false`, `deploy-gate` exit 3
+> → resolve+auto-reconcile → all clear, exit 0); armed screenroom `deploy-gate @deadbeef` exits 3; synthetic rows
+> pruned, real ledger intact at 213 claims / reports 32-34.
+> **PHASE 4 (the remaining work):** the reconciler + v0-backfill — register flows/tests/APPROVE reports for each app,
+> then ramp it `off → warn → block` (target: `block` everywhere). Detail below + in the register's feature-registry row.
+> The Phase-1/2/3 sections below are kept for provenance; ignore "Next up: Phase 3".
+
 **Start here.** Frictionless entry point to continue the feature-registry + whole-site feature-verifier
 build. **Phases 1 + 2 are DONE, DEPLOYED, and VERIFIED. Next up: Phase 3 (the hard ship-gate) — a complete,
 executable plan already exists.** Everything below is real, on-disk, and verified.
