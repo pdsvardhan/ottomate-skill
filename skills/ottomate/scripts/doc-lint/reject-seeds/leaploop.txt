@@ -1,4 +1,12 @@
 # Retired terms for leaploop — flagged in any hand-written doc (R-DOC-2).
 # One term (regex, case-insensitive via Vale) per non-comment line.
-# Seeded from dropped feature feat-telegram-push + adr-010 (telegram dropped).
-Telegram
+#
+# EMPTY BY DESIGN (2026-08-04): the only retired capability is the Telegram push
+# (dropped in adr-010). But after the backfill, "Telegram" appears in the docs
+# ONLY as correctly-documented HISTORY ("Telegram push was dropped, adr-010" in
+# README/ARCHITECTURE/CODING_GUIDELINES, and the retrospective's post-mortem) —
+# a bare-word ban would false-positive on those correct docs. Lexical banned-terms
+# only work for terms with ZERO legitimate use. The LIVE-drift that mattered
+# (LEAPLOOP_BRIEF.md claiming Telegram active) was retired; the structural guard
+# for dropped capability is the native `dead-capability` rule + the generated
+# reference omitting dropped features, not this list.
