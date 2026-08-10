@@ -90,7 +90,12 @@ test.afterAll(async () => {
     pre_build_authored: !!m.authored?.at_commit,
   });
   verdict = applyTrust(verdict, trust);
-  const reportArgs = { target_kind: 'stage-3-feature' as const, target_id: m.feature, matrix, verdict, full_report: { trust, tamper } };
+  // target_id is the REGISTRY FLOW id when the matrix names one (owner ruling, 2026-08-11): the
+  // deploy gate resolves per (feature x linked flow) and matches on the flow, so posting m.feature
+  // put the verdict somewhere the gate never looks — 12 of screenroom's 16 rows were invisible that
+  // way. Falls back to m.feature for matrices that predate `flow_id`; the API accepts that only
+  // while the project's verify_gate is 'off', and says so in the response.
+  const reportArgs = { target_kind: 'stage-3-feature' as const, target_id: m.flow_id ?? m.feature, matrix, verdict, full_report: { trust, tamper } };
   await writeMatrix(cfg.evidenceRoot, matrix.results,
     `# feature-verify: ${m.feature} (P2-A runner)\n\n${verdict.recommendation_overall} — ${verdict.reason}\n\ntrust: ${JSON.stringify(trust)}\n\n${matrix.renderTable()}\n`);
   // P3-A hook (a): FV_NO_POST is the INTERACTIVE (skill-session) path — the runner produces the matrix +

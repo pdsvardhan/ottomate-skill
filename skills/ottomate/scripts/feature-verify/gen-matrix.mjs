@@ -31,6 +31,10 @@ export async function buildMatrix(req, { at_commit } = {}) {
     target: req.target, parameters: req.parameters ?? {}, cases,
     review: { owner_locked: false, locked_at: null },
   };
+  // Carry the registry flow id through when the caller names one — the runner posts it as
+  // target_id so the deploy gate can see this run. Omitted rather than guessed: mapping a
+  // matrix to the wrong flow would put a green APPROVE against a flow nobody drove.
+  if (req.flow_id) m.flow_id = req.flow_id;
   const v = validateMatrix(m);
   if (!v.ok) throw new Error(`generated matrix invalid: ${v.errors.join('; ')}`);
   return m;

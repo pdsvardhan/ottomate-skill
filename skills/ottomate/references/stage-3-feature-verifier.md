@@ -281,7 +281,22 @@ its exact proof, e.g. the saved bytes). Persist to Ottomate so trends are visibl
   variant, axis, inputs, action_log, system_state, outcome (pass|fail|warn|skipped), evidence,
   judge_verdict?}], evidence_root, full_report}`. Headline counts are derived server-side from
   the matrix (they can't disagree). `GET ?project_slug=&target_id=&latest=1` reads the verdict;
-  `DELETE /[id]` prunes disposable dogfood/smoke runs.
+  `DELETE /[id]` prunes disposable dogfood/smoke runs (bearer + a JSON body, e.g. `{}` — a
+  bodyless DELETE 400s).
+
+  **Two fields the API now enforces (2026-08-11) — both were silent holes:**
+  - **`target_id` is the REGISTRY FLOW id** (`flow-request-tv`), never the feature id and never an
+    iteration number. The deploy gate resolves per (feature × linked flow) and matches on the flow;
+    anything else stores a healthy-looking APPROVE the gate never sees. It was measurably wrong:
+    12 of screenroom's 16 rows carried an iteration number, and `run-matrix` posted `m.feature`.
+    Declare it in the case matrix as `flow_id` and the runner posts it. **422 on a project whose
+    `verify_gate != 'off'`**; on an ungated project the write is accepted with a `warning` field so
+    existing harnesses keep running. Keying on the feature was considered and rejected — one
+    APPROVE would clear a feature whose other flows were never driven.
+  - **`commit_sha` is the full 40-hex sha** (`git rev-parse HEAD`); a short sha is **422** on every
+    project. Rows previously held both shapes while the gate compared with `=`, so a format
+    mismatch read as "never verified". The gate side is prefix-tolerant (7-char floor, both
+    directions), so a *reader* may pass either form and get the same verdict.
 - **Per-critical-flow pass/fail → `POST /api/flows/[id]/test`** with `ran_by:'automated'` — this
   is what the **Stage-3→deploy gate** already reads (`flow_test_runs`). Reuse, don't reinvent.
 - **CI subset → `POST /api/test-runs`** (`triggered_by:'schedule'`) for the nightly rerun.
@@ -333,7 +348,12 @@ out app-by-app instead of blocking all 8+ on day one.
      `feature_verification_reports` row at *that* `commit_sha` (keyed on `target_id` + APPROVE +
      `commit_sha`, never `target_kind` — reports in practice carry `stage-3-feature`). A stale
      APPROVE at an old commit does NOT count; `no-flow` / `no-test` / `no-approve-at-commit` are
-     the `blocking` reasons. `off`/`warn` → `ok:true` (advisory `warnings` only).
+     the `blocking` reasons. `off`/`warn` → `ok:true` (advisory `warnings` only). The sha may be
+     given short or full (≥7 hex, resolved by prefix since 2026-08-11); a non-hex value 400s.
+
+     **Plan the sweep around this:** the match is commit-specific, so *every new commit invalidates
+     every APPROVE*. The verifier pass across all user-facing features has to be the last thing
+     before deploy, on the frozen commit — it cannot be spread across a week of work.
 - **CLI:** `node scripts/feature-verify/deploy-gate.mjs --project <slug> --commit <sha>` runs both
   and **exits 3 (blocked) / 0 (clear)** — a drop-in pre-deploy shell hook. Env `FV_TRACKER_BASE`
   (default `127.0.0.1:8110`), `FV_BEARER_TOKEN` optional (both GETs are open). The **primary**

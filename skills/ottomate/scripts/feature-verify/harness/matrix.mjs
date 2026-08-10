@@ -12,6 +12,14 @@ export function validateMatrix(m) {
   if (!m.authored?.at_commit) e.push('missing authored.at_commit');
   if (m.authored?.blind_to_diff !== true) e.push('authored.blind_to_diff must be true');
   if (!m.target?.kind || !m.target?.id) e.push('missing target.kind/id');
+  // 2026-08-11: the REGISTRY flow this matrix verifies (e.g. 'flow-request-tv'), which is what the
+  // deploy gate matches feature_verification_reports.target_id against. Distinct from target.id,
+  // which is a local label ('indicator-switch') and from `feature`, which names the feature — the
+  // runner used to post the feature id, so the gate saw no approval for any flow. Optional, because
+  // a project with verify_gate='off' has nothing reading it; the API refuses a non-flow target_id
+  // once the gate is armed, which is where it starts to matter.
+  if (m.flow_id !== undefined && (typeof m.flow_id !== 'string' || !m.flow_id.trim()))
+    e.push('flow_id, if present, must be a non-empty string');
   if (!Array.isArray(m.cases) || m.cases.length === 0) e.push('cases must be a non-empty array');
   // P3-C1: optional `covers` globs drive on-commit impacted-matrix selection (absent ⇒ always impacted).
   if (m.covers !== undefined && (!Array.isArray(m.covers) || m.covers.some((g) => typeof g !== 'string')))
