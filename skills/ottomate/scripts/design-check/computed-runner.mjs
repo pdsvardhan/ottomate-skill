@@ -77,6 +77,11 @@ function panelInputs(f) {
   }));
 }
 
+// Round types for which the divergence floor is NOT a blocker, because the round declares controls
+// and the isolation gate's control-diff is the governing check. Named as a set so a caller cannot
+// quietly widen it with a typo, and so the reason lives in one place.
+export const DIVERGENCE_EXEMPT = new Set(['one-axis', 'controlled']);
+
 /** Everything the computed pass found, blocking and advisory alike. */
 export function allFindings(findings, { profile = 'P1', roundType = 'whole-direction' } = {}) {
   const f = findings ?? {};
@@ -93,7 +98,14 @@ export function allFindings(findings, { profile = 'P1', roundType = 'whole-direc
   // named axis; there the isolation gate's control-diff governs, and the divergence floor must NOT
   // false-block it (the two gates were mutually opposed only because both ran on every round). So the
   // divergence block applies to whole-direction rounds only.
-  if (roundType !== 'one-axis') {
+  //
+  // 2026-08-10: 'controlled' added alongside 'one-axis'. The exemption's REASON is "the round declares
+  // controls and control-diff governs", which is equally true of a multi-axis controlled round — a
+  // cluster round on 4 named density axes with 38 frozen controls is the same case, and calling it
+  // 'one-axis' to get the right behaviour would be mislabelling it. Found on mapsofbharat: the frozen
+  // controls were colour + type by owner ruling, so 6 of the 14 properties the divergence metric
+  // compares COULD NOT differ, and it scored 0.12-0.21 on a set the isolation gate had just passed.
+  if (!DIVERGENCE_EXEMPT.has(roundType)) {
     for (const d of f.divergence ?? []) {
       if (d.differ === false) {
         out.push({ rule: 'computed-axis-divergence', detail: `${(d.pair ?? []).join(' / ')}: resolved-style distance ${d.distance} — these render nearly identically` });
@@ -142,14 +154,14 @@ export function summariseFindings(findings) {
   };
 }
 
-export function formatComputed(result, profile = 'P1') {
+export function formatComputed(result, profile = 'P1', roundType = 'whole-direction') {
   if (result.state === 'unavailable') return `computed pass: UNAVAILABLE — ${result.why}`;
   if (result.state === 'failed') return `computed pass: FAILED TO RUN — ${result.why}`;
   const sum = summariseFindings(result.findings);
-  const blocking = blockingFindings(result.findings, { profile });
+  const blocking = blockingFindings(result.findings, { profile, roundType });
   const lines = [`computed pass: ran — contrast ${sum.contrastFails}/${sum.contrast} below floor · divergence ${sum.divergenceFails}/${sum.divergencePairs} pairs too alike · colour ${sum.colourOverBudget} over budget${sum.monochromePanels ? ` (${sum.monochromePanels} monochrome — reported, not blocked)` : ''} · ${sum.computedRuleFails} computed advisories · ${blocking.length} blocking`];
   for (const f of blocking) lines.push(`  BLOCK ${f.rule ?? f.id ?? '?'}: ${f.detail ?? f.message ?? ''}`);
-  for (const f of allFindings(result.findings, { profile }).filter((x) => x.advise).slice(0, 8)) {
+  for (const f of allFindings(result.findings, { profile, roundType }).filter((x) => x.advise).slice(0, 8)) {
     lines.push(`  advise ${f.rule}: ${f.detail}`);
   }
   return lines.join('\n');

@@ -329,10 +329,17 @@ function main() {
   // It was a separate manual command until 2026-07-27, and a manual step is a step that gets skipped.
   // It cannot be silently omitted: with no Chromium it reports UNAVAILABLE, never a pass.
   const computed = runComputedPass(outHtml, { cwd: cfg.computed?.cwd ?? null, profile: cfg.audienceProfile ?? 'P1' });
-  console.log(formatComputed(computed, cfg.audienceProfile ?? 'P1'));
+  // 2026-08-10: roundType was never passed here, so allFindings always fell back to its
+  // 'whole-direction' default and the divergence exemption documented at computed-runner.mjs was
+  // UNREACHABLE from the harness — every controlled round was false-blocked. The exemption had unit
+  // tests (composition-gate-r3.test.mjs) that passed the whole time, because they call blockingFindings
+  // directly; nothing tested the integration boundary. Default stays 'whole-direction', so an existing
+  // config that declares nothing behaves exactly as before.
+  const roundType = cfg.roundType ?? 'whole-direction';
+  console.log(formatComputed(computed, cfg.audienceProfile ?? 'P1', roundType));
   const profile = cfg.audienceProfile ?? 'P1';
   if (computed.state === 'ran') {
-    const blocking = blockingFindings(computed.findings, { profile });
+    const blocking = blockingFindings(computed.findings, { profile, roundType });
     if (blocking.length) {
       console.error('\nThe page was written but MUST NOT be presented — a computed rule blocks it. Fix and rerun.');
       process.exit(2);
