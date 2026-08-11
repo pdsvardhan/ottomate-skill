@@ -94,8 +94,22 @@ if (docs.length) {
   } catch (e) {
     try {
       const j = JSON.parse(e.stdout || '{}');
-      const fails = (j.fail_map && Object.values(j.fail_map).flat()) || [];
-      for (const f of fails) violations.push({ rule: 'R-DOC-7 broken-link', file: '(docs)', msg: (f.url || f) + (f.status ? ` [${JSON.stringify(f.status)}]` : '') });
+      // lychee >= 0.19 emits `error_map` (keyed by input file); older builds emitted
+      // `fail_map`. Reading only `fail_map` made this leg a silent no-op on lychee
+      // 0.24 — it reported CLEAN on a file lychee itself flagged. Accept both.
+      const map = j.error_map || j.fail_map || {};
+      for (const [file, fails] of Object.entries(map)) {
+        for (const f of fails) {
+          const url = f.url || String(f);
+          const status = typeof f.status === 'string' ? f.status : f.status?.text || '';
+          violations.push({
+            rule: 'R-DOC-7 broken-link',
+            file: path.relative(repo, file),
+            line: f.span?.line,
+            msg: url + (status ? ` [${status}]` : ''),
+          });
+        }
+      }
     } catch { /* lychee non-zero without parseable json */ }
   }
 }
