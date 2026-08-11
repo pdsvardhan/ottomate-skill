@@ -15,8 +15,19 @@ Both are single binaries; no service, no cost. Installed 2026-08-04: vale 3.17.0
 ```
 node run.mjs --project <slug> [--repo /mnt/storage/websites/<slug>] [--gate off|warn|block]
 ```
+### Which docs get linted
+**Every top-level `.md`**, plus everything under `public_docs/` and `decisions/` — minus a small
+deny-list of agent scratch / machine-appended logs (`iteration-log.md`,
+`PENDING-AND-NEXT-SESSION.md`, `SESSION_*.md`, `CLAUDE_MEMORY.md`). Deny by exception, never by
+allow-pattern: this linter's failure mode is a **silent skip**, so a doc you just wrote must be
+linted by default. The run prints the collected set — a `CLEAN` you cannot audit is worthless.
+(The earlier name heuristic — three fixed filenames + `/brief|features|product/i` — skipped 7 of
+mapsofbharat's 14 top-level docs and reported CLEAN over 25 real broken links.)
+
 - **Vale.Avoid** flags retired/dropped terms from `reject-seeds/<slug>.txt` (R-DOC-2), across the
-  hand-written docs EXCEPT `decisions/` (ADRs must be free to name what they dropped — R-DOC-8).
+  hand-written docs EXCEPT the ADR record — `decisions/**` and a top-level `DECISIONS.md` register
+  (ADRs must be free to name what they dropped — R-DOC-8). Vale-only: the ADR record is still
+  link-checked.
 - **lychee** flags broken links (R-DOC-7).
 - Native: required title present (R-DOC-6); a generated doc (`FEATURES.md`) must carry a
   `generated from registry` provenance header (R-DOC-1).

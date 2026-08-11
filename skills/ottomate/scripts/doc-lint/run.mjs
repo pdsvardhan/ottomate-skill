@@ -50,12 +50,27 @@ function mdUnder(dir) {
   }
   return out;
 }
-const topDocs = ['README.md', 'ARCHITECTURE.md', 'CODING_GUIDELINES.md'].map((f) => path.join(repo, f)).filter(existsSync);
-const docs = [...new Set([...topDocs, ...mdUnder(path.join(repo, 'public_docs')), ...mdUnder(path.join(repo, 'decisions'))])];
-// plus any hand-written brief-style docs at repo top (so a stale BRIEF is linted)
-for (const f of existsSync(repo) ? readdirSync(repo) : []) {
-  if (/\.md$/i.test(f) && /brief|features|product/i.test(f)) { const p = path.join(repo, f); if (!docs.includes(p)) docs.push(p); }
-}
+// EVERY top-level .md is hand-authored unless it is agent scratch or a machine-appended
+// log (deny-list below), plus everything under public_docs/ and decisions/.
+// Deny by exception, never by allow-pattern: the failure mode of this linter is a SILENT
+// SKIP, not a false alarm, so a newly written doc must be linted by default. The previous
+// name heuristic (three fixed filenames + /brief|features|product/i) skipped most of a
+// project's Layer-2 docs — in mapsofbharat it dropped DECISIONS.md, VOICE.md, ROADMAP.md,
+// moderation-policy.md, response-playbook.md, does-not-claim.md and measurement-runbook.md,
+// so the runner printed CLEAN while lychee found 25 broken links in DECISIONS.md alone.
+const DENY_TOP = [
+  /^iteration[-_]log\.md$/i,          // append-only iteration log (agent-written)
+  /^pending-and-next-session\.md$/i,  // session handoff scratch
+  /^session[-_].+\.md$/i,             // dated session notes (SESSION_2026-03-21.md)
+  /^claude[-_]memory\.md$/i,          // agent memory scratch
+];
+const topDocs = (existsSync(repo) ? readdirSync(repo) : [])
+  .filter((f) => /\.md$/i.test(f) && !DENY_TOP.some((re) => re.test(f)))
+  .map((f) => path.join(repo, f))
+  .filter((p) => existsSync(p) && statSync(p).isFile());
+const docs = [...new Set([...topDocs, ...mdUnder(path.join(repo, 'public_docs')), ...mdUnder(path.join(repo, 'decisions'))])].sort();
+// Print the collected set: a CLEAN verdict is only trustworthy if you can see what it covered.
+console.log(`doc-lint: collected ${docs.length} doc(s) — ${docs.map((d) => path.relative(repo, d)).join(' ')}`);
 
 const violations = [];
 
@@ -66,9 +81,14 @@ const terms = existsSync(seedFile)
   ? readFileSync(seedFile, 'utf8').split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'))
   : [];
 writeFileSync(rejectFile, terms.join('\n') + (terms.length ? '\n' : ''));
-// Retired-term is NOT applied to decisions/ (ADRs are the RECORD of a drop — they
-// must be free to name the dropped thing) — R-DOC-8 governs those instead.
-const valeDocs = docs.filter((d) => !d.split(path.sep).includes('decisions'));
+// Retired-term is NOT applied to the ADR record — neither decisions/ nor a top-level
+// DECISIONS.md register, which is the same artifact class: an ADR is the RECORD of a drop,
+// so it must be free to name the dropped thing. R-DOC-8 governs those instead. The
+// exemption is Vale-only — the ADR record IS link-checked by lychee below.
+const isAdrRecord = (d) =>
+  d.split(path.sep).some((seg) => seg.toLowerCase() === 'decisions') ||
+  path.basename(d).toLowerCase() === 'decisions.md';
+const valeDocs = docs.filter((d) => !isAdrRecord(d));
 if (valeDocs.length && terms.length) {
   try {
     const out = execFileSync(VALE, ['--config', path.join(HERE, '.vale.ini'), '--output', 'JSON', ...valeDocs], { encoding: 'utf8' });
