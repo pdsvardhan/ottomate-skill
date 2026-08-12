@@ -10,7 +10,7 @@ It drives the **real running app** like a QA human, feeds it real + nasty inputs
 | File | Role |
 |---|---|
 | `harness/config.ts` | Env-driven config (`FV_*`) — instance URL, tracker base, token, evidence root, asset root, risk policy. |
-| `harness/selectors.ts` | `oid()` — stable `[data-oid]` selectors (Task 1's provenance stamp). No self-healing selectors on the gate. |
+| `harness/selectors.ts` | Stable-selector helpers. **`oid()` is dead code — zero call sites; do not build on it.** Bind to `getByRole`, then the app's own `data-testid` / `data-widget`. No self-healing selectors on the gate. |
 | `harness/system-state.ts` | `assertFileOnDisk` (fs bytes) · `assertViaApi` (DB-via-API, ONE DOOR) · `pollUntil` (async effects). |
 | `harness/unicode.ts` | `SCRIPT_FIXTURES`, `NORMALIZATION_PAIR`, `assertNfcPreserved` — the NFC-vs-NFD headline recipe. |
 | `harness/evidence.ts` | Per-case evidence dirs, bytes-as-proof, `writeMatrix` (matrix.json + summary.md). |
@@ -27,8 +27,15 @@ It drives the **real running app** like a QA human, feeds it real + nasty inputs
    need `FV_*` env), invoked explicitly with `-c .../playwright.feature-verify.config.ts` — never
    part of the default `test:e2e`. Without this the default suite imports them and throws.
 4. Author `<feature>.feature-verify.spec.ts` next to `harness/` — import from `./harness`.
-5. Stamp `data-oid` on the feature's component/section roots (see `stage-3-codegen.md`) so specs
-   have stable selectors — one instrument, two consumers (Task 1 comments + Task 3 selectors).
+5. Bind to the app's OWN stable hooks — `getByRole` first, then `getByTestId` / `data-widget`.
+   Where a needed element has no hook, add one to the component; never reach for a brittle
+   CSS-or-text selector on the gate.
+
+   **`data-oid` is dead** (`references/stage-3-feature-verifier.md`: "`oid()` is dead code with
+   zero call sites"). This README told you to stamp it until 2026-08-11, which contradicted the
+   reference and cost a session real time: screenroom's binding to its existing `data-testid`
+   hooks was written up as a *divergence needing recording* when it was simply the documented
+   contract. There is nothing to diverge from — using the app's own hooks IS the rule.
 
 ## The loop (per user-facing feature / Stage-4 item)
 
@@ -69,7 +76,7 @@ npx playwright test -c tests/e2e/feature-verify/playwright.feature-verify.config
 - **Fail closed** — a skipped/mocked/errored case is never green (`Matrix` treats skipped as
   not-a-clean-pass → ITERATE, never APPROVE).
 - **ONE DOOR (adr-018)** — DB assertions go through the app's API, never a second sqlite client.
-- **No self-healing selectors** on the gate — `[data-oid]` / role / testid / ARIA only.
+- **No self-healing selectors** on the gate — role / testid / `data-widget` / ARIA only.
 - **Both verifiers gate "done"** — block-on-red for cv/public, warn for personal (adr-014).
 - **Owner-reviewed matrix before any run** — no invent-and-run.
 
