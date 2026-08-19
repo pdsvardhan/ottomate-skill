@@ -73,7 +73,7 @@ Plus user-bias check: if `Doc 1.preferences.likes` includes "animated", verify c
 
 User must seed at least 1 entry per missing category before continuing. Three paths (one-time seeding activity — separate from project flow):
 
-1. **Path 1**: Tracker UI form `http://localhost:8110/components-browser`
+1. **Path 1**: Tracker UI form `https://ottomate.vault7a.xyz/components-browser` (owner-facing host — never print `localhost:8110`)
 2. **Path 2**: Skill helper `/ottomate seed-component <category>`
 3. **Path 3**: Bulk import script `scripts/import-master-components.ts <seed-batch.yaml>`
 

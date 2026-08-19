@@ -120,7 +120,7 @@ blob of `raw_text` and throw away every screenshot, locator and category.
 exports — **33 `.json` (v1)** and 2 `.zip` (v2). A zip-only pattern misses nearly all real exports.
 v1 is a bare array without the v2 fields and still ingests.
 
-**Rule D — User typed extra text after slug = Stage 4 intake.** POST `/api/projects/<slug>/reports` with the rest as raw_text. Run classifier prompt at `prompts/classify-text.md`. POST `/api/reports/<id>/classify` with structured items. Tell user: open the lock-in gate at `http://localhost:8110/iterations/<iter_id>`.
+**Rule D — User typed extra text after slug = Stage 4 intake.** POST `/api/projects/<slug>/reports` with the rest as raw_text. Run classifier prompt at `prompts/classify-text.md`. POST `/api/reports/<id>/classify` with structured items. Tell user: open the lock-in gate at `https://ottomate.vault7a.xyz/iterations/<iter_id>` (owner-facing host — **never** print `localhost:8110` or `127.0.0.1:8110`; see `references/credentials.md`).
 
 **Rule E — SO1 populated, no extra request.** AskUserQuestion: Continue Stage 2 / Continue Stage 3 / Run a Stage 4 iteration / Pack up / Just open in chat. Use the trigger table in `references/output-style.md` to gauge intent from free-text.
 

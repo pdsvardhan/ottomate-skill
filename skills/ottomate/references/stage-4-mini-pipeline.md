@@ -131,7 +131,9 @@ For each item in the locked list:
 
 1. Skill: `GET /api/iterations/<id>/items/<itemId>/component-options?category=<inferred>&tags=<modern|animated|...>` → returns up to 6 candidates from `master_components`, ranked by relevance to the item's title + description.
 2. Skill renders a single message:
-   > *"This item touches a UI component. Open the asset library at `http://localhost:8110/iterations/<id>/items/<itemId>/pick-component` and click 'Use this' on your choice. I'll wait."*
+   > *"This item touches a UI component. Open the asset library at `https://ottomate.vault7a.xyz/iterations/<id>/items/<itemId>/pick-component` and click 'Use this' on your choice. I'll wait."*
+
+   (Owner-facing host only — `localhost:8110` is a dead link for the owner; see `references/credentials.md`.)
 3. Skill polls `GET /api/iterations/<id>/items/<itemId>` every ~10s checking `proposed_change.picked_component`. Once set, proceed to 4.5.
 4. Chat-fallback (rare): if user prefers chat, render top 3 options as `AskUserQuestion` previews and POST `/pick-component` directly. UI page is the recommended path because it shows full source + framework tags + variants + previews.
 
