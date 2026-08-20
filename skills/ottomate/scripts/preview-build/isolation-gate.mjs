@@ -205,7 +205,30 @@ export function runGate(set, rendered = null) {
     if (!rendered) {
       add('structural', false, 'axis.kind is "structural" but no rendered markup was supplied to the gate');
     } else {
-      const floor = axis.minStructuralDiff ?? 0.15; // [REASONED] G1 §4.3 operational threshold
+      /**
+       * The floor scales with how much markup the axis is ALLOWED to move (#439).
+       *
+       * A flat 15% assumes the axis is free to restructure the whole document.
+       * That is true of a whole-direction round and false of a controlled one:
+       * screenroom's composite tiers froze 32 controls and varied a small
+       * surface, measured 3.4-4.7% apart, and were blocked for it — while the
+       * sibling axis-diff check passed the same set on its declared values. A
+       * correctly-built variant set failing two gates at once is the gate being
+       * wrong, not the set.
+       *
+       * `axisSurface` is the share of the composition the axis may touch (0-1).
+       * The floor is the flat threshold scaled by it, so a round varying a tenth
+       * of the markup is asked for a tenth of the movement. An explicit
+       * minStructuralDiff still wins, and the scaled floor never reaches zero:
+       * FLOOR_MIN keeps "these are literally the same markup" a failure, which
+       * is the thing this rung exists to catch.
+       */
+      const FLOOR_FLAT = 0.15;   // [REASONED] G1 §4.3 operational threshold
+      const FLOOR_MIN = 0.02;    // below this the rung stops being a check at all
+      const surface = typeof axis.axisSurface === 'number'
+        ? Math.min(1, Math.max(0, axis.axisSurface))
+        : 1;
+      const floor = axis.minStructuralDiff ?? Math.max(FLOOR_MIN, FLOOR_FLAT * surface);
       const problems = [], notes = [];
       // A STRUCTURAL fingerprint, not a text diff: tag vocabulary + class vocabulary + CSS property
       // vocabulary. Prose and embedded posters are control, not axis, so they must not move the number.
@@ -233,7 +256,7 @@ export function runGate(set, rendered = null) {
           const A = counts(norm(rendered[variants[i].label])), B = counts(norm(rendered[variants[j].label]));
           const distance = 1 - cosine(A, B);
           const line = `${variants[i].label}/${variants[j].label}: ${(distance * 100).toFixed(1)}% structural distance`;
-          if (distance < floor) problems.push(`${line} — below the ${(floor * 100).toFixed(0)}% floor; these render nearly the same markup`);
+          if (distance < floor) problems.push(`${line} — below the ${(floor * 100).toFixed(1)}% floor${surface < 1 ? ` (15% scaled by an axis surface of ${surface})` : ''}; these render nearly the same markup`);
           else notes.push(line);
         }
       }
