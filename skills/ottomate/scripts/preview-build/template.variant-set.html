@@ -6,6 +6,25 @@
      Panels are labelled A/B/C in RANDOMISED slot order with no option pre-selected or marked
      recommended (G3 §3.4/§3.5: a highlighted default anchors the pick; evaluative labels swung
      agreement 37 points). Content is identical in every panel — only the named axis moves. -->
+<!--
+  #461 — fonts must be declared at DOCUMENT level, not inside the variants.
+
+  Measured: document.fonts.size was 0 while variant panels were on screen. Each
+  variant renders inside a declarative shadow root, and an @font-face declared
+  in there does not apply — font faces resolve against the document, not the
+  shadow tree. Every panel was therefore judged in a fallback face, which made
+  a typography round unjudgeable and, worse, made rounds about weight or density
+  look wrong for a reason that had nothing to do with the axis being varied.
+
+  Loaded here rather than as local woff2 because the to-do assumed files on disk
+  and there are none in this plugin. Google Fonts needs no assets and reaches the
+  document the same way. Shadow roots inherit document faces, so declaring them
+  once here is all the variants need.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anek+Latin:wght@100..800&family=Geist+Mono:wght@100..900&family=Geist:wght@100..900&display=swap">
+
 <style>
   .vs {
     --bg:#0d0e12; --surface:#14161c; --surface-2:#1b1e26; --line:#262a34;

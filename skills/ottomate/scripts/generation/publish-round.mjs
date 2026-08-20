@@ -292,6 +292,33 @@ async function main() {
     process.exit(2);
   }
 
+  /**
+   * --replace must REPLACE (#462, 2026-08-20).
+   *
+   * It used to skip the refusal above and then POST anyway, leaving the old rows
+   * in place beside the new ones. Republishing round 1 on screenroom's requests
+   * ledger left rows 78 AND 79 proposed for the same axis, so the pick UI could
+   * write the owner's choice onto the stale one and the locked decision would
+   * then point at a variant they never saw. Row 78 had to be deleted by hand.
+   *
+   * A SETTLED clash is never deleted, even with --replace. That row is a
+   * decision the owner made; destroying it to make room for a rerun is the worse
+   * of the two failures. Refuse, and name which ones.
+   */
+  if (clash.length && args.replace) {
+    const settled = clash.filter((d) => d.status && d.status !== 'proposed');
+    if (settled.length) {
+      console.error(`REFUSED: ${settled.length} decision(s) for round ${manifest.round} are not proposed (${settled.map((d) => `${d.id}:${d.status}`).join(', ')}).`);
+      console.error('--replace will not delete a decision the owner has already settled. Reopen it deliberately, or publish as a new round.');
+      process.exit(2);
+    }
+    for (const d of clash) {
+      const r = await api(base, token, `/api/design-decisions/${d.id}`, { method: 'DELETE' });
+      if (!r.ok) { console.error(`--replace: DELETE ${d.id} -> HTTP ${r.status} ${JSON.stringify(r.body)}`); process.exit(2); }
+    }
+    console.log(`--replace: removed ${clash.length} superseded proposal(s) for round ${manifest.round}: ${clash.map((d) => d.id).join(', ')}`);
+  }
+
   // 3. backup BEFORE the first write (hard constraint 2) — mechanical, not remembered
   if (!args.noBackup && !args.no_backup) {
     const b = await api(base, token, '/api/backup', { method: 'POST', body: '{}' });
