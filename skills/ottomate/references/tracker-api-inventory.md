@@ -1,12 +1,13 @@
 # API inventory (generated)
 
-> Generated 2026-08-12T06:12:56+05:30 by `scripts/generate-api-inventory.sh` from route code.
+> Generated 2026-08-27T18:56:48+05:30 by `scripts/generate-api-inventory.sh` from route code.
 > Path/method/auth existence here outranks any prose doc. Do not hand-edit.
 
 | route | methods | bearer-auth |
 |---|---|---|
 | `/api/[...notfound]` | GET POST PATCH PUT DELETE HEAD | no |
 | `/api/anti-gaslight/violations` | GET | no |
+| `/api/anti-gaslight/writeoffs` | GET POST DELETE | yes |
 | `/api/asset/[...path]` | GET | no |
 | `/api/audit/[slug]` | GET | no |
 | `/api/backup` | POST GET | yes |
@@ -129,6 +130,6 @@
 | `/api/verify/project/[slug]` | POST | yes |
 | `/api/verify/site` | POST | yes |
 
-Total route files: 123. Mutating routes WITHOUT bearer auth: 1 (must be 0 or each one justified below).
+Total route files: 124. Mutating routes WITHOUT bearer auth: 1 (must be 0 or each one justified below).
 
 - UNAUTHENTICATED MUTATION: `/api/[...notfound]`
