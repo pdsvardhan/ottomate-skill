@@ -1,6 +1,6 @@
 # API inventory (generated)
 
-> Generated 2026-08-27T18:56:48+05:30 by `scripts/generate-api-inventory.sh` from route code.
+> Generated 2026-08-28T14:00:50+05:30 by `scripts/generate-api-inventory.sh` from route code.
 > Path/method/auth existence here outranks any prose doc. Do not hand-edit.
 
 | route | methods | bearer-auth |
