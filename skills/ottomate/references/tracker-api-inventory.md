@@ -1,6 +1,6 @@
 # API inventory (generated)
 
-> Generated 2026-08-28T14:00:50+05:30 by `scripts/generate-api-inventory.sh` from route code.
+> Generated 2026-09-07T04:23:31+05:30 by `scripts/generate-api-inventory.sh` from route code.
 > Path/method/auth existence here outranks any prose doc. Do not hand-edit.
 
 | route | methods | bearer-auth |
@@ -83,9 +83,10 @@
 | `/api/projects/[slug]/flows/[id]/steps` | GET POST | yes |
 | `/api/projects/[slug]/flows` | GET POST | yes |
 | `/api/projects/[slug]/intent-drafts/extract-hints` | POST | yes |
-| `/api/projects/[slug]/intent-drafts` | POST GET | yes |
+| `/api/projects/[slug]/intent-drafts` | POST PATCH GET | yes |
 | `/api/projects/[slug]/media/[file]` | GET DELETE | yes |
 | `/api/projects/[slug]/media` | GET POST | yes |
+| `/api/projects/[slug]/nd1-archive` | POST PATCH GET | yes |
 | `/api/projects/[slug]/non-goals/[id]` | PATCH DELETE | yes |
 | `/api/projects/[slug]/non-goals` | GET POST | yes |
 | `/api/projects/[slug]/pages/[id]/components` | GET POST | yes |
@@ -116,20 +117,20 @@
 | `/api/projects/[slug]/yaml-mirror` | GET | no |
 | `/api/projects` | GET POST | yes |
 | `/api/reports/[id]/classify` | POST | yes |
-| `/api/reports/[id]` | GET DELETE | yes |
+| `/api/reports/[id]` | GET DELETE PATCH | yes |
 | `/api/risks-heatmap` | GET | no |
 | `/api/sanity-check` | GET | no |
 | `/api/search` | GET | no |
 | `/api/skill-events` | POST GET | yes |
 | `/api/test-runs/[id]` | DELETE | yes |
 | `/api/test-runs` | GET POST | yes |
-| `/api/todos/[id]` | PATCH DELETE | yes |
+| `/api/todos/[id]` | GET PATCH DELETE | yes |
 | `/api/verification-reports` | GET POST | yes |
 | `/api/verify/[id]` | GET | no |
 | `/api/verify/gate` | GET | no |
 | `/api/verify/project/[slug]` | POST | yes |
 | `/api/verify/site` | POST | yes |
 
-Total route files: 124. Mutating routes WITHOUT bearer auth: 1 (must be 0 or each one justified below).
+Total route files: 125. Mutating routes WITHOUT bearer auth: 1 (must be 0 or each one justified below).
 
 - UNAUTHENTICATED MUTATION: `/api/[...notfound]`
