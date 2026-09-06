@@ -6,7 +6,8 @@
 //   STATE         do its cases assert system state (oracle layer 'system-state'), not only what the screen shows?
 //   VERIFIED      latest feature-verification report — verdict, date, commit
 //   STALE         the tracker's own stale-verification rule fired (edited after the last verdict)
-//   NEVER-RED     no case of that matrix has ever failed in the evidence history. A detector that has never
+//   NEVER-RED     no case of that matrix has ever failed (evidence history) and no report for the target ever
+//                 recorded a failed case or a BLOCK. A detector that has never
 //                 gone red has never been shown to detect anything — that is the honest confidence gap.
 // Counts and flags only. No score: a number here would be the exact kind of false confidence this exists to expose.
 //
@@ -106,6 +107,9 @@ for (const slug of slugs) {
     const cur = byTarget.get(r.target_id);
     if (!cur || String(r.ran_at) > String(cur.ran_at)) byTarget.set(r.target_id, r);
   }
+  // second "has it ever gone red" source: any report for the target that recorded a failed case or a BLOCK.
+  // Evidence dirs alone miss hand runs whose artifacts were not kept.
+  const redTargets = new Set(repRows.filter((r) => (r.cases_failed ?? 0) > 0 || r.recommendation_overall === 'BLOCK').map((r) => r.target_id));
   const stale = new Set();
   try {
     const v = await getJson(`/api/anti-gaslight/violations?project_slug=${slug}`);
@@ -121,7 +125,7 @@ for (const slug of slugs) {
     const cases = ms.reduce((n, m) => n + m.cases, 0);
     const stateOr = ms.reduce((n, m) => n + m.stateOracles, 0);
     const rep = byTarget.get(t.id) || null;
-    const wasRed = ms.some((m) => m.caseIds.some((c) => red.has(c)));
+    const wasRed = ms.some((m) => m.caseIds.some((c) => red.has(c))) || redTargets.has(t.id);
     const flags = [];
     if (!ms.length) flags.push('NO-MATRIX');
     else {
