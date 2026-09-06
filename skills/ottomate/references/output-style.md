@@ -147,12 +147,16 @@ Continuing now.
 
 ### Project load — open tasks (to-do surface)
 
-Shown in the load status block per `references/task-tracking.md` (source: `GET /api/projects/<slug>/todos`). Open count in the header, one compact line per task. Zero open → `Tasks — none open`. More than ~8 → list 8 then `+N more (full list via GET /api/projects/<slug>/todos)`.
+Shown in the load status block per `references/task-tracking.md` (source: `GET /api/projects/<slug>/todos`). `open` = state NOT IN (done, parked) (`GET .../todos?open=1`). Zero open → `Tasks — none open`. More than ~8 → list 8 then `+N more (full list via GET /api/projects/<slug>/todos)`.
 
 ```
-Tasks — stateofus (1 open)
-  • Fix red CI — pause tests, kill Chrome re-download · → .gitea/workflows/ci.yml
+Tasks — stateofus (4 open · 1 built · 2 waiting on you · 3 parked)
+  P1 chore  ready        #12  Fix red CI — pause tests, kill Chrome re-download · -> .gitea/workflows/ci.yml
+  P2 bug    built        #40  Search returns stale results after re-index (needs verifier)
+  OWNER QUEUE: #33 pick the launch date · #38 approve the new palette
+  misc: 3 of 4 open have kind=misc — name their kinds at pack-up
 ```
+One line per task: `priority kind state #id title`. The owner-queue line only when non-empty; the misc line only when misc is at least half the open set.
 
 ### Lock-in gate panel (Stage 4.3 — see references/propose-confirm.md, relocated from prompts/ 2026-06-11)
 

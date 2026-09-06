@@ -53,7 +53,7 @@ Friction entries feed detection of systemic problems (e.g. "pdftoppm missing" th
 
 ### 3b. Update project to-dos
 
-Per `references/task-tracking.md`: for any to-do completed this session, `PATCH /api/todos/<id>` with `done=true`. `POST` any new out-of-scope items the user raised this session as fresh to-dos (drop-with-reason, anti-gaslight Rule 7). State lives in the DB — no file to commit.
+Per `references/task-tracking.md` (the model, locked 2026-09-07): landed + verified -> `state: done`; landed, not verified -> `state: built`; handed back to the owner -> `state: blocked, blocked_on: owner` with the question in `body`; every to-do you read and found still true -> `last_verified_at: true`. `POST` new out-of-scope items with `kind`, `origin` and the why in `body`. Then read `counts` from `GET .../todos`: if `kind=misc` or `blocked_on=other` is at least half the open set, name the missing category in the session note — never add a project-specific kind.
 
 ### 4. Pack-Up Reconciliation Lock, then commit + push
 
