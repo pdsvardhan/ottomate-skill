@@ -137,16 +137,21 @@ From `extracted_hints.domain_hints`: lowercase + strip non-alpha + hyphenate + d
 Mechanical transform; user can edit.
 
 ### Port allocation
-```sql
-SELECT COALESCE(MAX(port), 8499) + 1 
-FROM projects 
-WHERE port BETWEEN 8500 AND 8599;
+The projects table only knows what Ottomate registered; a port can be busy on the host (another container,
+a dev server) and never appear there (#731). Pick the first port in 8500–8599 that is free in ALL of: the
+projects table, live listeners (`ss -ltn`), and docker published ports — one batched ssh call:
+
+```bash
+ssh pdsv@192.168.1.10 'used=$( { curl -s http://127.0.0.1:8110/api/projects | python3 -c "import sys,json;d=json.load(sys.stdin);r=d if isinstance(d,list) else d.get(\"projects\",[]);[print(p[\"port\"]) for p in r if p.get(\"port\")]"; ss -ltnH | awk "{print \$4}" | grep -oE "[0-9]+$"; docker ps --format "{{.Ports}}" | grep -oE ":[0-9]+->" | tr -d ":>-"; } | sort -un); for p in $(seq 8500 8599); do echo "$used" | grep -qx "$p" || { echo "$p"; break; }; done'
 ```
+
+Surface the chosen port in the panel; if the DB-max+1 port differs from the first-free port, say so (it means
+something unregistered is squatting a port — worth a look, not a blocker).
 
 ### Combined panel
 ONE AskUserQuestion with 3-5 candidates + "Type my own" + "Generate different options" + (if revive) "⓪ REVIVE existing".
 
-Each candidate pre-checked: format ✓ + slug-unique ✓ + domain-not-in-NPM-proxy ✓ + port-not-in-DB ✓ + repo-dir-doesn't-exist (else → revive option appears).
+Each candidate pre-checked: format ✓ + slug-unique ✓ + domain-not-in-NPM-proxy ✓ + port-free (projects table + ss -ltn + docker) ✓ + repo-dir-doesn't-exist (else → revive option appears).
 
 ### Output
 ```yaml
@@ -175,6 +180,13 @@ Fires after 0.5 user choice. HARD halt + jump-back to 0.5 if any fails.
 Problem statement only. If Type 2 with pre-fill from 0.3: show extracted draft + AskUserQuestion *"Approve / Edit / Replace"*. If Type 1: free-form prompt (templated rendering).
 
 ### Turn 2 (multiselect AskUserQuestion)
+
+**Audience profile — ask ONCE here, default P1 (#319).** One extra option group in the same panel:
+`P1 just me / a demo` · `P2 small team / internal` · `P3 shipped / external users`. Store it at
+`ui_master_plans.design_ledger.context.profile` (the `PUT /api/projects/<slug>/ui-master-plan` context
+merge). It decides which accessibility-floor rules block vs. advise at Stage 2/3 (`resolveFloor`). When the
+owner never set one, `lib/audience-profile.ts resolveProjectProfile()` falls back to `suggestProfile()`
+(lifecycle + public_url signals) — a suggestion, shown as such, never written back as if the owner chose it.
 Three multiselects in one panel:
 - target_users (≥1; pre-filled from extracted_hints.target_users_candidates)
 - non_goals_initial (≥1; templates seed + Claude refines for project specificity per amendment D-AMEND.6)
