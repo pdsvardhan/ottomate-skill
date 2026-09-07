@@ -14,7 +14,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import type { APIRequestContext, Page, expect as PlaywrightExpect } from '@playwright/test';
+import type { APIRequestContext, Page, expect as PlaywrightExpect, request as PlaywrightRequest } from '@playwright/test';
 import type { FeatureVerifyConfig, Matrix } from './index';
 import { ActionLog } from './action-log.mjs';
 
@@ -24,17 +24,30 @@ export type Check = { ok: boolean; detail: string; observed?: unknown; action_lo
 export type OracleFn = (page: Page, api: APIRequestContext, params: any) => Promise<Check>;
 export type OracleRegistry = Record<string, OracleFn>;
 
-/** What the runner hands a project module. `harness` lets a module without its own harness copy
- *  (mapsofbharat) use shared utilities without importing them by path. */
+/** What the runner hands a project module. EVERYTHING a module needs from Playwright or the harness comes
+ *  through `harness` — a module must never value-import `@playwright/test` itself: when the runner executes
+ *  from /opt/homeserver/fv-harness, the module's own repo would resolve a SECOND copy of the package and
+ *  Playwright refuses it ("Requiring @playwright/test second time"). Type-only imports are erased and safe. */
 export interface Runtime {
   cfg: FeatureVerifyConfig;
   matrix: Matrix;
-  harness: { ActionLog: typeof ActionLog; expect: typeof PlaywrightExpect };
+  harness: {
+    ActionLog: typeof ActionLog;
+    expect: typeof PlaywrightExpect;
+    request: typeof PlaywrightRequest;
+    identity: typeof import('./identity.mjs');
+    systemState: typeof import('./system-state');
+    unicode: typeof import('./unicode');
+    music: typeof import('./music-fixtures.mjs');
+  };
 }
 
 /** What a project module's factory returns. Everything but REGISTRY is optional. */
 export interface ProjectOracles {
   REGISTRY: OracleRegistry;
+  /** Set by the loader: the file the registry came from. The runner adds it to the tamper guard's protected
+   *  paths, so an oracle edited after the matrix was locked downgrades the run exactly like an edited matrix. */
+  modulePath?: string;
   /** Extra HTTP headers for the owner API context (screenroom: the Authentik identity headers). */
   ownerHeaders?: Record<string, string>;
   /** Called once the API context exists / the matrix is loaded — the module's own `api` / `m`. */
@@ -90,6 +103,7 @@ export async function loadProjectOracles(rt: Runtime): Promise<ProjectOracles> {
   if (!out || typeof out !== 'object' || !out.REGISTRY || typeof out.REGISTRY !== 'object') {
     throw new Error(`[fv] ${file}: factory returned no REGISTRY`);
   }
+  out.modulePath = file;
   console.log(`[fv] loaded ${Object.keys(out.REGISTRY).length} project oracle(s) from ${file}`);
   return out;
 }

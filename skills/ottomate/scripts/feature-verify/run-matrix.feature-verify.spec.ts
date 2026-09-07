@@ -20,6 +20,10 @@ import { ActionLog } from './harness/action-log.mjs';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { loadProjectOracles, type Check, type OracleRegistry, type ProjectOracles } from './harness/project-oracles';
+import * as identity from './harness/identity.mjs';
+import * as systemState from './harness/system-state';
+import * as unicode from './harness/unicode';
+import * as music from './harness/music-fixtures.mjs';
 
 const cfg = loadConfig();
 const matrix = new Matrix();
@@ -51,7 +55,7 @@ const STORE = process.env.FV_SYMPTOM_STORE ?? '/tmp/fv/symptom-baselines';
 test.beforeAll(async () => {
   // #717: the project's held-out oracles come from its own repo; the factory gets cfg + Matrix now, and
   // the API context / loaded matrix through setters once they exist (the moved code's own `api` / `m`).
-  hooks = await loadProjectOracles({ cfg, matrix, harness: { ActionLog, expect } });
+  hooks = await loadProjectOracles({ cfg, matrix, harness: { ActionLog, expect, request: playwrightRequest, identity, systemState, unicode, music } });
   api = await playwrightRequest.newContext({ timeout: 120_000, extraHTTPHeaders: hooks.ownerHeaders ?? {} });
   hooks.setApi?.(api);
   await hooks.beforeAll?.(api);
@@ -104,7 +108,8 @@ test.afterAll(async () => {
     repoRoot: repoRootForTamper,
     featureCommits: (process.env.FV_FEATURE_COMMITS ?? '').split(/[\s,]+/).filter(Boolean),
     commitRange: rangeForTamper,
-    protectedPaths: [MATRIX_FILE],
+    // #717: the project's oracle module is protected material too — an oracle edited after the lock is a tamper.
+    protectedPaths: [MATRIX_FILE, ...(hooks.modulePath ? [hooks.modulePath] : [])],
   });
   (tamper as Record<string, unknown>).range_source = rangeSource;
   const trust = assessTrust({
