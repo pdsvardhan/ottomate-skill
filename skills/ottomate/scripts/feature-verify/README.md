@@ -87,3 +87,28 @@ npx playwright test -c tests/e2e/feature-verify/playwright.feature-verify.config
 Redis for isolated system-state). Each is optional — skip gracefully if unwired; never fake a
 green. Phase 2 (only if wanted): an unattended-CI hosted VLM for subjective judging when Claude
 isn't in the session.
+
+## Project oracle modules (ottomate #717, 2026-09-07)
+
+`run-matrix.feature-verify.spec.ts` is the **generic** runner. A project's held-out oracles live in its own repo:
+
+```
+<repo_root>/tests/e2e/feature-verify/oracles/index.ts
+export default function (rt: Runtime): ProjectOracles   // see harness/project-oracles.ts
+```
+
+The runner resolves `<repo_root>` from `FV_PROJECT_ROOT` (run.mjs sets it) or the manifest, dynamically imports the
+module, and calls the factory once `cfg` + `Matrix` exist; the API context and the loaded matrix arrive through
+`setApi` / `setMatrix`, so a module can keep plain `let api` / `let m` bindings. Optional hooks: `ownerHeaders`
+(extra headers for the owner API context), `beforeAll(api)` (screenroom proves it is the owner), `sweeps`
+(start-of-run reclaim sweeps keyed by name). A project with no module gets only the built-in oracles and every
+case records `skipped: no registered oracle` — visible, never silent. A malformed module is a hard error.
+
+Why: the runner used to be one 17,424-line file with screenroom's 350 oracles inline — mapsofbharat ran
+screenroom's file, every screenroom edit forced a manual re-sync of the shared copy, and adding a third project
+meant editing that file, so 10 of 12 projects had no verifier at all. Measured on the split: 352/352 oracle keys
+preserved, palette-search 18/18 identical old vs new against the live app.
+
+Adding a project: create the module, list the app + its matrices in `feature-verify-apps.json`, run
+`node coverage.mjs --app <slug>` to see what is now verifiable. `fv-drift.sh` compares only the shared files, so a
+project's `oracles/` dir never trips it.

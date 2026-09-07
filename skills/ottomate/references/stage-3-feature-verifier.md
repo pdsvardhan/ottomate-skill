@@ -426,3 +426,12 @@ encoding bug **with the saved bytes as proof**.
 - **Coverage:** `node scripts/feature-verify/coverage.mjs [--app <slug>] [--json]` (deployed copy: `/opt/homeserver/fv-harness/coverage.mjs`). For every feature / flow / page the tracker knows: matrix present? cases assert system state? latest verdict + date + commit? `STALE` (the tracker's stale-verification rule)? `NEVER-RED` (no case of that matrix has ever failed in the evidence history — a detector that has never gone red has never been shown to detect anything)? Counts and flags only, deliberately no score. Run it at pack-up for any project whose features changed; a target that gains a matrix without ever going red is not yet evidence of anything.
 - **Drift guard:** `fv-drift.sh` runs first in both nightlies — fail-closed in `fv-harness/nightly.sh` (the shared runner refuses to run if it differs from any manifest app's `tests/e2e/feature-verify` tree) and reported in `/opt/homeserver/scripts/ottomate-nightly.sh`. Sync is deliberately manual: auto-copying would hide which side is newer. Measured before the fix: shared vs screenroom differed by 9,109 lines in `run-matrix.feature-verify.spec.ts` alone.
 - **Known state:** the nightly fv step itself has been SKIPPED since 2026-08-28 (owner ruling: side-effecting oracles). Until it is re-enabled or run by hand, coverage will show `never verified` / stale verdicts — that is the truth, not a bug in the report.
+
+## Project oracle modules (added 2026-09-07 — #717)
+
+The shared runner is generic; each project's held-out oracles live in **its own repo** at
+`tests/e2e/feature-verify/oracles/index.ts` (a factory, contract in `harness/project-oracles.ts`). When a feature
+verifier is dispatched for a project that has no module yet, the first job is to author that module + its case
+matrices and register the app in `feature-verify-apps.json` — until then every case is `skipped: no registered
+oracle`, which `coverage.mjs` shows as NO-MATRIX / NEVER-VERIFIED. Never put a project's oracles back into the
+shared runner.
