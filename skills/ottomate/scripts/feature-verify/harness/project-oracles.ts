@@ -59,9 +59,16 @@ function manifestRoot(slug: string): string | null {
   } catch { return null; }
 }
 
+/** A project may ship its module as TypeScript (index.ts — needs the Playwright transform to apply to that
+ *  path) or as plain ESM JavaScript (index.mjs / index.js — works with no toolchain at all). First match wins. */
+const MODULE_CANDIDATES = ['index.ts', 'index.mjs', 'index.js'];
+
 export function projectOracleModulePath(slug: string): string | null {
   const root = process.env.FV_PROJECT_ROOT || manifestRoot(slug);
-  return root ? path.join(root, 'tests', 'e2e', 'feature-verify', 'oracles', 'index.ts') : null;
+  if (!root) return null;
+  const dir = path.join(root, 'tests', 'e2e', 'feature-verify', 'oracles');
+  for (const c of MODULE_CANDIDATES) { const f = path.join(dir, c); if (existsSync(f)) return f; }
+  return path.join(dir, MODULE_CANDIDATES[0]);
 }
 
 /**
