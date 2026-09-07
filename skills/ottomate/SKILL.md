@@ -79,7 +79,7 @@ non_goals, must_haves, risks, and verifier output are BUILD RAILS — captured i
 3. Be opinionated; choices via AskUserQuestion, never prose questions.
 4. Pull before work; push after.
 5. Scope escalations are explicit — ADR required.
-6. Code via Write tool + SCP; never SSH heredoc.
+6. Code via Write tool + SCP; never SSH heredoc. Same for helper scripts and patch files over ~100 lines: Git Bash silently truncates a `-c` string past ~8 KB and the heredoc dies with "unexpected EOF" before anything runs (3 hits on 2026-09-07, #847) — small heredocs are fine.
 7. Commit before any docker rebuild.
 8. Sub-agents must read full files before editing.
 9. Clean temp files (local and server) after use.

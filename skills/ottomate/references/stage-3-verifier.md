@@ -139,3 +139,15 @@ For stub failures (pass B):
 Verifier dispatch is the most expensive step in Stage 3 / Stage 4 (independent agent run with code reading + endpoint hits). Acceptable cost — anti-gaslighting protection is non-negotiable.
 
 For Stage 4 iterations: verifier scoped to ONLY the changed item's affected files. Doesn't re-run on unchanged code. Keeps cost bounded.
+
+## Control trees — running a verifier against a specific commit (recipes, #342 / #343)
+
+A verifier compares the live tree against a known-good control tree built from a commit. Both recipes were
+learned the hard way on mapsofbharat (2026-07-26) and are the only way that reliably works on VAULT7A:
+
+1. **Materialise the control tree from git, never by copying the working tree:** `git archive <sha> | tar -x -C /tmp/ctl-<sha>` — the working tree may hold uncommitted edits, and `/tmp` and `/mnt/storage` are separate filesystems so `cp -al` cannot hardlink.
+2. **Reuse the project's `node_modules` by symlink** (`ln -s /mnt/storage/websites/<slug>/node_modules /tmp/ctl-<sha>/node_modules`) — an install per control tree is minutes and disk.
+3. **Do NOT start it with `next dev --turbopack`:** Turbopack refuses an out-of-root `node_modules` symlink and dies at startup. Use the plain webpack dev server: `npx next dev -p <free-port>`.
+4. **Copy `playwright.config.ts`** into the control tree if the tests read it from cwd.
+5. **Set `DB_PATH` explicitly.** `data/` is gitignored, and `lib/db.ts` defaults to the *container* path — so an un-pointed control tree answers `[]` from every API and the specs die in `waitForMapReady` with no useful error. Point it at a disposable copy of the DB, never the live file (ONE DOOR, adr-018).
+6. Tear the tree down after the run (`rm -rf /tmp/ctl-<sha>`) — pack-up step 6 looks for stragglers.
