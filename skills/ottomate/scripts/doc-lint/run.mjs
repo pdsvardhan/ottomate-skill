@@ -103,7 +103,11 @@ if (valeDocs.length && terms.length) {
       for (const [file, alerts] of Object.entries(parsed)) {
         for (const a of alerts) violations.push({ rule: 'R-DOC-2 retired-term', file: path.relative(repo, file), line: a.Line, msg: a.Match });
       }
-    } catch { console.error('vale run error:', e.message); }
+    } catch {
+      // 2026-09-07: a Vale RUNTIME failure (e.g. E100 missing .vale.ini) used to be swallowed here and the run
+      // printed CLEAN — the silent-skip failure mode this file's own README warns about. It is a violation now.
+      violations.push({ rule: 'R-DOC-2 vale-did-not-run', file: '(all)', msg: String(e.stdout || e.message || e).slice(0, 200) });
+    }
   }
 }
 
