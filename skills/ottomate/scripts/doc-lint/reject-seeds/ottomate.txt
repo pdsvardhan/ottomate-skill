@@ -1,0 +1,5 @@
+Infisical
+GlitchTip
+Lost Pixel
+Plausible
+generate-status.sh

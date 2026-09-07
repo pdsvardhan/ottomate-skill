@@ -30,6 +30,9 @@ For every SO1 / SO2 / SO3 doc affected during this session:
 
 Mirror writes are idempotent — if no changes, skip the file.
 
+**Generated reference + lint (R-DOC-9, added 2026-09-07):** for every project touched this session, on the box:
+`node /mnt/storage/ottomate/scripts/generation/gen-reference-docs.mjs --project <slug> --commit <sha>` (rewrites `FEATURES.md` with its provenance header), then `node /mnt/storage/ottomate/scripts/doc-lint/run.mjs --project <slug>` — advisory at `doc_gate=warn`, exit 3 at `block`. Both tools live on the box under `/mnt/storage/ottomate/scripts/`; the plugin copies under `scripts/` are canonical — scp them over whenever they change. Retired-term seeds per project: `doc-lint/reject-seeds/<slug>.txt`.
+
 ### 3. Update iteration log
 
 Append entry to `iteration-log.md` (per project) summarizing this session:

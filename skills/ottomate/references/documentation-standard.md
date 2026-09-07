@@ -1,6 +1,6 @@
-# Ottomate Documentation Standard (DRAFT — awaiting owner lock, 2026-08-04)
+# Ottomate Documentation Standard (in force — enforcement shipped Phase 4; doc_gate=block on screenroom, mapsofbharat, leaploop; warn on ottomate since 2026-09-07)
 
-> **Status: PROPOSAL.** This defines *what docs a project keeps, in what format, and the structural
+> **Status: IN FORCE.** The text was never formally locked by the owner, but the enforcement it specifies (doc-lint + the doc_gate ramp) shipped and four projects run under it; per-project backfills are tracked as to-dos #833–841. This defines *what docs a project keeps, in what format, and the structural
 > rules that keep them honest*. The enforcement (native rules + Vale/lychee + the spec-sync gate)
 > codifies this file, so this is locked FIRST (skill bedrock: lock before build). Scope: **per-project
 > product docs now; the skill's own internal docs in a follow-up** (owner decision 2026-08-04).
