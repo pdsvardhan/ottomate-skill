@@ -1,0 +1,45 @@
+# Retired terms for portfolio — flagged in any hand-written doc (R-DOC-2).
+# One Vale regex per non-comment line. Vale vocab entries are CASE-SENSITIVE; (?i) makes one
+# case-insensitive (tested with vale 3.17 on VAULT7A, 2026-09-27).
+# decisions/** is exempt (ADRs record what they dropped). FEATURES.md is NOT exempt: it is generated
+# from the registry, so a hit there means the registry text is stale.
+# Seeded 2026-09-27 (to-do #836) from retired features and superseded ADRs. Terms are kept
+# distinctive: phrases with spaces, so feature ids such as feat-cork-board do not match.
+
+# adr-010: figurine deleted; the pinned-card résumé board concept retired (board rebuilt).
+(?i)funko
+(?i)kanban
+(?i)cork board
+
+# adr-013 / iteration 14: desk globe removed, travel map moved to the board; the interests + vision
+# section dropped.
+(?i)desk globe
+(?i)interests (\+|and) vision
+
+# adr-011: the 10-second clip must-have retired. adr-014: the project carousel retired.
+# adr-009: the posters "lightbox carousel" rail retired.
+(?i)(10s|10-second|ten-second) clips?
+(?i)clip carousel
+(?i)(project|screenshot|spotlight|lightbox) carousels?
+
+# adr-006 (superseded by adr-018): the night-only rule. Hyphenated only: "lights at night only"
+# (iteration 18 item 1347) is current wording.
+(?i)night-only
+
+# adr-012 / item 1291: the halo rings are gone. Bare "halo" is not banned because a current
+# acceptance criterion says "No halo rings".
+(?i)first-visit halos?
+
+# adr-008 truth pass: there is no Caddy hop on the serving path.
+Caddy
+
+# NOT banned: adr-007 (superseded by adr-017). Paper toss is back, so "paper toss" and
+# "leaderboard" are current terms; only the claim that it is retired is stale, and that is not a
+# lexical pattern.
+
+# PENDING — decided but still live until iteration 17 / 18 ship. Uncomment each line when its item
+# is built and deployed; until then the live site, FEATURES.md and README use these words correctly.
+# (?i)photo frame              # adr-015, item 1326 (shelf photo frame removed)
+# (?i)slideshow                # adr-015, item 1326
+# (?i)flyer                    # item 1321 (tear-off flyer scrapped; socials become sticky notes)
+# (?i)design=1                 # adr-018, item 1347 (the /?design=1 accent toggle panel removed)
