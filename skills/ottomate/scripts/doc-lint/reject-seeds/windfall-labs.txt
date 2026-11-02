@@ -1,0 +1,11 @@
+# windfall-labs retired terms (R-DOC-2). Seeded 2026-11-02 for the #841 docs backfill.
+# Keep terms DISTINCTIVE. The ADR record (docs/decisions/) is exempt and may name what it dropped.
+#
+# adr-019 removed the homegrown D/V/M scores (adr-010); their column names must not reappear as
+# live factors in the hand-written docs.
+durability_own
+valuation_own
+momentum_own
+# NOT seeded on purpose:
+#  - "slippage": adr-020 dropped it as a fee, but the docs legitimately say "no slippage term by design".
+#  - "vectorbt": adr-036 records that it was never adopted; docs legitimately say "not vectorbt".
