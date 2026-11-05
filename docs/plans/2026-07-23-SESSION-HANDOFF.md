@@ -24,7 +24,7 @@ tables, reasoning). Pull one on demand for build knowledge on a specific axis; n
 | | |
 |---|---|
 | **Plugin** | `~/.claude/plugins/ottomate` · repo `pdsv/ottomate` · branch `main` · **clean, 0 unpushed (all Phase 1–4 + 3b work pushed)**. Where ALL Task-2 work lives |
-| **App** | `/opt/homeserver/ottomate` via `ssh pdsv@192.168.1.10` · repo `pdsv/ottomate-tracker-v3` · branch `iter-65-2026-07-13` · **@ `9c4c75d`, unchanged since session 2** — Phases 1/2/3a/3b/4 were all plugin-only (the design_decisions table + API already existed). The server's `@playwright`+Chromium hosts the computed checks |
+| **App** | `/opt/homeserver/ottomate` via `ssh pdsv@192.0.2.10` · repo `pdsv/ottomate-tracker-v3` · branch `iter-65-2026-07-13` · **@ `9c4c75d`, unchanged since session 2** — Phases 1/2/3a/3b/4 were all plugin-only (the design_decisions table + API already existed). The server's `@playwright`+Chromium hosts the computed checks |
 | **Test suites (plugin)** | `node --test` — generation 8/8 · ledger-context 9/9 · method-routing 9/9 · graduate 6/6 · design-check 33/33 · computed-checks 6/6 · harness-dsd 7/7 · isolation-gate 20/20. Browser test (server only): `computed-checks.browser.test.mjs` 4/4 |
 | **API** | `http://127.0.0.1:8110` · bearer token at `/opt/homeserver/ottomate/.token` |
 | **Preview artifact** | `https://claude.ai/code/artifact/76f9cb7a-9c14-4950-9061-251b75b998f1` |

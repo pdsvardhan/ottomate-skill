@@ -18,7 +18,7 @@ Read this, then `SKILL-REGISTER.md`. Nothing else is required to start.
 | | |
 |---|---|
 | **Plugin** | `~/.claude/plugins/ottomate` · `main` · clean, 0 unpushed. All Task-2 work lives here |
-| **App** | `/opt/homeserver/ottomate` via `ssh pdsv@192.168.1.10` · branch `iter-65-2026-07-13` · clean |
+| **App** | `/opt/homeserver/ottomate` via `ssh pdsv@192.0.2.10` · branch `iter-65-2026-07-13` · clean |
 | **Design surface** | `https://ottomate.vault7a.xyz/projects/<slug>/design/<target>` — **the Claude-Artifact path is retired** |
 | **Live rounds** | Screenroom poster card, r1 (weight+density) and r2 (colour+motion), decisions 18–27, all `in-review` |
 | **Suites** | `node --test` — 150 generation · 36 gate · 81 design-check · 16 harness. One known failure on Windows: `computed-checks.browser.test.mjs` needs Playwright, which lives only on VAULT7A |

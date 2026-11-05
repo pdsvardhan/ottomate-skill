@@ -92,8 +92,8 @@ test('publicRoundUrl surfaces the reachable tunnel host, not 127.0.0.1', () => {
 
 test('publicRoundUrl honours an override base and trims a trailing slash', () => {
   assert.equal(
-    publicRoundUrl(manifest, 'http://192.168.1.10:8110/'),
-    'http://192.168.1.10:8110/api/previews/design-rounds/demo/demo.media-card/r1/index.html',
+    publicRoundUrl(manifest, 'http://192.0.2.10:8110/'),
+    'http://192.0.2.10:8110/api/previews/design-rounds/demo/demo.media-card/r1/index.html',
   );
 });
 

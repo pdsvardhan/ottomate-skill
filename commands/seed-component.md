@@ -104,8 +104,8 @@ NEW COMPONENT — confirm before save
 Write the JSON payload locally (Write tool), SCP it up, POST server-side:
 
 ```bash
-scp payload.json pdsv@192.168.1.10:/tmp/mc-payload.json
-ssh pdsv@192.168.1.10 'curl -sf -X POST http://127.0.0.1:8110/api/master-components \
+scp payload.json pdsv@192.0.2.10:/tmp/mc-payload.json
+ssh pdsv@192.0.2.10 'curl -sf -X POST http://127.0.0.1:8110/api/master-components \
   -H "Authorization: Bearer $(cat /opt/homeserver/ottomate/.token)" \
   -H "Content-Type: application/json" \
   --data-binary @/tmp/mc-payload.json; rm /tmp/mc-payload.json'
@@ -162,8 +162,8 @@ For >10 components, batch through the SAME API (ONE DOOR — never a direct-DB s
 ```bash
 # Prepare seed-batch.json offline: a JSON ARRAY of create payloads (shape as step 5,
 # source_code inline per entry). Then:
-scp seed-batch.json pdsv@192.168.1.10:/tmp/seed-batch.json
-ssh pdsv@192.168.1.10 'TOKEN=$(cat /opt/homeserver/ottomate/.token); \
+scp seed-batch.json pdsv@192.0.2.10:/tmp/seed-batch.json
+ssh pdsv@192.0.2.10 'TOKEN=$(cat /opt/homeserver/ottomate/.token); \
   jq -c ".[]" /tmp/seed-batch.json | while read -r row; do \
     echo "$row" | jq -r .id; \
     curl -sf -X POST http://127.0.0.1:8110/api/master-components \

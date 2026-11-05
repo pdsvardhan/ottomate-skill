@@ -66,18 +66,18 @@ Execute **P3-0 → P3-E** from the PHASE3 plan (each item has files · acceptanc
 ## How to resume the sandbox (if a Phase-3 test needs a live verify run)
 The box's `/tmp/sr-harness` is ephemeral. Re-stage from the plugin:
 ```bash
-ssh pdsv@192.168.1.10 "rm -rf /tmp/sr-harness"
-scp -r skills/ottomate/scripts/feature-verify/sandboxes/screenroom-music pdsv@192.168.1.10:/tmp/sr-harness
-ssh pdsv@192.168.1.10 "cd /tmp/sr-harness && sed -i 's/\r$//' *.sh *.mjs && chmod +x *.sh && SR_IMAGE=screenroom-app:latest ./up.sh"
-ssh pdsv@192.168.1.10 "cd /tmp/sr-harness && FV_NO_POST=1 node music-upload.verify.mjs"   # verify only (no registry write)
-ssh pdsv@192.168.1.10 "cd /tmp/sr-harness && ./down.sh"                                    # teardown
+ssh pdsv@192.0.2.10 "rm -rf /tmp/sr-harness"
+scp -r skills/ottomate/scripts/feature-verify/sandboxes/screenroom-music pdsv@192.0.2.10:/tmp/sr-harness
+ssh pdsv@192.0.2.10 "cd /tmp/sr-harness && sed -i 's/\r$//' *.sh *.mjs && chmod +x *.sh && SR_IMAGE=screenroom-app:latest ./up.sh"
+ssh pdsv@192.0.2.10 "cd /tmp/sr-harness && FV_NO_POST=1 node music-upload.verify.mjs"   # verify only (no registry write)
+ssh pdsv@192.0.2.10 "cd /tmp/sr-harness && ./down.sh"                                    # teardown
 ```
 For the whole-site queue runner: `scp -r skills/ottomate/scripts/feature-verify/harness
-pdsv@192.168.1.10:/tmp/fv-harness` then `FV_BEARER_TOKEN=$(cat /opt/homeserver/ottomate/.token) node
+pdsv@192.0.2.10:/tmp/fv-harness` then `FV_BEARER_TOKEN=$(cat /opt/homeserver/ottomate/.token) node
 /tmp/fv-harness/queue-runner.mjs`. **`POST /api/backup` before any run that posts.**
 
 ## Environment quick-ref (VAULT7A)
-`ssh pdsv@192.168.1.10` (key-only) · **tracker** `ottomate` :8110 (source `/opt/homeserver/ottomate` =
+`ssh pdsv@192.0.2.10` (key-only) · **tracker** `ottomate` :8110 (source `/opt/homeserver/ottomate` =
 `/mnt/storage/websites/ottomate` bind-mount, branch `ws1.1-live-preview`, image `ottomate-ottomate`, DB
 `./data/ottomate.db`, deploy = backup → `docker compose build ottomate && up -d`) · **screenroom** :8504
 (repo `/mnt/storage/websites/screenroom` has OWNER WIP → build `:latest` from a `git worktree`, `up -d

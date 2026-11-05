@@ -63,7 +63,7 @@ Per `references/task-tracking.md` (the model, locked 2026-09-07): landed + verif
 **Before pushing** (Codex Round 2): show the final session-close screen — done / not-done / deferred / risks-changed / commits — and get user confirmation.
 
 ```bash
-ssh pdsv@192.168.1.10 'cd /mnt/storage/websites/<slug> && \
+ssh pdsv@192.0.2.10 'cd /mnt/storage/websites/<slug> && \
   git add -A && \
   git commit -m "Session <date>: <summary>" && \
   git push origin HEAD'
@@ -77,7 +77,7 @@ If push fails (network / auth): warn but continue ritual.
 **5a. API-inventory sync (2026-07-02 — closes the doc-drift gap):** if `/opt/homeserver/ottomate` received commits this session, regenerate the inventory into the plugin BEFORE committing it:
 
 ```bash
-ssh pdsv@192.168.1.10 'cd /opt/homeserver/ottomate && bash scripts/generate-api-inventory.sh' \
+ssh pdsv@192.0.2.10 'cd /opt/homeserver/ottomate && bash scripts/generate-api-inventory.sh' \
   > ~/.claude/plugins/ottomate/skills/ottomate/references/tracker-api-inventory.md
 ```
 

@@ -39,8 +39,8 @@ Build the import payload locally (base64 each screenshot), SCP it, POST server-s
 ```bash
 # 1. build payload.json = { imported_by_session, comments:[{...v2 fields..., screenshot_b64}] }
 #    (python: read the zip, base64.b64encode(zf.read(row['screenshot'])) → screenshot_b64)
-scp payload.json pdsv@192.168.1.10:/tmp/vqa-payload.json
-ssh pdsv@192.168.1.10 'cd /opt/homeserver/ottomate && \
+scp payload.json pdsv@192.0.2.10:/tmp/vqa-payload.json
+ssh pdsv@192.0.2.10 'cd /opt/homeserver/ottomate && \
   curl -sf -X POST http://127.0.0.1:8110/api/projects/<slug>/reports/import-visual-qa \
     -H "Authorization: Bearer $(cat .token)" -H "Content-Type: application/json" \
     --data-binary @/tmp/vqa-payload.json; rm -f /tmp/vqa-payload.json'

@@ -2,7 +2,7 @@
 # Generates STATUS.md from the live system. Never hand-edit STATUS.md (adr-016).
 # Usage: bash scripts/generate-status.sh > STATUS.md
 set -euo pipefail
-S="pdsv@192.168.1.10"
+S="pdsv@192.0.2.10"
 
 ssh "$S" '
 API=http://127.0.0.1:8110

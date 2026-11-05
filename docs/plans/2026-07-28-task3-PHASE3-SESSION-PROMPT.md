@@ -50,7 +50,7 @@ register row, verified on VAULT7A. **Never claim a browser/CI leg that didn't ru
 `references/stage-2-*` — Track A owns those. Stage to **`/tmp/fv`** (NOT `/tmp/ottoskill`). DB table:
 `feature_verification_reports`.
 
-**RUN RECIPE (VAULT7A):** `ssh pdsv@192.168.1.10` (key-only). `scp` the `scripts/feature-verify` dir to
+**RUN RECIPE (VAULT7A):** `ssh pdsv@192.0.2.10` (key-only). `scp` the `scripts/feature-verify` dir to
 `/tmp/fv`, then `cd /tmp/fv && npm install` (a `package.json` is committed; `@playwright/test` is pinned
 to 1.60.0 to match the browsers cached in `~/.cache/ms-playwright`). Env: `FV_INSTANCE_URL=http://127.0.0.1:8610`
 (the app under test — MoB), `FV_TRACKER_BASE=http://127.0.0.1:8110` (the Ottomate sink),

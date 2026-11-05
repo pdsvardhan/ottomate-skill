@@ -9,7 +9,7 @@ The `/ottomate` slash command delegates here for full routing logic. The command
 Run the bootstrap check directly — do NOT read `references/sanity-check.md` first:
 
 ```bash
-ssh pdsv@192.168.1.10 'curl -sf "http://127.0.0.1:8110/api/sanity-check?phase=bootstrap"'
+ssh pdsv@192.0.2.10 'curl -sf "http://127.0.0.1:8110/api/sanity-check?phase=bootstrap"'
 ```
 
 - **Verdict PROCEED, no failing checks** → one status line in the load block; move on. (This is the common case — the 13KB sanity reference stays unread.)
@@ -62,7 +62,7 @@ If `slug` provided: validate via GET `/api/projects/<slug>`. If 404, ask whether
 **Batch these into ONE ssh invocation** (one round-trip, not three — SSH handshakes are the dominant session-load cost):
 
 ```bash
-ssh pdsv@192.168.1.10 '
+ssh pdsv@192.0.2.10 '
   curl -sf "http://127.0.0.1:8110/api/projects/<slug>/context-packet?include=flows,features,pages,risks,decisions";
   echo "---TODOS---";
   curl -sf "http://127.0.0.1:8110/api/projects/<slug>/todos?open=1";
@@ -126,11 +126,11 @@ v1 is a bare array without the v2 fields and still ingests.
 
 ### Step 6 — Server access
 
-SSH to `pdsv@192.168.1.10`. Credentials in `references/credentials.md`. Mutating Ottomate calls require `Authorization: Bearer $(cat /opt/homeserver/ottomate/.token)`.
+SSH to `pdsv@192.0.2.10`. Credentials in `references/credentials.md`. Mutating Ottomate calls require `Authorization: Bearer $(cat /opt/homeserver/ottomate/.token)`.
 
 ### Step 7 — Pack up
 
-When user says "pack up", "done", "good night": follow `references/pack-up-ritual.md`. After pack-up, run on the host: `ssh pdsv@192.168.1.10 'cd /opt/homeserver/ottomate && npm run mirror:write -- <slug>'`. That's the script that writes `<slug>/ottomate/*.yaml` to `/mnt/storage/websites/<slug>/`.
+When user says "pack up", "done", "good night": follow `references/pack-up-ritual.md`. After pack-up, run on the host: `ssh pdsv@192.0.2.10 'cd /opt/homeserver/ottomate && npm run mirror:write -- <slug>'`. That's the script that writes `<slug>/ottomate/*.yaml` to `/mnt/storage/websites/<slug>/`.
 
 ## Anti-gaslighting reminders
 

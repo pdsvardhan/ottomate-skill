@@ -147,7 +147,7 @@ checks.push({
 ### How to apply (5 min)
 
 ```bash
-ssh pdsv@192.168.1.10
+ssh pdsv@192.0.2.10
 cd /opt/homeserver/ottomate
 # Apply the 3 edits above to app/api/sanity-check/route.ts
 docker compose up -d --build

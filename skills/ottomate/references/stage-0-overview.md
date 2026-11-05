@@ -142,7 +142,7 @@ a dev server) and never appear there (#731). Pick the first port in 8500–8599 
 projects table, live listeners (`ss -ltn`), and docker published ports — one batched ssh call:
 
 ```bash
-ssh pdsv@192.168.1.10 'used=$( { curl -s http://127.0.0.1:8110/api/projects | python3 -c "import sys,json;d=json.load(sys.stdin);r=d if isinstance(d,list) else d.get(\"projects\",[]);[print(p[\"port\"]) for p in r if p.get(\"port\")]"; ss -ltnH | awk "{print \$4}" | grep -oE "[0-9]+$"; docker ps --format "{{.Ports}}" | grep -oE ":[0-9]+->" | tr -d ":>-"; } | sort -un); for p in $(seq 8500 8599); do echo "$used" | grep -qx "$p" || { echo "$p"; break; }; done'
+ssh pdsv@192.0.2.10 'used=$( { curl -s http://127.0.0.1:8110/api/projects | python3 -c "import sys,json;d=json.load(sys.stdin);r=d if isinstance(d,list) else d.get(\"projects\",[]);[print(p[\"port\"]) for p in r if p.get(\"port\")]"; ss -ltnH | awk "{print \$4}" | grep -oE "[0-9]+$"; docker ps --format "{{.Ports}}" | grep -oE ":[0-9]+->" | tr -d ":>-"; } | sort -un); for p in $(seq 8500 8599); do echo "$used" | grep -qx "$p" || { echo "$p"; break; }; done'
 ```
 
 Surface the chosen port in the panel; if the DB-max+1 port differs from the first-free port, say so (it means

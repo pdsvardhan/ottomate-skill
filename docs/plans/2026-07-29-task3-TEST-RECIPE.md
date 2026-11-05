@@ -16,7 +16,7 @@ APPROVE→ITERATE for human review, **never blocks, never reverses**. Full pure 
 end-to-end on a real feature into one unified ITERATE report.
 
 ## Environment (VAULT7A) — prereqs
-- `ssh pdsv@192.168.1.10` (key-only). MoB app on `:8610`, Ottomate tracker on `:8110`, both must be 200.
+- `ssh pdsv@192.0.2.10` (key-only). MoB app on `:8610`, Ottomate tracker on `:8110`, both must be 200.
 - Durable harness home: **`/opt/homeserver/fv-harness`** (the cron uses it; kept current). For an
   ad-hoc test, scp `skills/ottomate/scripts/feature-verify` → **`/tmp/fv`** and `npm install` there
   (own `node_modules`; browsers cached in `~/.cache/ms-playwright`; `@playwright/test` pinned 1.60.0).

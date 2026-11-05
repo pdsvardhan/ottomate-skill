@@ -9,7 +9,7 @@
  * unless the corresponding skill template has been updated.
  */
 
-const DEFAULT_BASE = "http://192.168.1.10:8110";
+const DEFAULT_BASE = "http://192.0.2.10:8110";
 
 export type ComponentRow = {
   id: number;

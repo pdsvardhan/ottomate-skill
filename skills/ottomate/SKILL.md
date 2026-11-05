@@ -11,7 +11,7 @@ This file routes; it does not restate. Each topic has exactly one owning referen
 
 The skill owns judgment and dialogs; the Ottomate app owns state, gates, and evidence. Changes to one are reviewed against the other.
 
-- **Server:** `ssh pdsv@192.168.1.10` (key-only; `references/credentials.md` is a locations-only map — it contains no secret values).
+- **Server:** `ssh pdsv@192.0.2.10` (key-only; `references/credentials.md` is a locations-only map — it contains no secret values).
 - **App API:** `http://127.0.0.1:8110` server-side. Mutations: `Authorization: Bearer $(cat /opt/homeserver/ottomate/.token)`.
 - **Projects:** `/mnt/storage/websites/<slug>/` · **Held Type-2 code:** `/staging/code/<slug>/` · **Asset library:** `/mnt/storage/ottomate/assets/components/<id>/`.
 - All file ops via SSH; code files written locally then SCP'd (never SSH heredoc).

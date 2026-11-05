@@ -272,7 +272,7 @@ Net (post-2026-05-13 pruning): 31 documented checks pre-audit → 35 across all 
 
 `GET /api/sanity-check?phase=bootstrap` returns 3 false-positive BLOCKED criticals for `disk-space`, `bearer-token-valid`, and sometimes `db-schema-healthy`. Root cause: Ottomate route runs **inside the Docker container** and queries host paths (`/mnt/storage`, `/opt/homeserver/ottomate/.token`) that aren't bind-mounted into the container.
 
-**Verified via:** `ssh pdsv@192.168.1.10 'docker exec ottomate sh -c "df -h /mnt/storage; ls /opt/homeserver/ottomate/.token"'` returns "No such file or directory" inside the container.
+**Verified via:** `ssh pdsv@192.0.2.10 'docker exec ottomate sh -c "df -h /mnt/storage; ls /opt/homeserver/ottomate/.token"'` returns "No such file or directory" inside the container.
 
 **Recommended fix (server-side, not in this skill):** either bind-mount the paths into the container (`docker-compose.yml`), or move host-filesystem + token checks to the **skill side** (Claude does `ssh` from outside and reports back). Until then, **always verify a BLOCKED bootstrap verdict via SSH before trusting it.**
 

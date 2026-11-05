@@ -177,7 +177,7 @@ GET   /api/previews/[...path]                             serves built inline-pr
   and record unmappable ones in the staging ADR. (Catalog write API tracked as an
   app improvement, 2026-06-12.)
 - **Gitea repo creation**: push-to-create is OFF. Create via
-  `POST http://192.168.1.10:3300/api/v1/user/repos` with `Authorization: token $(cat ~/.gitea-token)`
+  `POST http://192.0.2.10:3300/api/v1/user/repos` with `Authorization: token $(cat ~/.gitea-token)`
   (server-side), then `git remote add origin ssh://gitea/pdsv/<slug>.git && git push -u origin master`.
 - **YAML mirrors**: `cd /opt/homeserver/ottomate && npm run mirror:write -- <slug>` —
   also takes a DB backup. A "1 drift warning" on first run after DB edits is the writer

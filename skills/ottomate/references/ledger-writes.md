@@ -5,7 +5,7 @@
 Every write goes through Ottomate REST API with bearer auth. All endpoints localhost-bound; reach via SSH.
 
 ```
-TOKEN=$(ssh pdsv@192.168.1.10 'cat /opt/homeserver/ottomate/.token')
+TOKEN=$(ssh pdsv@192.0.2.10 'cat /opt/homeserver/ottomate/.token')
 BASE='http://127.0.0.1:8110'   # use via SSH tunnel or run curl on the server
 ```
 
@@ -119,7 +119,7 @@ Add a step to `.gitea/workflows/test.yml` for each project:
 - name: Report test run to Ottomate
   if: always()  # report even on failure
   run: |
-    curl -sf -X POST "http://192.168.1.10:8110/api/test-runs" \
+    curl -sf -X POST "http://192.0.2.10:8110/api/test-runs" \
       -H "Authorization: Bearer ${{ secrets.TRACKER_API_TOKEN }}" \
       -H "Content-Type: application/json" \
       -d "{

@@ -1,5 +1,7 @@
 # Ottomate — web project pipeline skill
 
+> **About this public copy (November 2026).** This is the Ottomate Claude Code skill, published for my portfolio with its real commit history. It was built for my own home server, so its paths, hosts and tracker address assume that setup, and it won't run as-is: home-network addresses are replaced with documentation addresses (192.0.2.x), and a few internal files were left out of the history. The companion website is the Ottomate tracker, published separately.
+
 One system, two halves: this skill plugin (the judgment and dialogs) and the Ottomate web app on VAULT7A (the state, gates, and evidence). They version together; review changes to one against the other.
 
 ## Invoke
@@ -27,7 +29,7 @@ This README holds **no counts and no status claims** — they drift. Instead:
 `/opt/homeserver/ottomate` on VAULT7A — Next.js + drizzle + SQLite, container `ottomate`, bound `127.0.0.1:8110` server-side; public route `ottomate.vault7a.xyz` via Authentik (read-gating lands in WS3; risk instance 59 tracks the interim acceptance). Mutations require the bearer token at `/opt/homeserver/ottomate/.token`.
 
 ```bash
-ssh -L 8110:127.0.0.1:8110 pdsv@192.168.1.10   # then http://localhost:8110
+ssh -L 8110:127.0.0.1:8110 pdsv@192.0.2.10   # then http://localhost:8110
 ```
 
 SSH is key-only (password auth disabled 2026-06-10). No credential values live anywhere in this plugin — see `skills/ottomate/references/credentials.md` for the locations-only map.
